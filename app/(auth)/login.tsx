@@ -18,7 +18,7 @@ const LoginScreen: React.FC = () => {
 
     const handleLogin = () => {
         // Simulate login logic
-        router.push('/onboarding/step1');
+        router.push('/(tabs)/practice' as any);
     };
 
     const handleRegister = () => {

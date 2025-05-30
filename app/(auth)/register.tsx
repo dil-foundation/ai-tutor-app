@@ -28,7 +28,7 @@ const RegisterScreen: React.FC = () => {
     const handleRegister = () => {
         // TODO: Replace this with your API call or Firebase registration logic
         console.log('Register:', { username, password, proficiencyText, name, age });
-        router.push('/onboarding/step3');
+        router.push('/(tabs)/practice');
     };
 
     return (
