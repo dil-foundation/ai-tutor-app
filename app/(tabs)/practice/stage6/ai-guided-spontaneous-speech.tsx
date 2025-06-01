@@ -19,7 +19,7 @@ const AIGuidedSpontaneousSpeechScreen = () => {
           source={require("../../../../assets/images/abstract-topic-graphic-1.png")} // Update this path as needed
           style={styles.mainImage}
         />
-        <View style={styles.imageOverlay}>
+        {/* <View style={styles.imageOverlay}>
           <Text style={styles.overlayTextTitle}>
             Leadership in the 21st Century
           </Text>
@@ -28,7 +28,7 @@ const AIGuidedSpontaneousSpeechScreen = () => {
             world. Consider the impact of technology, globalization, and
             societal shifts on effective leadership.
           </Text>
-        </View>
+        </View> */}
       </View>
 
       <View style={styles.timerContainer}>
@@ -122,7 +122,8 @@ const styles = StyleSheet.create({
   },
   mainImage: {
     width: "90%",
-    height: 200,
+    height: 460,
+    // height: "100%",
     borderRadius: 10,
     marginTop: 10,
   },

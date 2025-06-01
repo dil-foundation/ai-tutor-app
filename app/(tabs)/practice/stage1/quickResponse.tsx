@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   mainImage: {
-    width: 200,
+    width: 260,
     height: 200,
     borderRadius: 15,
     marginBottom: 20,

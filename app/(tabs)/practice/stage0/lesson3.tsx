@@ -138,7 +138,7 @@ const Lesson3Screen: React.FC = () => {
         if (currentPageIndex > 0) {
             setCurrentPageIndex(currentPageIndex - 1);
         } else {
-            if(router.canGoBack()) router.back();
+            if (router.canGoBack()) router.back();
         }
     };
 
@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
     summaryEncouragement: {
         fontSize: 16,
         color: '#555',
-        textAlign: 'center',
         lineHeight: 22,
         paddingHorizontal: 10, // Padding for better text flow
     },

@@ -26,15 +26,14 @@ const CriticalOpinionBuilderScreen = () => {
       <ImageBackground
         source={require("../../../../assets/images/critical-opinion-background.png")} // Update path
         style={styles.imageBackground}
-        resizeMode="cover"
       >
-        <View style={styles.overlayContent}>
+        {/* <View style={styles.overlayContent}>
           <Text style={styles.imageText}>
             In the context of global climate change, should governments
             prioritize economic growth or environmental sustainability? Discuss
             the trade-offs and propose a balanced approach.
           </Text>
-        </View>
+        </View> */}
       </ImageBackground>
 
       <View style={styles.timerAndWordCountContainer}>
@@ -80,10 +79,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   imageBackground: {
-    height: 200, // Adjust as needed
+    padding: 10,
+    height: 480, // Adjust as needed
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
+    borderRadius: 50,
+    overflow: 'hidden',
+    // margin: 14,
+    width: '100%'
+
   },
   overlayContent: {
     backgroundColor: "rgba(0, 0, 0, 0.5)", // Dark overlay for text visibility

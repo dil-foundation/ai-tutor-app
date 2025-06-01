@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#007AFF",
     marginRight: 8,
   },
+
   messageText: {
     fontSize: 16,
     color: "#000", // Default for AI, user text color set below
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF", 
+    backgroundColor: "#FFFFFF",
   },
   speakButton: {
     backgroundColor: "#007AFF",

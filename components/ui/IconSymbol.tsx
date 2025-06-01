@@ -61,18 +61,18 @@ export function IconSymbol({
     // Fallback for icons not in IMAGE_MAPPING (e.g. if you use IconSymbol elsewhere)
     // You could render an Ionicons/MaterialIcons fallback here if desired for non-tab icons
     console.warn(`[IconSymbol] No image mapping found for name: ${name} on web/android.`);
-    return null; 
+    return null;
   }
 
   // Determine if current tab is active. Tabs are typically the second segment after '(tabs)'.
   const currentTabSegment = segments.length > 1 ? segments[1] : null;
   const isActive = currentTabSegment === iconData.routeSegment;
-  
+
   let tint;
   if (isActive) {
-    tint = 'red'; // TEST: Force active image tint to red
+    tint = '#8BC53F'; // TEST: Force active image tint to red
   } else {
-    tint = 'lime'; // Inactive icons remain lime for visibility
+    tint = '#006F8E'; // Inactive icons remain lime for visibility
   }
 
   console.log(`[IconSymbol WEB] Rendering: ${name}, routeSegment: ${iconData.routeSegment}, currentTabSegment: ${currentTabSegment}, isActive: ${isActive}, final tint: ${tint}, image src: ${iconData.image}`);
@@ -81,9 +81,9 @@ export function IconSymbol({
     <Image
       source={iconData.image}
       style={[
-        { 
-          width: size, 
-          height: size, 
+        {
+          width: size,
+          height: size,
           tintColor: tint
         },
         style,

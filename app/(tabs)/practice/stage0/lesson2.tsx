@@ -142,7 +142,7 @@ const Lesson2Screen: React.FC = () => {
         if (currentPageIndex > 0) {
             setCurrentPageIndex(currentPageIndex - 1);
         } else {
-            if(router.canGoBack()) router.back();
+            if (router.canGoBack()) router.back();
             console.log('Exiting Lesson 2');
         }
     };
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
         color: '#000',
         flex: 1,
         textAlign: 'center',
-        marginRight: 32, 
+        marginRight: 32,
     },
     paginationContainer: {
         flexDirection: 'row',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     },
     pageContent: {
         paddingHorizontal: 20,
-        width: width, 
+        width: width,
         marginBottom: 20,
     },
     sectionTitle: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
         color: '#555',
         marginLeft: 15,
         marginBottom: 3,
-        textAlign: 'right', 
+        textAlign: 'left',
         lineHeight: 24,
     },
     nextButton: {

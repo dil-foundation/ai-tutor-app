@@ -19,12 +19,12 @@ const RoleplaySensitiveScenarioScreen = () => {
           source={require("../../../../assets/images/roleplay-simulation-1.png")} // Update this path
           style={styles.mainImage}
         />
-        <View style={styles.imageOverlay}>
+        {/* <View style={styles.imageOverlay}>
           <Text style={styles.overlayText}>
             You are an HR Manager. An employee is upset about a missed
             promotion. Respond with tact
           </Text>
-        </View>
+        </View> */}
       </View>
 
       <ScrollView style={styles.chatContainer}>
@@ -58,7 +58,7 @@ const RoleplaySensitiveScenarioScreen = () => {
         </View>
         <Image source={require("../../../../assets/images/feedback-clarity-nuance-1.png")} style={styles.feedbackImage} />
       </View>
-       <View style={styles.feedbackCard}>
+      <View style={styles.feedbackCard}>
         <View style={styles.feedbackTextContainer}>
           <Text style={styles.feedbackItemTitle}>Conflict Resolution</Text>
           <Text style={styles.feedbackItemValue}>You initiated a constructive dialogue, focusing on understanding the employee's perspective.</Text>

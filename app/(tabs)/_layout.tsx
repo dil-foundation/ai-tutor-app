@@ -30,7 +30,7 @@ export default function TabLayout() {
         options={{
           title: 'Learn',
           tabBarIcon: ({ color, focused }) => {
-            console.log('[Learn Tab] router focused:', focused, 'router color:', color);
+            // console.log('[Learn Tab] router focused:', focused, 'router color:', color);
             return <IconSymbol size={28} name="graduationcap.fill" />;
           }
         }}

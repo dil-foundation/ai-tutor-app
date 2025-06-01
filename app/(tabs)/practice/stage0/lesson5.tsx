@@ -67,7 +67,7 @@ const Lesson5Screen: React.FC = () => {
     );
 
     const handleGoBack = () => {
-        if(router.canGoBack()) router.back();
+        if (router.canGoBack()) router.back();
     };
 
     const handleFinish = () => {
@@ -196,6 +196,7 @@ const styles = StyleSheet.create({
     urduText: {
         fontSize: 15,
         color: '#4A90E2',
+        textAlign: 'left'
     },
     nextButton: { // Reused for the "Finish" button
         backgroundColor: '#007AFF',

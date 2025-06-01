@@ -202,7 +202,7 @@ const Lesson4Screen: React.FC = () => {
         if (currentPageIndex > 0) {
             setCurrentPageIndex(currentPageIndex - 1);
         } else {
-            if(router.canGoBack()) router.back();
+            if (router.canGoBack()) router.back();
         }
     };
 
@@ -233,7 +233,7 @@ const Lesson4Screen: React.FC = () => {
                         <Ionicons name="arrow-back" size={24} color="#333" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{currentHeaderTitle}</Text>
-                    <View style={{ width: 24 }} /> 
+                    <View style={{ width: 24 }} />
                 </View>
 
                 <View style={styles.paginationContainer}>
@@ -248,14 +248,14 @@ const Lesson4Screen: React.FC = () => {
                     ))}
                 </View>
 
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollViewContentContainer}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Ensure that lessonPages is an array and currentPageIndex is a valid index */}
-                    {Array.isArray(lessonPages) && lessonPages[currentPageIndex] ? 
-                        lessonPages[currentPageIndex] : 
+                    {Array.isArray(lessonPages) && lessonPages[currentPageIndex] ?
+                        lessonPages[currentPageIndex] :
                         <View><Text>Content not available. Please check lessonPages structure.</Text></View>}
                 </ScrollView>
 
@@ -297,14 +297,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
-        flex: 1, 
-        marginRight: 24 + 5, 
+        flex: 1,
+        marginRight: 24 + 5,
     },
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 15, 
+        paddingVertical: 15,
     },
     paginationDot: {
         width: 8,
@@ -374,6 +374,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     urduText: {
+        textAlign: 'left',
         fontSize: 16,
         color: '#666',
         marginTop: 4, // Space between English and Urdu text

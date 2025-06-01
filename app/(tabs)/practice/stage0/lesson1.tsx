@@ -139,7 +139,7 @@ const Lesson1Screen: React.FC = () => {
         if (currentPageIndex > 0) {
             setCurrentPageIndex(currentPageIndex - 1);
         } else {
-            if(router.canGoBack()) router.back();
+            if (router.canGoBack()) router.back();
             console.log('Exiting Lesson 1');
         }
     };
@@ -182,7 +182,7 @@ const Lesson1Screen: React.FC = () => {
                 <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollViewContentContainer}
-                    showsVerticalScrollIndicator={false} 
+                    showsVerticalScrollIndicator={false}
                 >
                     {lessonPages[currentPageIndex]}
                 </ScrollView>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        borderBottomWidth: 0, 
+        borderBottomWidth: 0,
         backgroundColor: '#FFFFFF',
     },
     backButton: {
@@ -225,17 +225,17 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         color: '#000',
-        flex: 1, 
+        flex: 1,
         textAlign: 'center',
-        marginRight: 32, 
+        marginRight: 32,
     },
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 10, 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#E0E0E0', 
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
     },
     paginationDot: {
         height: 8,
@@ -244,56 +244,57 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     activeDot: {
-        backgroundColor: '#007AFF', 
+        backgroundColor: '#007AFF',
     },
     inactiveDot: {
-        backgroundColor: '#C7C7CC', 
+        backgroundColor: '#C7C7CC',
     },
     scrollView: {
-        flex: 1, 
+        flex: 1,
     },
     scrollViewContentContainer: {
-        alignItems: 'center', 
-        paddingVertical: 20, 
+        alignItems: 'center',
+        paddingVertical: 20,
     },
     pageContent: {
-        alignItems: 'center',
-        paddingHorizontal: 20, 
-        width: width * 0.9, 
+        // alignItems: 'center',
+        paddingHorizontal: 20,
+        width: width * 0.9,
     },
     alphabetLetter: {
-        fontSize: 28, 
+        fontSize: 28,
         fontWeight: 'bold',
-        color: '#007AFF', 
-        marginBottom: 4, 
-        marginTop: 16, 
+        color: '#007AFF',
+        marginBottom: 4,
+        marginTop: 16,
     },
     englishWord: {
-        fontSize: 22, 
-        color: '#000', 
-        marginBottom: 2, 
+        fontSize: 22,
+        color: '#000',
+        marginBottom: 2,
     },
     arabicWord: {
-        fontSize: 20, 
-        color: '#555', 
-        marginBottom: 20, 
+        fontSize: 20,
+        color: '#555',
+        marginBottom: 20,
+        textAlign: 'left'
     },
     nextButton: {
         backgroundColor: '#007AFF',
         paddingVertical: 15,
         paddingHorizontal: 30,
-        borderRadius: 25, 
-        alignSelf: 'center', 
-        marginBottom: 20, 
-        width: '80%', 
-        elevation: 2, 
-        shadowColor: '#000', 
+        borderRadius: 25,
+        alignSelf: 'center',
+        marginBottom: 20,
+        width: '80%',
+        elevation: 2,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 1.41,
     },
     nextButtonText: {
-        color: '#FFFFFF', 
+        color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
