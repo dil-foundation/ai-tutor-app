@@ -229,9 +229,7 @@ const Lesson4Screen: React.FC = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#333" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>{currentHeaderTitle}</Text>
                     <View style={{ width: 24 }} />
                 </View>
@@ -279,32 +277,34 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingHorizontal: 20,
         backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFFFFF',
     },
     backButton: {
-        padding: 5,
+        padding: 8,
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontWeight: '600',
+        color: '#000',
         flex: 1,
-        marginRight: 24 + 5,
+        textAlign: 'center',
+        marginRight: 32,
     },
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 15,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
     },
     paginationDot: {
         width: 8,

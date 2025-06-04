@@ -5,12 +5,30 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+// Define BASE_API_URL based on Platform
+const BASE_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+
 // Icons (can be customized further or replaced with actual image assets if needed)
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#000" />;
 const MicIcon = ({ color = "white" }) => <Ionicons name="mic" size={24} color={color} />;
 const PlayIcon = () => <Ionicons name="play" size={20} color="#000" />;
 
 type ScreenState = 'initial' | 'listening' | 'processing' | 'playback' | 'error';
+
+// +++ Utility function to convert Blob to Base64 +++
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      // The result includes the data URI prefix (e.g., "data:audio/wav;base64,"), so we split it off.
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+// +++ End of utility function +++
 
 export default function LearnScreen() {
   const router = useRouter();
@@ -148,21 +166,40 @@ export default function LearnScreen() {
         } as any);
       }
 
-      const response = await fetch('http://localhost:8000/api/translate/speak/audio', {
+      // Use BASE_API_URL
+      const response = await fetch(`${BASE_API_URL}/api/translate/speak/audio`, {
         method: 'POST',
         body: formData,
       });
 
+      // +++ Enhanced logging for the response +++
+      const responseContentType = response.headers.get('Content-Type');
+      const responseContentLength = response.headers.get('Content-Length');
+      console.log(
+        `Response from /speak/audio - Status: ${response.status}, StatusText: ${response.statusText}, Content-Type: ${responseContentType}, Content-Length: ${responseContentLength}`
+      );
+      // +++ End of enhanced logging +++
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Translation API error: ${response.status} - ${errorText}`);
+        // Add more detailed error logging for server non-OK responses
+        console.error('uploadAndTranslateAudio - Server error response text from /speak/audio:', errorText);
+        throw new Error(`Translation API error from /speak/audio: ${response.status} - ${errorText}`);
       }
 
       const audioBlob = await response.blob();
-      console.log('Translated audio received, type:', audioBlob.type);
+      // Log blob type and size
+      console.log('Translated audio received from /speak/audio - Blob Type:', audioBlob.type, 'Blob Size:', audioBlob.size);
       setEnglishAudioBlob(audioBlob);
       
+      // Check if the blob seems empty before proceeding
+      if (audioBlob.size === 0) {
+        console.warn('The translated audio blob from /speak/audio is empty (size 0). This might cause issues downstream.');
+      }
+      
+      console.log('>>> PREPARING to call transcribeEnglishAudioWithLocalAPI');
       await transcribeEnglishAudioWithLocalAPI(audioBlob);
+      console.log('>>> FINISHED calling transcribeEnglishAudioWithLocalAPI');
 
     } catch (error: any) {
       console.error('Error in uploadAndTranslateAudio:', error);
@@ -172,14 +209,26 @@ export default function LearnScreen() {
   };
 
   const transcribeEnglishAudioWithLocalAPI = async (audioBlob: Blob) => {
-    console.log('Transcribing English audio with local API...');
+    console.log('>>> ENTERED transcribeEnglishAudioWithLocalAPI');
+    console.log('Transcribing English audio with local API... Blob type:', audioBlob.type, 'Blob size:', audioBlob.size);
     try {
-      const formData = new FormData();
-      formData.append('file', audioBlob, `english-audio-${Date.now()}.wav`); 
+      console.log('Converting audio blob to Base64...');
+      const audioBase64 = await blobToBase64(audioBlob);
+      console.log('Audio blob converted to Base64. Length:', audioBase64.length);
 
-      const response = await fetch('http://localhost:8000/api/translate/transcribe-audio-direct', {
+      const payload = {
+        audio_base64: audioBase64,
+        filename: `english-audio-${Date.now()}.wav`, // You can adjust the filename/extension as needed
+        content_type: audioBlob.type || 'audio/wav' // Send original content type
+      };
+
+      const response = await fetch(`${BASE_API_URL}/api/translate/transcribe-audio-direct`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -205,7 +254,7 @@ export default function LearnScreen() {
     }
   };
 
-  const playAudio = async (uri: string | null) => {
+  const playAudio = async (audioSource: string | Blob | null) => {
     if (soundRef.current) {
       console.log('Stopping and unloading previous sound...');
       try {
@@ -217,16 +266,37 @@ export default function LearnScreen() {
       soundRef.current = null;
     }
 
-    if (uri) {
+    let effectiveUri: string | null = null;
+
+    if (audioSource instanceof Blob) {
+      console.log('playAudio received a Blob. Attempting to save to temp file.');
       try {
-        console.log('Playing audio from URI:', uri);
+        const base64Data = await blobToBase64(audioSource);
+        const filename = `${FileSystem.cacheDirectory}tempaudio_${Date.now()}.wav`;
+        await FileSystem.writeAsStringAsync(filename, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        effectiveUri = filename;
+        console.log('Blob saved to temp file for playback:', effectiveUri);
+      } catch (error: any) {
+        console.error('Failed to save blob to temp file for playback:', error);
+        setErrorMessage('Could not prepare audio for playback. ' + (error.message || ''));
+        return;
+      }
+    } else if (typeof audioSource === 'string') {
+      effectiveUri = audioSource;
+    }
+
+    if (effectiveUri) {
+      try {
+        console.log('Playing audio from URI:', effectiveUri);
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
           playsInSilentModeIOS: true,
         });
 
         const { sound } = await Audio.Sound.createAsync(
-          { uri },
+          { uri: effectiveUri },
           { shouldPlay: true }
         );
         soundRef.current = sound;
@@ -376,25 +446,66 @@ export default function LearnScreen() {
     }
     console.log('Stopping practice recording..');
     setPracticeActivityState('processing_practice');
-    try {
-      await practiceRecordingRef.current.stopAndUnloadAsync();
-      const practicedAudioUri = practiceRecordingRef.current.getURI();
-      practiceRecordingRef.current = null;
-      console.log('Practice recording stopped and stored at', practicedAudioUri);
+    let originalPracticeUri: string | null = null;
 
-      if (practicedAudioUri && englishSentence) {
+    try {
+      // Get URI BEFORE stopAndUnloadAsync
+      originalPracticeUri = practiceRecordingRef.current.getURI(); 
+      console.log('Original practice recording URI:', originalPracticeUri);
+
+      await practiceRecordingRef.current.stopAndUnloadAsync();
+      practiceRecordingRef.current = null;
+      
+      if (originalPracticeUri && englishSentence) {
+        // ---- Move file to a more permanent location ----
+        const directoryName = `${FileSystem.documentDirectory}audiopractice/`;
+        // Ensure the directory exists
+        await FileSystem.makeDirectoryAsync(directoryName, { intermediates: true });
+        
+        const fileNameParts = originalPracticeUri.split('/');
+        const originalFileName = fileNameParts[fileNameParts.length - 1];
+        const newPracticeFileUri = `${directoryName}${originalFileName}`;
+
+        console.log(`Moving practice audio from ${originalPracticeUri} to ${newPracticeFileUri}`);
+        try {
+            await FileSystem.moveAsync({
+                from: originalPracticeUri,
+                to: newPracticeFileUri,
+            });
+            console.log('Practice audio moved successfully.');
+        } catch (moveError: any) {
+            console.error('Failed to move practice audio file:', moveError);
+            // Fallback: try to use original URI if move fails, though it might not exist later
+            // Or, better, show an error to the user.
+            setErrorMessage('Failed to save practice recording for feedback. ' + moveError.message);
+            setPracticeActivityState('idle');
+            return; // Stop if file cannot be reliably saved
+        }
+        // ---- End of move file ----
+
         router.push({
           pathname: '/(tabs)/learn/feedback',
-          params: { practicedAudioUri, targetEnglishText: englishSentence },
+          // Pass the NEW URI of the moved file
+          params: { practicedAudioUri: newPracticeFileUri, targetEnglishText: englishSentence }, 
         });
       } else {
-        throw new Error('Practice recording URI is null or target English sentence is missing.');
+        throw new Error('Practice recording URI is null or target English sentence is missing after unload.');
       }
-      setPracticeActivityState('idle'); // Reset after successful navigation trigger
+      setPracticeActivityState('idle'); 
     } catch (error: any) {
       console.error('Error stopping practice recording or navigating:', error);
       setErrorMessage(error.message || 'Failed to process practice audio.');
-      setPracticeActivityState('idle'); // Reset on error
+      setPracticeActivityState('idle');
+      // Ensure practiceRecordingRef is nulled out if an error occurred and it wasn't already
+      if (practiceRecordingRef.current) {
+        try {
+            console.warn("Error occurred, attempting to cleanup lingering practiceRecordingRef.");
+            await practiceRecordingRef.current.stopAndUnloadAsync();
+        } catch (cleanupError: any) {
+            console.warn("Cleanup error for practiceRecordingRef in catch block:", cleanupError.message);
+        }
+        practiceRecordingRef.current = null;
+      }
     }
   };
 
@@ -453,7 +564,7 @@ export default function LearnScreen() {
               <Text style={styles.sentenceText}>{englishSentence}</Text>
             </View>
             {englishAudioBlob && (
-                <TouchableOpacity style={styles.playButton} onPress={() => playAudio(URL.createObjectURL(englishAudioBlob))}>
+                <TouchableOpacity style={styles.playButton} onPress={() => playAudio(englishAudioBlob)}>
                     <PlayIcon />
                     <Text style={styles.playButtonText}>Play Translated Sound (English)</Text>
                 </TouchableOpacity>

@@ -1,8 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Define BASE_API_URL based on Platform
+const BASE_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
 // Placeholder for actual icons
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="black" />;
@@ -14,6 +18,20 @@ interface FeedbackData {
   pronunciation_score: number;
   fluency_feedback: string;
 }
+
+// +++ Utility function to convert Blob to Base64 (if not already globally available/imported) +++
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+// +++ End of utility function +++
 
 export default function FeedbackScreen() {
   const router = useRouter();
@@ -42,26 +60,53 @@ export default function FeedbackScreen() {
     setIsLoading(true);
     setErrorMessage(null);
     setFeedbackResult(null);
-    console.log('Fetching feedback for:', audioUri, 'Expected:', expectedText);
+    console.log('Fetching feedback. Expected:', expectedText, 'Audio URI:', audioUri);
 
     try {
-      const formData = new FormData();
-      formData.append('expected_text', expectedText);
+      let audioBase64: string | null = null;
+      let originalFilename = `practiced-audio-${Date.now()}`;
+      let originalContentType = 'audio/wav'; // Default, can be refined
 
       if (Platform.OS === 'web' && audioUri.startsWith('blob:')) {
-        const audioBlob = await fetch(audioUri).then(res => res.blob());
-        formData.append('file', audioBlob, `practiced-audio-${Date.now()}.webm`);
+        console.log('Web platform: fetching blob from URI to convert to Base64');
+        const audioBlob = await fetch(audioUri).then(res => {
+            if (!res.ok) throw new Error('Failed to fetch blob for Base64 conversion');
+            return res.blob();
+        });
+        originalFilename += '.webm'; // Or derive from blob.type
+        originalContentType = audioBlob.type || 'audio/webm';
+        audioBase64 = await blobToBase64(audioBlob);
+      } else if (Platform.OS !== 'web' && audioUri.startsWith('file://')) {
+        console.log('Native platform: reading file URI to convert to Base64');
+        // For native, FileSystem can read file as base64 directly
+        audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        originalFilename += '.' + (Platform.OS === 'ios' ? 'm4a' : 'mp4');
+        originalContentType = `audio/${Platform.OS === 'ios' ? 'm4a' : 'mp4'}`;
       } else {
-        formData.append('file', {
-          uri: audioUri,
-          name: `practiced-audio-${Date.now()}.${Platform.OS === 'ios' ? 'm4a' : 'mp4'}`,
-          type: `audio/${Platform.OS === 'ios' ? 'm4a' : 'mp4'}`,
-        } as any);
+        throw new Error('Unsupported audio URI format for feedback.');
       }
 
-      const response = await fetch('http://localhost:8000/api/translate/feedback', {
+      if (!audioBase64) {
+        throw new Error('Failed to convert audio to Base64.');
+      }
+      console.log('Audio converted to Base64 for feedback. Length:', audioBase64.length);
+
+      const payload = {
+        expected_text: expectedText,
+        audio_base64: audioBase64,
+        filename: originalFilename,
+        content_type: originalContentType
+      };
+
+      const response = await fetch(`${BASE_API_URL}/api/translate/feedback`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -69,19 +114,27 @@ export default function FeedbackScreen() {
         throw new Error(`Feedback API error: ${response.status} - ${errorText}`);
       }
 
-      const resultData = await response.json(); // Parse as JSON
+      const resultData = await response.json();
       console.log("Parsed Feedback API Response:", resultData);
       
-      if (resultData && typeof resultData.pronunciation_score === 'number' && typeof resultData.fluency_feedback === 'string') {
-        setFeedbackResult(resultData as FeedbackData);
+      if (
+        resultData &&
+        typeof resultData.user_text === 'string' &&
+        typeof resultData.pronunciation_score === 'number' &&
+        resultData.fluency_feedback &&
+        typeof resultData.fluency_feedback.feedback === 'string' 
+      ) {
+        setFeedbackResult({
+          user_text: resultData.user_text,
+          pronunciation_score: Number(resultData.pronunciation_score),
+          fluency_feedback: resultData.fluency_feedback.feedback,
+        });
       } else {
-        console.warn("Feedback API response format unexpected:", resultData);
-        let responseText = "";
+        console.warn("Feedback API response format unexpected after parsing check:", resultData);
+        let responseText = "Invalid data structure received.";
         try {
             responseText = JSON.stringify(resultData);
-        } catch (e) {
-            responseText = "Invalid JSON received from server.";
-        }
+        } catch (e) { /* ignore if stringify fails */ }
         throw new Error(`Received unexpected data format from feedback API. Response: ${responseText}`);
       }
 

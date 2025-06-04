@@ -158,11 +158,9 @@ const Lesson3Screen: React.FC = () => {
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 3: Vocabulary Basics</Text>
-                    <View style={{ width: 24 }} /> {/* Spacer */}
+                    <View style={{ width: 24 }} />
                 </View>
 
                 {/* Pagination Dots */}
@@ -208,31 +206,34 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingHorizontal: 20,
+        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFFFFF',
     },
     backButton: {
-        padding: 5,
+        padding: 8,
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
+        color: '#000',
+        flex: 1,
         textAlign: 'center',
-        flex: 1, // Ensure title centers properly with a flex spacer on the right
-        marginRight: 24 + 5, // Width of icon + padding
+        marginRight: 32,
     },
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 15,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
     },
     paginationDot: {
         width: 8,

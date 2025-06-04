@@ -80,11 +80,9 @@ const Lesson5Screen: React.FC = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#333" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 5: App UI Words</Text>
-                    <View style={{ width: 24 }} /> {/* Spacer for centering title */}
+                    <View style={{ width: 24 }} />
                 </View>
 
                 <ScrollView
@@ -114,27 +112,26 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingHorizontal: 20,
         backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#FFFFFF',
     },
     backButton: {
-        padding: 5,
+        padding: 8,
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: '600',
+        color: '#000',
+        flex: 1,
         textAlign: 'center',
-        flex: 1, // Ensure title centers with spacer
-        marginRight: 24 + 5, // Width of icon + padding
+        marginRight: 32,
     },
     scrollView: {
         flex: 1,
@@ -152,13 +149,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
-        marginBottom: 8, // Reduced margin as subtitle follows directly
+        marginBottom: 8,
     },
     pageSubtitle: {
         fontSize: 16,
         color: '#555',
         textAlign: 'center',
-        marginBottom: 25,
+        marginBottom: 20,
         paddingHorizontal: 10,
     },
     listContainer: {

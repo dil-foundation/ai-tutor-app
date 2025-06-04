@@ -61,11 +61,9 @@ const BeginnerLessonsScreen: React.FC = () => {
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Beginner Lessons</Text>
-                    <View style={{ width: 24 }} /> {/* Spacer to balance title */}
+                    <View style={{ width: 24 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollViewContent}>

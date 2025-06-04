@@ -162,11 +162,9 @@ const Lesson2Screen: React.FC = () => {
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 2: Phonics & Sound Confusion</Text>
-                    <View style={{ width: 24 }} /> {/* Spacer */}
+                    <View style={{ width: 24 }} />
                 </View>
 
                 {/* Pagination Dots */}
