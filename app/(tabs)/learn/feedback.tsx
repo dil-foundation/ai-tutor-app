@@ -1,3 +1,4 @@
+import BASE_API_URL from '@/app/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
@@ -5,8 +6,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// Define BASE_API_URL based on Platform
-const BASE_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
 // Placeholder for actual icons
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="black" />;
