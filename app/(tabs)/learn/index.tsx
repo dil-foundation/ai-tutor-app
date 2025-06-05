@@ -4,9 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-// Define BASE_API_URL based on Platform
-const BASE_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+import BASE_API_URL from '../../config/api';
 
 // Icons (can be customized further or replaced with actual image assets if needed)
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#000" />;
