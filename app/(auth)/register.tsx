@@ -19,6 +19,7 @@ import {
     View
 } from 'react-native';
 import BASE_API_URL from '../config/api';
+import { saveAuthData } from '../utils/authStorage';
 
 type RootStackParamList = {
     Register: undefined;
@@ -293,6 +294,9 @@ const RegisterScreen: React.FC = () => {
 
             if (response.ok) {
                 console.log('Registration successful:', responseData);
+                if (responseData.access_token && responseData.user_id) {
+                    await saveAuthData(responseData.access_token, responseData.user_id);
+                }
                 Alert.alert('Success', 'Registration successful!');
                 router.push('/(tabs)/practice');
             } else {
