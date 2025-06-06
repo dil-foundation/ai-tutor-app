@@ -12,6 +12,7 @@ interface FloatingLabelInputProps {
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   error?: string;
+  multiline?: boolean;
 }
 
 const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
@@ -22,6 +23,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
   onToggleVisibility,
   isPasswordVisible,
   error,
+  multiline,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -55,17 +57,28 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
     paddingHorizontal: 4,
   };
 
+
+  const inputBoxStyles = [
+    styles.inputBox,
+    isFocused && styles.inputBoxFocused,
+    error && styles.inputBoxError,
+    multiline && styles.multilineInputBox,
+  ];
+
+  const textInputStyles = [styles.input, multiline && { textAlignVertical: 'top' as 'top' }];
+
   return (
     <View style={styles.container}>
-      <View style={[styles.inputBox, isFocused && styles.inputBoxFocused, error && styles.inputBoxError]}>
+      <View style={inputBoxStyles}>
         <Animated.Text style={labelStyle}>{label}</Animated.Text>
         <TextInput
-          style={styles.input}
+          style={textInputStyles}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={secureTextEntry}
+          multiline={multiline}
           {...props}
         />
         {onToggleVisibility && (
@@ -92,6 +105,11 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
     position: 'relative',
+  },
+  multilineInputBox: {
+    height: 120,
+    justifyContent: 'flex-start',
+    paddingTop: 15,
   },
   inputBoxFocused: {
     borderColor: '#3db5ff',
