@@ -1,8 +1,5 @@
 import BASE_API_URL from '@/config/api';
-import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -15,24 +12,14 @@ import {
     StyleSheet,
     Switch,
     Text,
-    TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
+import FloatingLabelInput from '../../components/ui/FloatingLabelInput';
 import { saveAuthData } from '../utils/authStorage';
-
-type RootStackParamList = {
-    Register: undefined;
-    Login: undefined;
-    Home: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RegisterScreen: React.FC = () => {
     const router = useRouter();
-
-    const navigation = useNavigation<NavigationProp>();
 
     const [username, setUsername] = useState('');
     const [usernameError, setUsernameError] = useState('');
@@ -54,7 +41,7 @@ const RegisterScreen: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [registrationError, setRegistrationError] = useState('');
 
-    const toggleLanguageSwitch = () => setIsEnglishLanguage(previousState => !previousState);
+    const toggleLanguageSwitch = () => setIsEnglishLanguage((previousState) => !previousState);
 
     // Calculate min and max dates for the date picker
     const today = new Date();
@@ -66,7 +53,7 @@ const RegisterScreen: React.FC = () => {
     const validateUsername = (text: string): string => {
         const trimmedText = text.trim();
         if (!trimmedText) {
-            return 'Username cannot be empty.';
+            return 'Username is required.';
         }
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         if (!alphanumericRegex.test(trimmedText)) {
@@ -84,7 +71,7 @@ const RegisterScreen: React.FC = () => {
     const validateEmail = (text: string): string => {
         const trimmedText = text.trim();
         if (!trimmedText) {
-            return 'Email cannot be empty.';
+            return 'Email is required.';
         }
         // Basic email format validation using a common regex
         const emailRegex = /^[a-zA-Z0-9](\.?[a-zA-Z0-9_-]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
@@ -96,7 +83,7 @@ const RegisterScreen: React.FC = () => {
 
     const validatePassword = (text: string): string => {
         if (!text) {
-            return 'Password cannot be empty.';
+            return 'Password is required.';
         }
         if (text.length < 8) {
             return 'Password must be at least 8 characters long.';
@@ -122,7 +109,7 @@ const RegisterScreen: React.FC = () => {
     const validateFirstName = (text: string): string => {
         const trimmedText = text.trim();
         if (!trimmedText) {
-            return 'First name cannot be empty.';
+            return 'First name is required.';
         }
         const nameRegex = /^[a-zA-Z]+$/; // Allows only letters
         if (!nameRegex.test(trimmedText)) {
@@ -140,7 +127,7 @@ const RegisterScreen: React.FC = () => {
     const validateLastName = (text: string): string => {
         const trimmedText = text.trim();
         if (!trimmedText) {
-            return 'Last name cannot be empty.';
+            return 'Last name is required.';
         }
         const nameRegex = /^[a-zA-Z]+$/; // Allows only letters
         if (!nameRegex.test(trimmedText)) {
@@ -155,7 +142,7 @@ const RegisterScreen: React.FC = () => {
     const validateProficiencyText = (text: string): string => {
         const trimmedText = text.trim();
         if (!trimmedText) {
-            return 'Proficiency text cannot be empty.';
+            return 'Proficiency text is required.';
         }
         if (trimmedText.length < 25) {
             return 'Proficiency text must be at least 25 characters long.';
@@ -173,7 +160,7 @@ const RegisterScreen: React.FC = () => {
 
     const validateDOB = (date: Date | null): string => {
         if (!date) {
-            return 'Date of Birth cannot be empty.';
+            return 'Date of Birth is required.';
         }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -202,48 +189,16 @@ const RegisterScreen: React.FC = () => {
         setIsPasswordVisible(!isPasswordVisible);
     };
 
-    const handleUsernameChange = (text: string) => {
-        setUsername(text);
-        setUsernameError(validateUsername(text));
-    };
-
-    const handleEmailChange = (text: string) => {
-        setEmail(text);
-        setEmailError(validateEmail(text));
-    };
-
-    const handlePasswordChange = (text: string) => {
-        setPassword(text);
-        setPasswordError(validatePassword(text));
-    };
-
-    const handleFirstNameChange = (text: string) => {
-        setFirstName(text);
-        setFirstNameError(validateFirstName(text));
-    };
-
-    const handleLastNameChange = (text: string) => {
-        setLastName(text);
-        setLastNameError(validateLastName(text));
-    };
-
-    const handleProficiencyTextChange = (text: string) => {
-        setProficiencyText(text);
-        setProficiencyTextError(validateProficiencyText(text));
-    };
-
     const onDOBChange = (event: any, selectedDate?: Date) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate) {
             setDob(selectedDate);
             setDobError(validateDOB(selectedDate));
-        } else {
-            if (!dob) { 
-                setDobError(validateDOB(null));
-            }
+        } else if (!dob) {
+            setDobError(validateDOB(null));
         }
     };
-
+    
     const handleRegister = async () => {
         setRegistrationError('');
         const finalUsernameError = validateUsername(username);
@@ -295,7 +250,7 @@ const RegisterScreen: React.FC = () => {
             if (response.ok) {
                 console.log('Registration successful:', responseData);
                 if (responseData.access_token && responseData.user_id) {
-                    await saveAuthData(responseData.access_token, responseData.user_id);
+                    await saveAuthData(String(responseData.access_token), String(responseData.user_id));
                 }
                 Alert.alert('Success', 'Registration successful!');
                 router.push('/(tabs)/practice');
@@ -323,8 +278,8 @@ const RegisterScreen: React.FC = () => {
                 <View style={styles.languageToggle}>
                     <Text style={styles.languageText}>English</Text>
                     <Switch
-                        trackColor={{ false: "#767577", true: "#81b0ff" }}
-                        thumbColor={isEnglishLanguage ? "#f4f3f4" : "#f4f3f4"}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={isEnglishLanguage ? '#f4f3f4' : '#f4f3f4'}
                         ios_backgroundColor="#3e3e3e"
                         onValueChange={toggleLanguageSwitch}
                         value={isEnglishLanguage}
@@ -338,64 +293,76 @@ const RegisterScreen: React.FC = () => {
                     Kindly Register to begin your English learning journey.
                 </Text>
 
-                {/* Input Fields */}
-                <TextInput
-                    placeholder="Username"
-                    style={styles.input}
+                <FloatingLabelInput
+                    label="Username *"
                     value={username}
-                    onChangeText={handleUsernameChange}
+                    onChangeText={(text) => {
+                        setUsername(text);
+                        setUsernameError(validateUsername(text));
+                    }}
                     autoCapitalize="none"
+                    error={usernameError}
                 />
-                {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
-                <TextInput
-                    placeholder="Email"
-                    style={styles.input}
+
+                <FloatingLabelInput
+                    label="Email Address *"
                     value={email}
-                    onChangeText={handleEmailChange}
+                    onChangeText={(text) => {
+                        setEmail(text);
+                        setEmailError(validateEmail(text));
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    error={emailError}
                 />
-                {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-                
-                {/* Password Input with Visibility Toggle */}
-                <View style={styles.passwordInputContainer}>
-                    <TextInput
-                        placeholder="Password"
-                        style={styles.passwordTextInput}
-                        value={password}
-                        onChangeText={handlePasswordChange}
-                        secureTextEntry={!isPasswordVisible} 
-                    />
-                    <TouchableOpacity onPress={togglePasswordVisibility} style={styles.passwordVisibilityIcon}>
-                        <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color="grey" />
-                    </TouchableOpacity>
-                </View>
-                {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-                <TextInput
-                    placeholder="First Name"
-                    style={styles.input}
-                    value={firstName}
-                    onChangeText={handleFirstNameChange}
-                />
-                {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
-                <TextInput
-                    placeholder="Last Name"
-                    style={styles.input}
-                    value={lastName}
-                    onChangeText={handleLastNameChange}
-                />
-                {lastNameError ? <Text style={styles.errorText}>{lastNameError}</Text> : null}
 
-                {/* Date of Birth Input */}
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-                    <Text style={styles.datePickerText}>
-                        {dob ? dob.toLocaleDateString() : 'Date of Birth'}
-                    </Text>
+                <FloatingLabelInput
+                    label="Password *"
+                    value={password}
+                    onChangeText={(text) => {
+                        setPassword(text);
+                        setPasswordError(validatePassword(text));
+                    }}
+                    secureTextEntry={!isPasswordVisible}
+                    onToggleVisibility={togglePasswordVisibility}
+                    isPasswordVisible={isPasswordVisible}
+                    error={passwordError}
+                />
+
+                <FloatingLabelInput
+                    label="First Name *"
+                    value={firstName}
+                    onChangeText={(text) => {
+                        setFirstName(text);
+                        setFirstNameError(validateFirstName(text));
+                    }}
+                    error={firstNameError}
+                />
+
+                <FloatingLabelInput
+                    label="Last Name *"
+                    value={lastName}
+                    onChangeText={(text) => {
+                        setLastName(text);
+                        setLastNameError(validateLastName(text));
+                    }}
+                    error={lastNameError}
+                />
+
+                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                    <View pointerEvents="none">
+                        <FloatingLabelInput
+                            label="Date of Birth *"
+                            value={dob ? dob.toLocaleDateString() : ''}
+                            onChangeText={() => {}}
+                            error={dobError}
+                        />
+                    </View>
                 </TouchableOpacity>
-                {dobError ? <Text style={styles.errorText}>{dobError}</Text> : null}
+
                 {showDatePicker && (
                     <DateTimePicker
-                        value={dob || maxSelectableDate} // Default to max selectable if dob is null
+                        value={dob || maxSelectableDate}
                         mode="date"
                         display="default"
                         onChange={onDOBChange}
@@ -404,15 +371,16 @@ const RegisterScreen: React.FC = () => {
                     />
                 )}
 
-                <TextInput
-                    placeholder="Type 2-3 English sentences to assess your English proficiency."
-                    style={[styles.input, styles.proficiencyInput]}
+                <FloatingLabelInput
+                    label="Type 2-3 English sentences to assess your English proficiency. *"
                     value={proficiencyText}
-                    onChangeText={handleProficiencyTextChange}
-                    multiline={true} // Allow multiple lines for sentences
-                    textAlignVertical="top" // Align text to the top on Android
+                    onChangeText={(text) => {
+                        setProficiencyText(text);
+                        setProficiencyTextError(validateProficiencyText(text));
+                    }}
+                    multiline
+                    error={proficiencyTextError}
                 />
-                {proficiencyTextError ? <Text style={styles.errorText}>{proficiencyTextError}</Text> : null}
 
                 {registrationError ? <Text style={[styles.errorText, {alignSelf: 'center', marginBottom:15}]}>{registrationError}</Text> : null}
 
@@ -437,14 +405,14 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F6F7', // Light gray background to match the image
+        backgroundColor: '#F5F6F7',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 20, // Adjusted padding
+        paddingTop: 20,
         paddingBottom: 10,
     },
     appLanguageLabel: {
@@ -461,15 +429,14 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     contentContainer: {
-        paddingHorizontal: 15,
-        alignItems: 'center', // Center content horizontally
-        paddingBottom: 10, // Added padding at the bottom of the scrollable content
+        paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     mainTitle: {
         fontSize: 28,
         fontWeight: 'bold',
         color: '#000',
-        marginTop: 40, // Increased margin to push it down
+        marginTop: 40,
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -477,36 +444,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         textAlign: 'center',
-        marginBottom: 50, // Increased margin for spacing (was 40)
-        paddingHorizontal: 15, // Add horizontal padding for better readability
-    },
-    input: {
-        width: '100%',
-        backgroundColor: '#FFFFFF', // White background for inputs
-        borderRadius: 10,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        fontSize: 16,
-        marginBottom: 15,
-        shadowColor: '#000', // Subtle shadow for input fields
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1, // For Android shadow
-    },
-    proficiencyInput: {
-        height: 120, // Taller for multi-line input
-        paddingTop: 15, // Ensure text starts from the top
-        marginBottom: 40, // Space before the button (was 30)
+        marginBottom: 30,
+        paddingHorizontal: 15,
     },
     registerButton: {
         width: '100%',
-        backgroundColor: '#38A3FF', // Blue color from the image
+        backgroundColor: '#38A3FF',
         paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 25, // Space from bottom (was 15)
+        marginBottom: 25,
+        marginTop: 15,
     },
     registerButtonText: {
         color: '#FFFFFF',
@@ -514,9 +463,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     loginLinkContainer: {
-        marginTop: 10, // Adjusted from 15
+        marginTop: 10,
         alignItems: 'center',
-        marginBottom: 15, // Significantly increased margin
+        marginBottom: 15,
     },
     loginLinkText: {
         fontSize: 14,
@@ -525,38 +474,10 @@ const styles = StyleSheet.create({
     errorText: {
         color: 'red',
         fontSize: 12,
-        alignSelf: 'flex-start',
-        marginBottom: 10, // Add some space before the next input if error is shown
-        // marginLeft: 5, // Optional: if inputs have specific padding/margin
-    },
-    passwordInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
-        paddingHorizontal: 20, 
-        marginBottom: 15, 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    passwordTextInput: {
-        flex: 1,
-        paddingVertical: 15,
-        fontSize: 16,
-    },
-    passwordVisibilityIcon: {
-        padding: 10, 
-    },
-    datePickerText: {
-        fontSize: 16,
-        color: '#000', // Adjust color to match placeholder/input text
-        // Add paddingVertical if needed to align with other inputs, but styles.input provides it
+        alignSelf: 'center',
+        marginBottom: 15,
     },
     disabledButton: {
-        backgroundColor: '#A9A9A9', // Darker grey for disabled state
-    }
+        backgroundColor: '#A9A9A9',
+    },
 });
