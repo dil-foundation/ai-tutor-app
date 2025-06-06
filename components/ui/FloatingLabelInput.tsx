@@ -57,6 +57,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
     paddingHorizontal: 4,
   };
 
+
   const inputBoxStyles = [
     styles.inputBox,
     isFocused && styles.inputBoxFocused,
