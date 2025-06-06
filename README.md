@@ -46,6 +46,13 @@ Follow these steps to get the application running on your Android emulator:
     ```
     This will open a new tab in your web browser with the Expo Developer Tools. You will also see a QR code in your terminal.
 
+    To run the app with production optimizations, use the `start:prod` script:
+    ```bash
+    npm run start:prod
+    # OR
+    yarn start:prod
+    ```
+
 4.  **Run on Android Emulator:**
     *   **Ensure your Android emulator is running.**
     *   In the terminal where the Metro bundler is running, press `a`. This should automatically install the Expo Go app (if not already installed) on your emulator and then launch your application.
