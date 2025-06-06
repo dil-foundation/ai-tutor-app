@@ -13,7 +13,7 @@ import {
 
 const LoginScreen: React.FC = () => {
     const router = useRouter();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
@@ -39,10 +39,10 @@ const LoginScreen: React.FC = () => {
 
                 <View style={styles.inputBox}>
                     <TextInput
-                        placeholder="Username"
+                        placeholder="Email Address"
                         style={styles.input}
-                        value={username}
-                        onChangeText={setUsername}
+                        value={email}
+                        onChangeText={setEmail}
                     />
                 </View>
 

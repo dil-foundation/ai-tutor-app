@@ -1,4 +1,4 @@
-import BASE_API_URL from '@/app/config/api';
+import BASE_API_URL from '@/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
