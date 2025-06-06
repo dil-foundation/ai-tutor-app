@@ -1,24 +1,81 @@
-// app/(auth)/login.tsx
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     SafeAreaView,
+    ScrollView,
+    StatusBar,
     StyleSheet,
+    Switch,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import FloatingLabelInput from '../../components/ui/FloatingLabelInput';
+import BASE_API_URL from '../../config/api';
+import { saveAuthData } from '../utils/authStorage';
+
 
 const LoginScreen: React.FC = () => {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isEnglishLanguage, setIsEnglishLanguage] = useState(true);
 
-    const handleLogin = () => {
-        // Simulate login logic
-        router.push('/(tabs)/practice' as any);
+    const toggleLanguageSwitch = () => setIsEnglishLanguage((previousState) => !previousState);
+
+    const handleLogin = async () => {
+        setEmailError('');
+        setPasswordError('');
+
+        let hasError = false;
+        if (!email.trim()) {
+            setEmailError('Email is required.');
+            hasError = true;
+        }
+        if (!password) {
+            setPasswordError('Password is required.');
+            hasError = true;
+        }
+
+        if (hasError) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${BASE_API_URL}/user/login-wordpress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const responseData = await response.json();
+
+            if (response.ok) {
+                if (responseData.access_token && responseData.user_id) {
+                    await saveAuthData(String(responseData.access_token), String(responseData.user_id));
+                    router.push('/(tabs)/practice' as any);
+                } else {
+                    Alert.alert('Login Failed', 'Invalid response from server.');
+                }
+            } else {
+                Alert.alert('Login Failed', responseData.message || 'An error occurred.');
+            }
+        } catch (error) {
+            console.error('Login API error:', error);
+            Alert.alert('Login Error', 'An unexpected network error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleRegister = () => {
@@ -26,38 +83,59 @@ const LoginScreen: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.iconWrapper}>
-                <Ionicons name="globe-outline" size={24} color="black" />
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar barStyle="dark-content" backgroundColor="#F5F6F7" />
+            <View style={styles.languageHeader}>
+                <Text style={styles.appLanguageLabel}>App Language</Text>
+                <View style={styles.languageToggle}>
+                    <Text style={styles.languageText}>English</Text>
+                    <Switch
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={isEnglishLanguage ? '#f4f3f4' : '#f4f3f4'}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={toggleLanguageSwitch}
+                        value={isEnglishLanguage}
+                    />
+                </View>
             </View>
 
-            <View style={styles.contentWrapper}>
-                <Text style={styles.title}>Welcome to our English Journey</Text>
+            <ScrollView contentContainerStyle={styles.contentContainer}>
+                <Text style={styles.mainTitle}>Welcome to our English Journey</Text>
                 <Text style={styles.subtitle}>
                     Log in to continue your English learning journey.
                 </Text>
 
-                <View style={styles.inputBox}>
-                    <TextInput
-                        placeholder="Email Address"
-                        style={styles.input}
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                </View>
+                <FloatingLabelInput
+                    label="Email Address *"
+                    value={email}
+                    onChangeText={(text) => {
+                        setEmail(text);
+                        if (emailError) setEmailError('');
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={emailError}
+                />
 
-                <View style={styles.inputBox}>
-                    <TextInput
-                        placeholder="Password"
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
-                </View>
+                <FloatingLabelInput
+                    label="Password *"
+                    value={password}
+                    onChangeText={(text) => {
+                        setPassword(text);
+                        if (passwordError) setPasswordError('');
+                    }}
+                    secureTextEntry={!isPasswordVisible}
+                    onToggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
+                    isPasswordVisible={isPasswordVisible}
+                    error={passwordError}
+                />
 
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.loginText}>Login</Text>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.loginText}>Login</Text>
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.forgotContainer}>
@@ -65,85 +143,94 @@ const LoginScreen: React.FC = () => {
                     <Text style={styles.forgotText}> Forgot Password?</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleRegister}>
+                <TouchableOpacity onPress={handleRegister} style={styles.registerLinkContainer}>
                     <Text style={styles.registerText}>Don't have an account? Register</Text>
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
 
 export default LoginScreen;
 
-// (same styles as before)
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
-        backgroundColor: '#f9fbfd',
+        backgroundColor: '#F5F6F7',
+    },
+    languageHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 20, // Bootstrap-style horizontal spacing
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 10,
     },
-    contentWrapper: {
-        width: '100%',
-        maxWidth: 400, // Limit content width like Bootstrap container
+    appLanguageLabel: {
+        fontSize: 16,
+        color: '#333',
     },
-    iconWrapper: {
-        position: 'absolute',
-        top: 50,
-        right: 20,
+    languageToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    title: {
-        fontSize: 22,
+    languageText: {
+        fontSize: 16,
+        color: '#333',
+        marginRight: 8,
+    },
+    contentContainer: {
+        paddingHorizontal: 20,
+        alignItems: 'center',
+        paddingBottom: 20,
+    },
+    mainTitle: {
+        fontSize: 28,
         fontWeight: 'bold',
-        textAlign: 'center',
         color: '#000',
-        marginBottom: 8,
+        marginTop: 40,
+        marginBottom: 10,
+        textAlign: 'center',
     },
     subtitle: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#333',
-        marginBottom: 30,
-    },
-    inputBox: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#dce2ea',
-    },
-    input: {
         fontSize: 16,
-        color: '#000',
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 50,
+        paddingHorizontal: 15,
     },
     loginButton: {
+        width: '100%',
         backgroundColor: '#3db5ff',
-        paddingVertical: 16,
+        paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
-        marginBottom: 20,
+        justifyContent: 'center',
+        marginTop: 20,
+        marginBottom: 25,
     },
     loginText: {
         color: '#fff',
         fontWeight: '700',
-        fontSize: 16,
+        fontSize: 18,
     },
     forgotContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 15,
     },
     forgotText: {
         fontSize: 14,
         color: '#555',
     },
+    registerLinkContainer: {
+        marginTop: 10,
+        alignItems: 'center',
+        marginBottom: 15,
+    },
     registerText: {
         fontSize: 14,
         color: '#007bff',
-        textAlign: 'center',
     },
 });
