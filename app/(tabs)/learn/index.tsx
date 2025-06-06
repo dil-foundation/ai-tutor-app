@@ -1,10 +1,10 @@
+import BASE_API_URL from '@/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import BASE_API_URL from '../../config/api';
 
 // Icons (can be customized further or replaced with actual image assets if needed)
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#000" />;

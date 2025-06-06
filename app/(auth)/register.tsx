@@ -1,3 +1,4 @@
+import BASE_API_URL from '@/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -18,7 +19,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import BASE_API_URL from '../config/api';
 import { saveAuthData } from '../utils/authStorage';
 
 type RootStackParamList = {
