@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({ title, showBackButton = true }) 
     <View style={styles.headerContainer}>
       {showBackButton && (
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
         </TouchableOpacity>
       )}
       <Text style={styles.headerTitle}>{title}</Text>
@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    borderBottomColor: "#1E293B",
+    backgroundColor: "#111629",
     // Add padding for Android status bar
     paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 12,
   },
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#000",
+    fontFamily: 'Lexend-SemiBold',
+    color: "#93E893",
     textAlign: "center",
     flex: 1, // Allow title to take up available space and center itself
   },

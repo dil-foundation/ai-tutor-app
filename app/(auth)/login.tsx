@@ -84,7 +84,7 @@ const LoginScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#F5F6F7" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.languageHeader}>
                 <Text style={styles.appLanguageLabel}>App Language</Text>
                 <View style={styles.languageToggle}>
@@ -98,7 +98,6 @@ const LoginScreen: React.FC = () => {
                     />
                 </View>
             </View>
-
             <ScrollView contentContainerStyle={styles.contentContainer}>
                 <Text style={styles.mainTitle}>Welcome to our English Journey</Text>
                 <Text style={styles.subtitle}>
@@ -139,7 +138,7 @@ const LoginScreen: React.FC = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.forgotContainer}>
-                    <FontAwesome5 name="lock" size={14} color="#555" />
+                    <FontAwesome5 name="lock" size={14} color="#D2D5E1" />
                     <Text style={styles.forgotText}> Forgot Password?</Text>
                 </TouchableOpacity>
 
@@ -156,7 +155,7 @@ export default LoginScreen;
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F6F7',
+        backgroundColor: '#111629',
     },
     languageHeader: {
         flexDirection: 'row',
@@ -168,7 +167,8 @@ const styles = StyleSheet.create({
     },
     appLanguageLabel: {
         fontSize: 16,
-        color: '#333',
+        color: '#D2D5E1',
+        fontFamily: 'Lexend-Regular',
     },
     languageToggle: {
         flexDirection: 'row',
@@ -176,8 +176,9 @@ const styles = StyleSheet.create({
     },
     languageText: {
         fontSize: 16,
-        color: '#333',
+        color: '#D2D5E1',
         marginRight: 8,
+        fontFamily: 'Lexend-Regular',
     },
     contentContainer: {
         paddingHorizontal: 20,
@@ -186,22 +187,23 @@ const styles = StyleSheet.create({
     },
     mainTitle: {
         fontSize: 28,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginTop: 40,
         marginBottom: 10,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
+        color: '#D2D5E1',
         textAlign: 'center',
         marginBottom: 50,
         paddingHorizontal: 15,
+        fontFamily: 'Lexend-Regular',
     },
     loginButton: {
         width: '100%',
-        backgroundColor: '#3db5ff',
+        backgroundColor: '#93E893',
         paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
@@ -210,8 +212,8 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     loginText: {
-        color: '#fff',
-        fontWeight: '700',
+        color: '#111629',
+        fontFamily: 'Lexend-Bold',
         fontSize: 18,
     },
     forgotContainer: {
@@ -222,7 +224,8 @@ const styles = StyleSheet.create({
     },
     forgotText: {
         fontSize: 14,
-        color: '#555',
+        color: '#D2D5E1',
+        fontFamily: 'Lexend-Regular',
     },
     registerLinkContainer: {
         marginTop: 10,
@@ -231,6 +234,7 @@ const styles = StyleSheet.create({
     },
     registerText: {
         fontSize: 14,
-        color: '#007bff',
+        color: '#93E893',
+        fontFamily: 'Lexend-Regular',
     },
 });

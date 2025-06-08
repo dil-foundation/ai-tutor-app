@@ -2,47 +2,39 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const messages = [
   {
     id: "1",
     sender: "ai",
     text: "What would you like to eat?",
-    avatar: require("../../../../assets/images/ai-avatar-chef.png"), // Replace with actual avatar
   },
   {
     id: "2",
     sender: "user",
     text: "I would like a chicken burger and a juice.",
-    avatar: require("../../../../assets/images/user_avatar.png"), // Replace with actual avatar
   },
   {
     id: "3",
     sender: "ai",
     text: "Anything else?",
-    avatar: require("../../../../assets/images/ai-avatar-chef.png"),
   },
   {
     id: "4",
     sender: "user",
     text: "No, thank you.",
-    avatar: require("../../../../assets/images/user_avatar.png"),
   },
   {
     id: "5",
     sender: "ai",
     text: "Perfect! You used 'I would like' correctly.",
-    avatar: require("../../../../assets/images/ai-avatar-chef.png"),
     isFeedback: true,
   },
 ];
@@ -53,7 +45,12 @@ const RoleplaySimulationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Roleplay Simulation" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Roleplay Simulation</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Order Food at a Restaurant</Text>
 
@@ -70,7 +67,7 @@ const RoleplaySimulationScreen = () => {
               ]}
             >
               {msg.sender === "ai" && (
-                <Image source={msg.avatar} style={styles.avatar} />
+                <Ionicons name="hardware-chip-outline" size={28} color="#93E893" style={styles.avatar}/>
               )}
               <View
                 style={[
@@ -78,31 +75,31 @@ const RoleplaySimulationScreen = () => {
                   msg.sender === "user"
                     ? styles.userMessageBubble
                     : styles.aiMessageBubble,
-                  msg.isFeedback && styles.feedbackBubble, // Special style for feedback from AI
+                  msg.isFeedback && styles.feedbackBubble,
                 ]}
               >
                 <Text
                   style={[
                     styles.messageText,
                     msg.sender === "user" && styles.userMessageText,
-                    msg.isFeedback && styles.feedbackText, // Special style for feedback text
+                    msg.isFeedback && styles.feedbackText,
                   ]}
                 >
                   {msg.text}
                 </Text>
               </View>
               {msg.sender === "user" && (
-                <Image source={msg.avatar} style={styles.avatar} />
+                 <Ionicons name="person-outline" size={28} color="#93E893" style={styles.avatar}/>
               )}
             </View>
           ))}
         </View>
       </ScrollView>
 
-      <View style={styles.speakButtonContainer}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.speakButtonText}>Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -112,22 +109,37 @@ const RoleplaySimulationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#000000",
+    color: "#D2D5E1",
     marginBottom: 24,
     textAlign: "center",
   },
   chatContainer: {
-    flex: 1, // Ensure chat takes available space before button
+    flex: 1,
   },
   messageRow: {
     flexDirection: "row",
@@ -141,63 +153,55 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginHorizontal: 5,
   },
   messageBubble: {
-    borderRadius: 18, // More rounded corners
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    maxWidth: "75%",
-    minHeight: 40, // Ensure consistent bubble height for short messages
-    justifyContent: "center",
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    maxWidth: "80%",
   },
   aiMessageBubble: {
-    backgroundColor: "#F0F0F0", // Light grey for AI
-    marginLeft: 10,
+    backgroundColor: "#1E293B",
   },
   userMessageBubble: {
-    backgroundColor: "#ADD8E6", // Light blue for user
-    marginRight: 10,
+    backgroundColor: "#93E893",
   },
   feedbackBubble: {
-    backgroundColor: "#F0F0F0", // Same as AI for feedback bubble
+    backgroundColor: "rgba(147, 232, 147, 0.2)",
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: "#93E893",
   },
   messageText: {
     fontSize: 16,
-    color: "#000000",
+    color: "#D2D5E1",
     lineHeight: 22,
   },
   userMessageText: {
-    color: "#000000", // User text is black as per image
+    color: "#111629",
   },
   feedbackText: {
     fontStyle: "italic",
-    color: "#333333",
+    color: "#93E893",
   },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

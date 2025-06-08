@@ -1,9 +1,9 @@
 import React from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 
 export default function ProgressScreen() {
@@ -22,7 +22,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F6F7', // Consistent background
+    backgroundColor: '#111629', // Consistent background
   },
   container: {
     flex: 1,
@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000',
+    fontFamily: 'Lexend-Bold',
+    color: '#93E893',
     marginBottom: 25,
   },
   content: {
@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
   },
   contentText: {
     fontSize: 18,
-    color: '#333',
+    color: '#D2D5E1',
+    fontFamily: 'Lexend-Regular',
   },
 }); 

@@ -155,11 +155,11 @@ const Lesson1Screen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#D2D5E1" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 1: The English Alphabet!</Text>
                     <View style={{ width: 24 }} />
                 </View>
@@ -201,11 +201,11 @@ const Lesson1Screen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -213,8 +213,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        borderBottomWidth: 0,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     backButton: {
         padding: 8,
@@ -222,7 +221,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
+        color: '#93E893',
         flex: 1,
         textAlign: 'center',
         marginRight: 32,
@@ -233,7 +232,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: '#1E293B',
     },
     paginationDot: {
         height: 8,
@@ -242,60 +241,49 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     activeDot: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#93E893',
     },
     inactiveDot: {
-        backgroundColor: '#C7C7CC',
+        backgroundColor: '#D2D5E1',
     },
     scrollView: {
         flex: 1,
     },
     scrollViewContentContainer: {
-        alignItems: 'center',
-        paddingVertical: 20,
+        padding: 20,
     },
     pageContent: {
-        // alignItems: 'center',
-        paddingHorizontal: 20,
-        width: width * 0.9,
+        alignItems: 'center',
     },
     alphabetLetter: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#007AFF',
-        marginBottom: 4,
-        marginTop: 16,
+        color: '#93E893',
+        marginBottom: 8,
     },
     englishWord: {
-        fontSize: 22,
-        color: '#000',
-        marginBottom: 2,
+        fontSize: 20,
+        color: '#D2D5E1',
+        marginBottom: 4,
     },
     arabicWord: {
         fontSize: 20,
-        color: '#555',
-        marginBottom: 20,
-        textAlign: 'left'
+        color: '#D2D5E1',
+        marginBottom: 24,
     },
     nextButton: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 15,
-        paddingHorizontal: 30,
-        borderRadius: 25,
-        alignSelf: 'center',
+        backgroundColor: '#93E893',
+        paddingVertical: 16,
+        marginHorizontal: 20,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 20,
-        width: '80%',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
     },
     nextButtonText: {
-        color: '#FFFFFF',
+        color: '#111629',
         fontSize: 18,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
 });
 

@@ -29,11 +29,13 @@ export function IconSymbol({
   size = 28, // Default size from _layout.tsx
   style,
   weight, // For iOS
+  color,
 }: {
   name: MappedIconName; // Ensure name is one of the keys in IMAGE_MAPPING for web image rendering
   size?: number;
   style?: StyleProp<ImageStyle>; // Changed to ImageStyle
   weight?: SymbolWeight;
+  color?: string;
 }) {
   // console.log('[IconSymbol WEB/ANDROID] name:', name, 'size:', size);
 
@@ -68,14 +70,9 @@ export function IconSymbol({
   const currentTabSegment = segments.length > 1 ? segments[1] : null;
   const isActive = currentTabSegment === iconData.routeSegment;
 
-  let tint;
-  if (isActive) {
-    tint = '#8BC53F'; // TEST: Force active image tint to red
-  } else {
-    tint = '#006F8E'; // Inactive icons remain lime for visibility
-  }
+  const finalColor = color ?? (isActive ? currentActiveColor : currentInactiveColor);
 
-  console.log(`[IconSymbol WEB] Rendering: ${name}, routeSegment: ${iconData.routeSegment}, currentTabSegment: ${currentTabSegment}, isActive: ${isActive}, final tint: ${tint}, image src: ${iconData.image}`);
+  console.log(`[IconSymbol WEB] Rendering: ${name}, routeSegment: ${iconData.routeSegment}, currentTabSegment: ${currentTabSegment}, isActive: ${isActive}, final tint: ${finalColor}, image src: ${iconData.image}`);
 
   return (
     <Image
@@ -84,7 +81,7 @@ export function IconSymbol({
         {
           width: size,
           height: size,
-          tintColor: tint
+          tintColor: finalColor,
         },
         style,
       ]}

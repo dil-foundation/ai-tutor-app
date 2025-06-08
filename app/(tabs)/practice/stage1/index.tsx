@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Stage1Screen = () => {
@@ -11,21 +12,21 @@ const Stage1Screen = () => {
       id: 'repeatAfterMe',
       title: 'Repeat After Me',
       description: 'Practice speaking by repeating phrases',
-      image: require('../../../../assets/images/repeat_after_me.png'), // Placeholder - replace with actual image
+      icon: 'mic-outline' as const,
       screen: '/(tabs)/practice/stage1/repeatAfterMe' as any,
     },
     {
       id: 'quickResponse',
       title: 'Quick Response',
       description: 'Answer simple questions quickly',
-      image: require('../../../../assets/images/quick_response.png'), // Placeholder - replace with actual image
+      icon: 'flash-outline' as const,
       screen: '/(tabs)/practice/stage1/quickResponse' as any,
     },
     {
       id: 'listenAndReply',
       title: 'Listen and Reply',
       description: 'Improve listening skills by responding to audio',
-      image: require('../../../../assets/images/listen_and_reply.png'), // Placeholder - replace with actual image
+      icon: 'ear-outline' as const,
       screen: '/(tabs)/practice/stage1/listenAndReply' as any,
     },
   ];
@@ -35,7 +36,7 @@ const Stage1Screen = () => {
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Stage 1</Text>
         </View>
@@ -48,14 +49,12 @@ const Stage1Screen = () => {
             style={styles.activityCard}
             onPress={() => router.push(activity.screen)}
           >
+            <Ionicons name={activity.icon} size={32} color="#93E893" style={styles.activityIcon} />
             <View style={styles.textContainer}>
               <Text style={styles.activityTitle}>{activity.title}</Text>
               <Text style={styles.activityDescription}>{activity.description}</Text>
-              <View style={styles.startButton}>
-                <Text style={styles.startButtonText}>Start →</Text>
-              </View>
             </View>
-            <Image source={activity.image} style={styles.activityImage} />
+            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -66,12 +65,12 @@ const Stage1Screen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#111629',
   },
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#111629',
   },
   header: {
     flexDirection: 'row',
@@ -81,76 +80,48 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 15,
   },
-  backButtonText: {
-    fontSize: 24,
-    color: '#000',
-  },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#93E893',
   },
   levelTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#D2D5E1',
     textAlign: 'center',
     marginTop: 10,
-    marginBottom: 5,
+    marginBottom: 10,
   },
   goalText: {
     fontSize: 16,
-    color: '#666',
+    color: '#D2D5E1',
     textAlign: 'center',
     marginBottom: 30,
   },
   activityCard: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1E293B',
     borderRadius: 15,
     padding: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+  },
+  activityIcon: {
+    marginRight: 20,
   },
   textContainer: {
     flex: 1,
-    marginRight: 15,
   },
   activityTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#93E893',
     marginBottom: 5,
   },
   activityDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
-  },
-  startButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: '#eee'
-  },
-  startButtonText: {
-    color: '#333',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  activityImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+    color: '#D2D5E1',
   },
 });
 

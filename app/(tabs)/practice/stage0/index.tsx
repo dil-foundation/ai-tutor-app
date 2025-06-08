@@ -57,11 +57,11 @@ const BeginnerLessonsScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#D2D5E1" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Beginner Lessons</Text>
                     <View style={{ width: 24 }} />
                 </View>
@@ -162,11 +162,11 @@ const BeginnerLessonsScreen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F6F7', // Light gray background to match the image
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#F5F6F7',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -175,10 +175,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
-        backgroundColor: '#FFFFFF',
-        // Add extra padding for Android status bar if not handled by SafeAreaView
-        // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
+        borderBottomColor: '#1E293B',
+        backgroundColor: '#111629',
     },
     backButton: {
         padding: 8,
@@ -186,52 +184,42 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
-        flex: 1, // Allows the title to take available space
-        textAlign: 'center', // Center the title
-        marginRight: 24, // Account for the back button's width
+        color: '#93E893',
+        flex: 1,
+        textAlign: 'center',
+        marginRight: 24,
     },
     scrollViewContent: {
         paddingHorizontal: 20,
-        paddingBottom: 20, // Add space for bottom nav bar
+        paddingBottom: 20,
     },
     welcomeSection: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#1E293B',
         borderRadius: 15,
         padding: 20,
         marginTop: 20,
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
     },
     welcomeTitle: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#000',
+        color: '#93E893',
         marginBottom: 10,
     },
     welcomeDescription: {
         fontSize: 15,
-        color: '#555',
+        color: '#D2D5E1',
         lineHeight: 22,
     },
     lessonCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#1E293B',
         borderRadius: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3, // For Android shadow
         marginBottom: 20,
-        overflow: 'hidden', // Ensures border radius clips image
+        overflow: 'hidden',
     },
     lessonImage: {
         width: '100%',
-        height: 180, // Fixed height for consistency
+        height: 180,
         resizeMode: 'cover',
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
@@ -243,25 +231,25 @@ const styles = StyleSheet.create({
     lessonTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#D2D5E1',
         marginBottom: 5,
     },
     lessonDescription: {
         fontSize: 14,
-        color: '#666',
+        color: '#D2D5E1',
         marginBottom: 15,
-        lineHeight: 20,
     },
     startButton: {
-        backgroundColor: '#E6F0FF', // Light blue background
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        backgroundColor: '#93E893',
+        paddingVertical: 12,
         borderRadius: 25,
-        alignSelf: 'flex-start', // Align button to the left
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     startButtonText: {
-        color: '#007AFF',
-        fontSize: 14,
-        fontWeight: '600',
+        color: '#111629',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     // Styles for the bottom navigation bar are now removed
 });

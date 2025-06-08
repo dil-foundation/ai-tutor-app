@@ -2,18 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const DailyRoutineNarrationScreen = () => {
   const router = useRouter();
@@ -22,37 +20,45 @@ const DailyRoutineNarrationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Daily Routine Narration" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Daily Routine</Text>
+      </View>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flex}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>
-            Sentence building + fluency using familiar topics
-          </Text>
           <Text style={styles.prompt}>
             Tell me about your morning routine. What do you do after you wake up?
           </Text>
-          <Text style={styles.responseLabel}>Your Response</Text>
-          <TextInput
-            style={styles.responseInput}
-            multiline
-            placeholder="Type your response here..."
-            value={response}
-            onChangeText={setResponse}
-          />
-          <Text style={styles.feedbackText}>
-            Nice! Try saying it with time words like 'then' or 'after that'.
-          </Text>
+          <View style={styles.responseContainer}>
+            <TextInput
+              style={styles.responseInput}
+              multiline
+              placeholder="Start writing or speaking..."
+              placeholderTextColor="#666"
+              value={response}
+              onChangeText={setResponse}
+            />
+          </View>
+          <View style={styles.feedbackBox}>
+            <Ionicons name="information-circle-outline" size={24} color="#93E893" style={styles.feedbackIcon} />
+            <Text style={styles.feedbackText}>
+              Nice! Try saying it with time words like 'then' or 'after that'.
+            </Text>
+          </View>
+        </ScrollView>
+        <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.retryButton}>
+            <Ionicons name="refresh-outline" size={24} color="#D2D5E1" />
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
-        </ScrollView>
-        <View style={styles.speakButtonContainer}>
           <TouchableOpacity style={styles.speakButton}>
-            <Ionicons name="mic" size={24} color="#FFFFFF" />
-            <Text style={styles.speakButtonText}>Speak</Text>
+            <Ionicons name="mic-outline" size={28} color="#111629" />
+            <Text style={styles.speakButtonText}>Speak Now</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -63,88 +69,98 @@ const DailyRoutineNarrationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
   },
   flex: {
     flex: 1,
   },
-  scrollContent: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
     paddingHorizontal: 20,
-    paddingTop: 24, // Increased top padding
-    paddingBottom: 20,
+    backgroundColor: '#111629',
   },
-  title: {
-    fontSize: 18, // Slightly smaller title
-    fontWeight: "600", // Semi-bold
-    color: "#333333",
-    marginBottom: 12, // Increased margin
-    textAlign: "left",
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
   },
   prompt: {
-    fontSize: 16,
-    color: "#000000",
-    marginBottom: 24, // Increased margin
-    lineHeight: 22,
-    textAlign: "left",
+    fontSize: 18,
+    color: "#D2D5E1",
+    marginBottom: 24,
+    lineHeight: 24,
+    textAlign: "center",
   },
-  responseLabel: {
-    fontSize: 14, // Label for the text input
-    color: "#666666",
-    marginBottom: 8,
-    textAlign: "left",
+  responseContainer: {
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    minHeight: 200,
+    padding: 15,
+    marginBottom: 24,
   },
   responseInput: {
-    backgroundColor: "#F8F8F8",
-    borderRadius: 8,
-    padding: 16,
-    minHeight: 150, // Made text area taller
     fontSize: 16,
+    color: "#D2D5E1",
     textAlignVertical: "top",
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    color: "#000000",
+    flex: 1,
+  },
+  feedbackBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feedbackIcon: {
+    marginRight: 15,
   },
   feedbackText: {
-    fontSize: 14,
-    color: "#555555", // Darker grey for feedback
-    textAlign: "left",
-    fontStyle: "normal", // Not italic as per image
-    marginBottom: 24, // Space before retry button
+    fontSize: 16,
+    color: "#D2D5E1",
+    flex: 1,
+  },
+  bottomBar: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#111629",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   retryButton: {
-    backgroundColor: "#E0E0E0", // Grey background for retry
-    borderRadius: 20, // Pill shape
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignSelf: "center", // Centered button
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   retryButtonText: {
     fontSize: 16,
-    color: "#000000",
+    color: "#D2D5E1",
     fontWeight: "600",
-  },
-  speakButtonContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    marginLeft: 8,
   },
   speakButton: {
-    backgroundColor: "#007AFF", // Standard blue
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

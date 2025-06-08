@@ -8,9 +8,9 @@ import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View }
 
 
 // Placeholder for actual icons
-const BackIcon = () => <Ionicons name="arrow-back" size={24} color="black" />;
-const PlayIcon = () => <Ionicons name="play" size={24} color="black" />;
-const MicIcon = () => <Ionicons name="mic" size={24} color="#007AFF" />;
+const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#D2D5E1" />;
+const PlayIcon = () => <Ionicons name="play" size={24} color="#111629" />;
+const MicIcon = () => <Ionicons name="mic" size={24} color="#93E893" />;
 
 interface FeedbackData {
   user_text: string;
@@ -211,7 +211,7 @@ export default function FeedbackScreen() {
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <BackIcon />
       </TouchableOpacity>
-      <Text style={styles.title}>Real-time Urdu-to-English Tutor</Text>
+      <Text style={styles.title}>Your Feedback</Text>
 
       <Text style={styles.englishSentencePlayback}>{targetEnglishText || "The weather is beautiful today."}</Text>
       <TouchableOpacity style={styles.playButton} onPress={playPracticedAudio}>
@@ -223,7 +223,7 @@ export default function FeedbackScreen() {
 
       {isLoading && (
         <View style={styles.centeredMessageContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#93E893" />
             <Text style={styles.loadingText}>Getting your feedback...</Text>
         </View>
       )}
@@ -240,28 +240,32 @@ export default function FeedbackScreen() {
           <View style={styles.feedbackCard}>
             <View style={styles.feedbackItemRow}>
               <MicIcon />
-              <Text style={styles.feedbackCategory}>Pronunciation Score</Text>
+              <Text style={[styles.feedbackCategory, { marginLeft: 10 }]}>Pronunciation Score</Text>
             </View>
             <Text style={styles.pronunciationScoreText}>{feedbackResult.pronunciation_score.toFixed(1)}%</Text>
           </View>
 
           <View style={styles.feedbackCard}>
-            <Text style={styles.feedbackCategory}>Detailed Feedback:</Text>
+            <Text style={[styles.feedbackCategory, { marginBottom: 10 }]}>Detailed Feedback:</Text>
             <Text style={styles.apiFeedbackText}>
-              {feedbackResult.fluency_feedback.replace(/\\n/g, '\n')}
+              {feedbackResult.fluency_feedback}
             </Text>
           </View>
         </View>
       )}
 
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.bottomButton, styles.tryAgainButton]}>
-          <Text style={styles.tryAgainButtonText}>Try Again</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.replace('../learn')} style={[styles.bottomButton, styles.practiceAnotherButton]}>
-          <Text style={styles.practiceAnotherButtonText}>Practice Another</Text>
-        </TouchableOpacity>
-      </View>
+      {(!isLoading) && (
+        <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.tryAgainButton} onPress={() => router.back()}>
+                <Ionicons name="refresh-outline" size={20} color="#111629" />
+                <Text style={styles.tryAgainButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.practiceAnotherButton} onPress={() => router.push('/(tabs)/learn')}>
+                 <Ionicons name="play-forward-outline" size={20} color="#D2D5E1" />
+                <Text style={styles.practiceAnotherButtonText}>Practice Another</Text>
+            </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -269,142 +273,138 @@ export default function FeedbackScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#F5F6F7',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    backgroundColor: '#111629',
   },
   backButton: {
     position: 'absolute',
-    top: 40,
+    top: 50,
     left: 20,
     zIndex: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#93E893',
     textAlign: 'center',
-    marginTop: 30,
     marginBottom: 20,
   },
   englishSentencePlayback: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 20,
+    color: '#D2D5E1',
     textAlign: 'center',
-    marginHorizontal: 20,
-    marginBottom: 15,
+    marginVertical: 15,
+    padding: 10,
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
   },
   playButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e0e0e0',
-    paddingHorizontal: 30,
+    justifyContent: 'center',
+    backgroundColor: '#93E893',
     paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 25,
-    marginBottom: 25,
     alignSelf: 'center',
+    marginBottom: 20,
   },
   playButtonText: {
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 16,
+    color: '#111629',
+    fontWeight: '500',
   },
   feedbackTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    alignSelf: 'flex-start',
+    color: '#93E893',
+    marginTop: 10,
     marginBottom: 15,
-    paddingHorizontal: '5%',
+    textAlign: 'center',
+  },
+  centeredMessageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 18,
+    color: '#D2D5E1',
+  },
+  errorText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
   },
   feedbackContentContainer: {
-    width: '100%',
-    paddingHorizontal: '5%',
-    marginBottom: 'auto',
+    flex: 1,
   },
   feedbackCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
-    padding: 15,
+    padding: 20,
     marginBottom: 15,
-    width: '100%',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.00,
-    elevation: 1,
   },
   feedbackItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 10,
   },
   feedbackCategory: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
-    marginLeft: 8,
+    color: '#D2D5E1',
   },
   pronunciationScoreText: {
-    fontSize: 20,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#93E893',
     textAlign: 'center',
-    marginTop: 5,
   },
   apiFeedbackText: {
-    fontSize: 15,
-    color: '#444',
-    marginTop: 8,
-    lineHeight: 22,
+    fontSize: 16,
+    color: '#D2D5E1',
+    lineHeight: 24,
   },
   actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: '5%',
     paddingVertical: 20,
-    borderTopColor: '#E0E0E0',
+    backgroundColor: '#111629',
+    borderTopColor: '#1E293B',
     borderTopWidth: 1,
-    backgroundColor: '#F5F6F7',
-  },
-  bottomButton: {
-    paddingVertical: 15,
-    borderRadius: 25,
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: 5,
   },
   tryAgainButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#93E893',
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 15,
   },
   tryAgainButtonText: {
-    color: 'white',
+    color: '#111629',
     fontSize: 16,
     fontWeight: 'bold',
+    marginLeft: 10,
   },
   practiceAnotherButton: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#1E293B',
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    borderColor: '#D2D5E1',
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   practiceAnotherButtonText: {
-    color: 'black',
+    color: '#D2D5E1',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  centeredMessageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#007AFF',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
+    marginLeft: 10,
   },
 }); 

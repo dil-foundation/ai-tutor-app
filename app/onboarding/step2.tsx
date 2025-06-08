@@ -28,7 +28,7 @@ const AITutorChatScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -36,7 +36,7 @@ const AITutorChatScreen = () => {
                         style={styles.backButton}
                         onPress={() => navigation.goBack()} // Add onPress to go back
                     >
-                        <Ionicons name="arrow-back" size={24} color="#000000" />
+                        <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>AI Tutor</Text>
                     <View style={{ width: 24 }} />
@@ -79,17 +79,17 @@ const AITutorChatScreen = () => {
                     <TextInput
                         style={styles.textInput}
                         placeholder="Type a message"
-                        placeholderTextColor="#A0A0A0"
+                        placeholderTextColor="#D2D5E1"
                         value={message}
                         onChangeText={setMessage}
                     />
                     {message.trim() ? (
                         <TouchableOpacity onPress={handleSend} style={styles.iconButton}>
-                            <Ionicons name="send" size={22} color="#007AFF" />
+                            <Ionicons name="send" size={22} color="#93E893" />
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity style={styles.iconButton}>
-                            <FontAwesome5 name="microphone" size={22} color="#606060" />
+                            <FontAwesome5 name="microphone" size={22} color="#D2D5E1" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -101,11 +101,11 @@ const AITutorChatScreen = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
         paddingHorizontal: 20,
     },
     header: {
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: 'bold',
-        color: '#000000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
     },
     progressContainer: {
         marginTop: 20,
@@ -128,24 +128,25 @@ const styles = StyleSheet.create({
     },
     stepText: {
         fontSize: 14,
-        color: '#606060',
+        color: '#D2D5E1',
         marginBottom: 8,
+        fontFamily: 'Lexend-Regular',
     },
     progressBarBackground: {
         height: 8,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: '#1E293B',
         borderRadius: 4,
     },
     progressBarForeground: {
         height: 8,
-        backgroundColor: '#007AFF',
+        backgroundColor: '#93E893',
         borderRadius: 4,
         width: '33%',
     },
     mainTitle: {
         fontSize: 26,
-        fontWeight: 'bold',
-        color: '#000000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginBottom: 30,
     },
     chatContainer: {
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     aiBubble: {
-        backgroundColor: '#EFF1F3',
+        backgroundColor: '#1E293B',
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 20,
@@ -172,14 +173,15 @@ const styles = StyleSheet.create({
     },
     aiBubbleText: {
         fontSize: 16,
-        color: '#000000',
+        color: '#D2D5E1',
+        fontFamily: 'Lexend-Regular',
     },
     spacer: {
         flex: 1,
     },
     transcriptionPlaceholder: {
         fontSize: 14,
-        color: '#A0A0A0',
+        color: '#D2D5E1',
         textAlign: 'center',
         marginBottom: 15,
         fontStyle: 'italic',
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F0F0F0',
+        backgroundColor: '#1E293B',
         borderRadius: 25,
         paddingHorizontal: 15,
         paddingVertical: 5,
@@ -196,8 +198,9 @@ const styles = StyleSheet.create({
     textInput: {
         flex: 1,
         fontSize: 16,
-        color: '#000000',
+        color: '#D2D5E1',
         paddingVertical: 10,
+        fontFamily: 'Lexend-Regular',
     },
     iconButton: {
         padding: 8,

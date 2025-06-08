@@ -77,10 +77,10 @@ const Lesson5Screen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#333" /></TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#D2D5E1" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 5: App UI Words</Text>
                     <View style={{ width: 24 }} />
                 </View>
@@ -108,11 +108,11 @@ const Lesson5Screen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     backButton: {
         padding: 8,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
+        color: '#93E893',
         flex: 1,
         textAlign: 'center',
         marginRight: 32,
@@ -137,76 +137,66 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollViewContentContainer: {
-        paddingBottom: 20, // Space for the finish button not to overlap
+        padding: 20,
     },
     pageContent: {
-        paddingVertical: 20,
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
+        padding: 20,
+        backgroundColor: '#1E293B',
+        borderRadius: 15,
+        marginBottom: 20,
     },
     pageTitle: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#93E893',
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     pageSubtitle: {
         fontSize: 16,
-        color: '#555',
+        color: '#D2D5E1',
         textAlign: 'center',
         marginBottom: 20,
-        paddingHorizontal: 10,
     },
     listContainer: {
-        width: '100%',
+        marginTop: 10,
     },
     listItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F9F9F9',
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
+        backgroundColor: '#111629',
+        padding: 15,
+        borderRadius: 10,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
     },
     iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        backgroundColor: '#E9EFF7',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
+        marginRight: 15,
     },
     textPairContainer: {
         flex: 1,
     },
     englishText: {
-        fontSize: 17,
-        fontWeight: '500',
-        color: '#333',
-        marginBottom: 2,
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#93E893',
     },
     urduText: {
-        fontSize: 15,
-        color: '#4A90E2',
-        textAlign: 'left'
+        fontSize: 16,
+        color: '#D2D5E1',
+        marginTop: 4,
     },
-    nextButton: { // Reused for the "Finish" button
-        backgroundColor: '#007AFF',
-        paddingVertical: 15,
-        borderRadius: 8,
+    nextButton: {
+        backgroundColor: '#93E893',
+        paddingVertical: 16,
+        marginHorizontal: 20,
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        marginVertical: 10,
-        marginHorizontal: 20, // Ensure it has horizontal margins if container doesn't provide them
+        marginBottom: 20,
     },
     nextButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: '#111629',
+        fontSize: 18,
         fontWeight: 'bold',
     },
 });

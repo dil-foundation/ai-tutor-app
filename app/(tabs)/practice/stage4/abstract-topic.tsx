@@ -2,29 +2,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const feedbackItems = [
   {
     id: "1",
     title: "Vocabulary Richness",
     description: "Your word choice was diverse and appropriate for the topic.",
-    image: require("../../../../assets/images/feedback-vocab.png"), // Placeholder
+    icon: "book-outline" as const,
   },
   {
     id: "2",
     title: "Sentence Structure",
     description: "You used a variety of sentence lengths and structures effectively.",
-    image: require("../../../../assets/images/feedback-sentence.png"), // Placeholder
+    icon: "git-commit-outline" as const,
   },
 ];
 
@@ -34,13 +31,18 @@ const AbstractTopicMonologueScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Abstract Topic Monologue" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Abstract Topic</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>Speak Your Mind</Text>
-        <Image
-          source={require("../../../../assets/images/abstract-art.png")} // Placeholder
-          style={styles.mainImage}
-        />
+        
+        <View style={styles.topicContainer}>
+            <Text style={styles.topicText}>Topic: The importance of education</Text>
+        </View>
 
         <View style={styles.timerContainer}>
           <View style={styles.timerBox}>
@@ -53,26 +55,28 @@ const AbstractTopicMonologueScreen = () => {
           </View>
         </View>
 
-        <Text style={styles.transcriptionPlaceholder}>
-          Live transcription will appear here
-        </Text>
+        <View style={styles.transcriptionContainer}>
+            <Text style={styles.transcriptionPlaceholder}>
+            Live transcription will appear here...
+            </Text>
+        </View>
 
         <Text style={styles.feedbackSectionTitle}>Feedback</Text>
         {feedbackItems.map((item) => (
           <View key={item.id} style={styles.feedbackCard}>
+            <Ionicons name={item.icon} size={32} color="#93E893" style={styles.feedbackIcon} />
             <View style={styles.feedbackTextContainer}>
               <Text style={styles.feedbackTitle}>{item.title}</Text>
               <Text style={styles.feedbackDescription}>{item.description}</Text>
             </View>
-            <Image source={item.image} style={styles.feedbackImage} />
           </View>
         ))}
       </ScrollView>
 
-      <View style={styles.speakButtonContainer}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.speakButtonText}>Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -82,10 +86,25 @@ const AbstractTopicMonologueScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
   },
@@ -93,15 +112,20 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 16,
-    color: "#000000",
+    marginBottom: 20,
+    color: "#D2D5E1",
   },
-  mainImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
+  topicContainer: {
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 24,
-    backgroundColor: "#F0F0F0", // Placeholder bg
+  },
+  topicText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#93E893',
+    textAlign: 'center',
   },
   timerContainer: {
     flexDirection: "row",
@@ -109,90 +133,82 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   timerBox: {
-    backgroundColor: "#F8F9FA",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
     alignItems: "center",
-    minWidth: 100, // Ensure boxes have some width
   },
   timerText: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: "bold",
-    color: "#343A40",
+    color: "#93E893",
   },
   timerLabel: {
-    fontSize: 12,
-    color: "#6C757D",
+    fontSize: 14,
+    color: "#D2D5E1",
     marginTop: 4,
+  },
+  transcriptionContainer: {
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 20,
+    minHeight: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   transcriptionPlaceholder: {
     fontSize: 16,
-    color: "#6C757D",
+    color: "#D2D5E1",
     textAlign: "center",
-    marginBottom: 24,
-    paddingVertical: 20,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    borderColor: "#DEE2E6",
-    borderRadius: 8,
-    backgroundColor: "#F8F9FA",
+    fontStyle: 'italic',
   },
   feedbackSectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#000000",
-    marginBottom: 12,
+    color: "#D2D5E1",
+    marginBottom: 15,
   },
   feedbackCard: {
     flexDirection: "row",
-    backgroundColor: "#F8F9FA",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#1E293B",
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 12,
     alignItems: "center",
   },
+  feedbackIcon: {
+    marginRight: 20,
+  },
   feedbackTextContainer: {
     flex: 1,
-    marginRight: 12,
   },
   feedbackTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#343A40",
+    fontWeight: "bold",
+    color: "#93E893",
     marginBottom: 4,
   },
   feedbackDescription: {
     fontSize: 14,
-    color: "#6C757D",
-    lineHeight: 18,
+    color: "#D2D5E1",
+    lineHeight: 20,
   },
-  feedbackImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 4,
-    backgroundColor: "#E9ECEF", // Placeholder bg
-  },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#111629',
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

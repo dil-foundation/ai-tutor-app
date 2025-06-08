@@ -2,16 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  ImageBackground,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const AcademicPresentationScreen = () => {
   const router = useRouter();
@@ -19,34 +16,43 @@ const AcademicPresentationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Academic Presentation Challenge" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Academic Presentation</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>Presentation Challenge</Text>
 
-        <ImageBackground
-          source={require("../../../../assets/images/presentation-background.png")} // Placeholder
-          style={styles.presentationCard}
-          imageStyle={styles.presentationImage}
-        >
-          <View style={styles.presentationOverlay}>
+        <View style={styles.presentationCard}>
+            <Ionicons name="school-outline" size={60} color="#93E893" />
             <Text style={styles.presentationText}>
               Explain the role of climate change in global economics.
             </Text>
-          </View>
-        </ImageBackground>
+        </View>
 
         <View style={styles.speechStructureContainer}>
           <Text style={styles.speechStructureTitle}>Speech Structure</Text>
-          <Text style={styles.speechStructureItem}>Introduction</Text>
-          <Text style={styles.speechStructureItem}>Key Points</Text>
-          <Text style={styles.speechStructureItem}>Conclusion</Text>
+          <View style={styles.structureRow}>
+              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
+              <Text style={styles.speechStructureItem}>Introduction</Text>
+          </View>
+          <View style={styles.structureRow}>
+              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
+              <Text style={styles.speechStructureItem}>Key Points & Evidence</Text>
+          </View>
+          <View style={styles.structureRow}>
+              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
+              <Text style={styles.speechStructureItem}>Conclusion & Q&A</Text>
+          </View>
         </View>
       </ScrollView>
 
-      <View style={styles.speakButtonContainer}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.speakButtonText}>Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Start Presenting</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -56,88 +62,93 @@ const AcademicPresentationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
-    alignItems: "center", // Center content horizontally
   },
   pageTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    textAlign: "left", // Align title to the left
-    width: '100%', // Ensure it takes full width for left alignment
     marginBottom: 20,
-    color: "#000000",
+    color: "#D2D5E1",
   },
   presentationCard: {
-    width: "100%",
-    height: 300, // Adjust height as needed
-    borderRadius: 12,
-    overflow: "hidden", // Ensure image respects border radius
-    justifyContent: "center", // Center text vertically
-    alignItems: "center", // Center text horizontally
-    marginBottom: 30,
-  },
-  presentationImage: {
-    borderRadius: 12,
-  },
-  presentationOverlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent overlay for text readability
-    padding: 20,
-    width: "100%",
-    height: "100%",
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 30,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 30,
   },
   presentationText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#D2D5E1",
     textAlign: "center",
     lineHeight: 32,
+    marginTop: 20,
   },
   speechStructureContainer: {
-    width: '100%', // Take full width
-    alignItems: "flex-start", // Align items to the left
-    backgroundColor: "#F8F9FA",
-    padding: 16,
-    borderRadius: 8,
+    width: '100%',
+    backgroundColor: "#1E293B",
+    padding: 20,
+    borderRadius: 15,
   },
   speechStructureTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#343A40",
-    marginBottom: 12,
+    color: "#93E893",
+    marginBottom: 15,
+  },
+  structureRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+  },
+  structureIcon: {
+      marginRight: 15,
   },
   speechStructureItem: {
     fontSize: 16,
-    color: "#495057",
-    marginBottom: 8,
+    color: "#D2D5E1",
     lineHeight: 22,
   },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#DEE2E6",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#111629',
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

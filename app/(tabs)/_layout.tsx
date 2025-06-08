@@ -1,9 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
@@ -14,25 +12,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#93E893',
+        tabBarInactiveTintColor: '#D2D5E1',
         headerShown: false,
-        // tabBarButton: HapticTab,
-        // tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-          },
-          default: {},
-        }),
+        tabBarStyle: {
+          backgroundColor: '#111629',
+          borderTopColor: '#1E293B',
+        },
       }}>
       <Tabs.Screen
         name="learn"
         options={{
           title: 'Learn',
-          tabBarIcon: ({ color, focused }) => {
-            // console.log('[Learn Tab] router focused:', focused, 'router color:', color);
-            return <IconSymbol size={28} name="graduationcap.fill" />;
-          }
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="graduationcap.fill" color={color} />
+          )
         }}
         listeners={{
           tabPress: (e) => {
@@ -45,10 +39,9 @@ export default function TabLayout() {
         name="practice"
         options={{
           title: 'Practice',
-          tabBarIcon: ({ color, focused }) => {
-            console.log('[Practice Tab] router focused:', focused, 'router color:', color);
-            return <IconSymbol size={28} name="rectangle.inset.filled.on.rectangle" />;
-          }
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="rectangle.inset.filled.on.rectangle" color={color} />
+          )
         }}
         listeners={{
           tabPress: (e) => {
@@ -61,10 +54,9 @@ export default function TabLayout() {
         name="progress"
         options={{
           title: 'Progress',
-          tabBarIcon: ({ color, focused }) => {
-            console.log('[Progress Tab] router focused:', focused, 'router color:', color);
-            return <IconSymbol size={28} name="chart.line.uptrend.xyaxis" />;
-          }
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="chart.line.uptrend.xyaxis" color={color} />
+          )
         }}
         listeners={{
           tabPress: (e) => {
@@ -77,10 +69,9 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => {
-            console.log('[Profile Tab] router focused:', focused, 'router color:', color);
-            return <IconSymbol size={28} name="person.fill" />;
-          }
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="person.fill" color={color} />
+          )
         }}
         listeners={{
           tabPress: (e) => {

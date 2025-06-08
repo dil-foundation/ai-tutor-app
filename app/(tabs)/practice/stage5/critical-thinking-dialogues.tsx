@@ -2,41 +2,34 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const messages = [
   {
     id: "1",
     sender: "ai",
     text: "Is privacy more important than national security?",
-    avatar: require("../../../../assets/images/ai-interviewer-avatar.png"), // Placeholder
   },
   {
     id: "2",
     sender: "user",
     text: "I believe privacy is paramount, but it must be balanced with security. Absolute privacy could shield threats, while unchecked surveillance erodes freedom.",
-    avatar: require("../../../../assets/images/user_avatar.png"), // Placeholder
   },
   {
     id: "3",
     sender: "ai",
     text: "But what if privacy endangers lives? Consider scenarios where surveillance could prevent terrorist attacks or major crimes.",
-    avatar: require("../../../../assets/images/ai-interviewer-avatar.png"),
   },
   {
     id: "4",
     sender: "ai",
     text: "Also, could you provide a specific example of a time you demonstrated innovation or problem-solving skills?",
-    avatar: require("../../../../assets/images/ai-interviewer-avatar.png"),
   },
 ];
 
@@ -45,13 +38,13 @@ const feedbackItems = [
     id: "1",
     title: "Depth of Ideas",
     description: "Your word choice was diverse and appropriate for the topic.",
-    image: require("../../../../assets/images/feedback-depth-ideas.png"), // Placeholder
+    icon: "bulb-outline" as const,
   },
   {
     id: "2",
     title: "Clarity & Nuance",
     description: "The language is clear, but could be more nuanced. Phrases like 'absolute privacy' and 'unchecked surveillance' are strong but lack precision. Try qualifying these terms.",
-    image: require("../../../../assets/images/feedback-clarity-nuance.png"), // Placeholder
+    icon: "options-outline" as const,
   },
 ];
 
@@ -61,9 +54,13 @@ const CriticalThinkingDialoguesScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Critical Thinking Dialogues" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Critical Thinking</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Chat Interface */}
         <View style={styles.chatContainer}>
           {messages.map((msg) => (
             <View
@@ -76,7 +73,7 @@ const CriticalThinkingDialoguesScreen = () => {
               ]}
             >
               {msg.sender === "ai" && (
-                <Image source={msg.avatar} style={styles.avatar} />
+                <Ionicons name="hardware-chip-outline" size={28} color="#93E893" style={styles.avatar}/>
               )}
               <View
                 style={[
@@ -97,29 +94,28 @@ const CriticalThinkingDialoguesScreen = () => {
                 </Text>
               </View>
               {msg.sender === "user" && (
-                <Image source={msg.avatar} style={styles.avatar} />
+                <Ionicons name="person-outline" size={28} color="#93E893" style={styles.avatar}/>
               )}
             </View>
           ))}
         </View>
 
-        {/* Feedback Section */}
         <Text style={styles.feedbackSectionTitle}>Feedback</Text>
         {feedbackItems.map((item) => (
           <View key={item.id} style={styles.feedbackCard}>
+            <Ionicons name={item.icon} size={32} color="#93E893" style={styles.feedbackIcon} />
             <View style={styles.feedbackTextContainer}>
               <Text style={styles.feedbackTitle}>{item.title}</Text>
               <Text style={styles.feedbackDescription}>{item.description}</Text>
             </View>
-            <Image source={item.image} style={styles.feedbackImage} />
           </View>
         ))}
       </ScrollView>
 
-      <View style={styles.speakButtonContainer}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.speakButtonText}>Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -129,10 +125,25 @@ const CriticalThinkingDialoguesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
   },
@@ -142,7 +153,7 @@ const styles = StyleSheet.create({
   messageRow: {
     flexDirection: "row",
     marginBottom: 16,
-    alignItems: "flex-start", // Align avatar with top of bubble
+    alignItems: "flex-start",
   },
   aiMessageRow: {
     justifyContent: "flex-start",
@@ -151,94 +162,83 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   avatar: {
-    width: 36, // Slightly smaller avatar
-    height: 36,
-    borderRadius: 18,
+    marginHorizontal: 5,
+    marginTop: 5,
   },
   messageBubble: {
-    borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    maxWidth: "82%", // Adjusted width
+    borderRadius: 20,
+    padding: 15,
+    maxWidth: "85%",
   },
   aiMessageBubble: {
-    backgroundColor: "#F1F3F5",
-    marginLeft: 10,
+    backgroundColor: "#1E293B",
   },
   userMessageBubble: {
-    backgroundColor: "#007AFF",
-    marginRight: 10,
+    backgroundColor: "#93E893",
   },
   messageSenderText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#495057", // Darker grey for sender
-    marginBottom: 3,
+    fontWeight: "bold",
+    color: "#D2D5E1",
+    marginBottom: 5,
   },
   messageText: {
-    fontSize: 15,
-    color: "#212529",
-    lineHeight: 20,
+    fontSize: 16,
+    color: "#D2D5E1",
+    lineHeight: 22,
   },
   userMessageText: {
-    color: "#FFFFFF",
+    color: "#111629",
   },
   feedbackSectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#000000",
-    marginBottom: 12,
-    marginTop: 8, // Add some space above feedback section
+    color: "#D2D5E1",
+    marginBottom: 15,
   },
   feedbackCard: {
     flexDirection: "row",
-    backgroundColor: "#F8F9FA",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#1E293B",
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 12,
     alignItems: "center",
   },
+  feedbackIcon: {
+    marginRight: 20,
+  },
   feedbackTextContainer: {
     flex: 1,
-    marginRight: 12,
   },
   feedbackTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#343A40",
+    fontWeight: "bold",
+    color: "#93E893",
     marginBottom: 4,
   },
   feedbackDescription: {
     fontSize: 14,
-    color: "#495057", // Slightly darker for better readability
-    lineHeight: 18,
+    color: "#D2D5E1",
+    lineHeight: 20,
   },
-  feedbackImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 4,
-    backgroundColor: "#E9ECEF",
-  },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#DEE2E6", // Lighter border
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#111629',
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

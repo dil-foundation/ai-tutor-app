@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ListenAndReplyScreen = () => {
@@ -8,27 +9,35 @@ const ListenAndReplyScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>3. Listen and Reply</Text>
+          <Text style={styles.headerTitle}>Listen and Reply</Text>
         </View>
-        <Text style={styles.subHeaderTitle}>Functional Dialogue</Text>
 
-        <Image source={require('../../../../assets/images/sarah.png')} style={styles.dialogueImage} />
-        <Text style={styles.dialogueText}>Hi! My name is Sarah. What is your name?</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.dialogueContainer}>
+            <Ionicons name="person-circle-outline" size={100} color="#93E893" style={styles.avatar} />
+            <Text style={styles.dialogueText}>Hi! My name is Sarah. What is your name?</Text>
+            <TouchableOpacity style={styles.listenButton}>
+              <Ionicons name="volume-high-outline" size={32} color="#111629" />
+            </TouchableOpacity>
+          </View>
 
-        <Text style={styles.suggestionText}>
-          Try Saying...
-          <Text style={styles.suggestionBoldText}> My name is Amina.</Text>
-        </Text>
+          <View style={styles.suggestionBox}>
+            <Text style={styles.suggestionText}>
+              Try saying: <Text style={styles.suggestionBoldText}>My name is Amina.</Text>
+            </Text>
+          </View>
+        </ScrollView>
 
         <TouchableOpacity style={styles.speakButton}>
-          <Text style={styles.speakButtonText}>🎤 Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -36,14 +45,12 @@ const ListenAndReplyScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#111629',
   },
   container: {
-    flexGrow: 1,
-    alignItems: 'center',
+    flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#111629',
   },
   header: {
     flexDirection: 'row',
@@ -54,66 +61,69 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 15,
   },
-  backButtonText: {
-    fontSize: 24,
-    color: '#000',
-  },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#93E893',
   },
-  subHeaderTitle: {
-    fontSize: 18,
-    color: '#555',
-    marginBottom: 20,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dialogueImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100, // Make it a circle
+  dialogueContainer: {
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 30,
+  },
+  avatar: {
     marginBottom: 20,
-    resizeMode: 'cover',
   },
   dialogueText: {
-    fontSize: 18,
-    color: '#333',
+    fontSize: 20,
+    color: '#D2D5E1',
     textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 20, 
+    marginBottom: 20,
+  },
+  listenButton: {
+    backgroundColor: '#93E893',
+    padding: 20,
+    borderRadius: 50,
+  },
+  suggestionBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 20,
+    width: '100%',
   },
   suggestionText: {
     fontSize: 16,
-    color: '#555',
+    color: '#D2D5E1',
     textAlign: 'center',
-    marginBottom: 60,
   },
   suggestionBoldText: {
     fontWeight: 'bold',
-    color: '#333',
+    color: '#93E893',
   },
   speakButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 80,
+    backgroundColor: '#93E893',
+    paddingVertical: 20,
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-    position: 'absolute',
-    bottom: 40,
+    width: '100%',
     alignSelf: 'center',
+    marginBottom: 40,
   },
   speakButtonText: {
-    color: '#fff',
+    color: '#111629',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

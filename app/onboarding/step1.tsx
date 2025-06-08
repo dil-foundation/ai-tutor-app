@@ -36,7 +36,7 @@ const QuickConversationScreen: React.FC = () => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
                     </TouchableOpacity>
                     <Text style={styles.welcomeText}>Welcome</Text>
                     <View style={{ width: 24 }} /> {/* Spacer to balance header layout */}
@@ -45,7 +45,7 @@ const QuickConversationScreen: React.FC = () => {
                 {/* Title & Subtitle */}
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>
-                        Let’s Get Started With a{'\n'}Quick Conversation
+                        Let's Get Started With a{'\n'}Quick Conversation
                     </Text>
                     <Text style={styles.subtitle}>
                         Our AI Tutor will chat with you to understand{'\n'}your English level.
@@ -133,7 +133,7 @@ export default QuickConversationScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#111629',
         paddingHorizontal: 20,
         alignItems: 'center',
     },
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     },
     welcomeText: {
         fontSize: 16,
-        fontWeight: '600',
-
+        fontFamily: 'Lexend-SemiBold',
+        color: '#D2D5E1',
     },
     textContainer: {
         marginTop: 30,
@@ -158,21 +158,21 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontWeight: '800',
+        fontFamily: 'Lexend-ExtraBold',
         textAlign: 'center',
-        color: '#1a1a1a',
+        color: '#93E893',
     },
     subtitle: {
         fontSize: 14,
-        color: '#555',
+        color: '#D2D5E1',
         marginTop: 12,
         textAlign: 'center',
         lineHeight: 20,
+        fontFamily: 'Lexend-Regular',
     },
     imageWrapper: {
         marginTop: 30,
         alignItems: 'center',
-        // backgroundColor: '#ffe0c1',
         padding: 20,
         borderRadius: 16,
     },
@@ -182,14 +182,14 @@ const styles = StyleSheet.create({
     },
     button: {
         marginTop: 30,
-        backgroundColor: '#d1ecf9',
+        backgroundColor: '#93E893',
         paddingVertical: 16,
         borderRadius: 999,
         alignItems: 'center',
     },
     buttonText: {
-        color: '#000',
-        fontWeight: '600',
+        color: '#111629',
+        fontFamily: 'Lexend-SemiBold',
         fontSize: 16,
     },
 });

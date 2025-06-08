@@ -20,27 +20,27 @@ export default function PracticeLandingScreen() {
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage0')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 0 - Beginner Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage1')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 1 - Intermediate Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage2')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 2 - Upper Intermediate</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <Text style={styles.subHeader}>Advanced Stages</Text>
@@ -48,36 +48,36 @@ export default function PracticeLandingScreen() {
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage3')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 3 - Advanced Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage4')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 4 - Expert Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage5')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 5 - Master Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => navigateToStage('./practice/stage6')}
             >
-                <Ionicons name="library-outline" size={24} color="#007AFF" style={styles.menuIcon} />
+                <Ionicons name="library-outline" size={24} color="#93E893" style={styles.menuIcon} />
                 <Text style={styles.menuText}>Stage 6 - Fluency Lessons</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#C7C7CC" />
+                <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
             </TouchableOpacity>
         </ScrollView>
       </View>
@@ -88,16 +88,17 @@ export default function PracticeLandingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F6F7', // Consistent background
+    backgroundColor: '#111629', // Consistent background
+    paddingTop: 40,
   },
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000',
+    fontFamily: 'Lexend-Bold',
+    color: '#93E893',
     marginBottom: 25,
     textAlign: 'center',
   },
@@ -106,33 +107,26 @@ const styles = StyleSheet.create({
   },
   subHeader: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    fontFamily: 'Lexend-SemiBold',
+    color: '#D2D5E1',
     marginBottom: 15,
   },
   menuItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E293B',
     paddingVertical: 18,
     paddingHorizontal: 15,
     borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2.22,
-    elevation: 2,
   },
   menuIcon: {
     marginRight: 15,
   },
   menuText: {
     fontSize: 17,
-    color: '#333',
+    color: '#D2D5E1',
     flex: 1, // Allow text to take remaining space
+    fontFamily: 'Lexend-Regular',
   },
 }); 

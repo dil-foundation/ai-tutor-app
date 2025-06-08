@@ -5,6 +5,7 @@ import { Animated, Easing, StyleSheet, Text, TextInput, TouchableOpacity, View }
 interface FloatingLabelInputProps {
   label: string;
   value: string;
+  placeholder?: string;
   onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
   onToggleVisibility?: () => void;
@@ -13,17 +14,20 @@ interface FloatingLabelInputProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   error?: string;
   multiline?: boolean;
+  style?: object;
 }
 
 const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
   label,
   value,
+  placeholder,
   onChangeText,
   secureTextEntry,
   onToggleVisibility,
   isPasswordVisible,
   error,
   multiline,
+  style,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -51,10 +55,14 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
     }),
     color: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['#aaa', error ? 'red' : '#3db5ff'],
+      outputRange: ['#D2D5E1', error ? 'red' : '#93E893'],
     }),
-    backgroundColor: '#fff',
+    backgroundColor: animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['transparent', '#111629']
+    }),
     paddingHorizontal: 4,
+    opacity: placeholder ? animatedValue : 1,
   };
 
 
@@ -68,7 +76,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
   const textInputStyles = [styles.input, multiline && { textAlignVertical: 'top' as 'top' }];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <View style={inputBoxStyles}>
         <Animated.Text style={labelStyle}>{label}</Animated.Text>
         <TextInput
@@ -79,11 +87,13 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
           onBlur={() => setIsFocused(false)}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
+          placeholder={placeholder}
+          placeholderTextColor="#A9A9A9"
           {...props}
         />
         {onToggleVisibility && (
           <TouchableOpacity onPress={onToggleVisibility} style={styles.icon}>
-            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#555" />
+            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#D2D5E1" />
           </TouchableOpacity>
         )}
       </View>
@@ -98,10 +108,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inputBox: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E293B',
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#dce2ea',
+    borderColor: '#D2D5E1',
     height: 60,
     justifyContent: 'center',
     position: 'relative',
@@ -112,14 +122,14 @@ const styles = StyleSheet.create({
     paddingTop: 15,
   },
   inputBoxFocused: {
-    borderColor: '#3db5ff',
+    borderColor: '#93E893',
   },
   inputBoxError: {
     borderColor: 'red',
   },
   input: {
     fontSize: 16,
-    color: '#000',
+    color: '#D2D5E1',
     paddingHorizontal: 16,
     paddingTop: 18,
     height: '100%',

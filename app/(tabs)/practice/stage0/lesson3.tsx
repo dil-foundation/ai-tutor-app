@@ -154,11 +154,11 @@ const Lesson3Screen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#000" /></TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#D2D5E1" /></TouchableOpacity>
                     <Text style={styles.headerTitle}>Lesson 3: Vocabulary Basics</Text>
                     <View style={{ width: 24 }} />
                 </View>
@@ -202,11 +202,11 @@ const Lesson3Screen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     backButton: {
         padding: 8,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
+        color: '#93E893',
         flex: 1,
         textAlign: 'center',
         marginRight: 32,
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: '#1E293B',
     },
     paginationDot: {
         width: 8,
@@ -242,85 +242,79 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     activeDot: {
-        backgroundColor: '#007AFF', // Active dot color
+        backgroundColor: '#93E893',
     },
     inactiveDot: {
-        backgroundColor: '#C0C0C0', // Inactive dot color
+        backgroundColor: '#D2D5E1',
     },
     scrollView: {
         flex: 1,
     },
     scrollViewContentContainer: {
-        paddingBottom: 20, // Space for the next button
+        padding: 20,
     },
     pageContent: {
-        alignItems: 'center',
-        paddingVertical: 10,
-        width: '100%',
+        padding: 20,
+        backgroundColor: '#1E293B',
+        borderRadius: 15,
+        marginBottom: 20,
     },
     stepTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#007AFF',
-        marginBottom: 20,
+        color: '#93E893',
         textAlign: 'center',
+        marginBottom: 20,
     },
     vocabGrid: {
         width: '100%',
-        borderWidth: 1,
-        borderColor: '#DDD',
-        borderRadius: 8,
-        overflow: 'hidden', // To clip borderRadius for rows
     },
     vocabRow: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#DDD',
+        borderBottomColor: '#111629',
     },
     vocabCell: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        fontSize: 16,
+        fontSize: 18,
+        color: '#D2D5E1',
+        width: '48%',
         textAlign: 'center',
     },
     vocabHeader: {
-        backgroundColor: '#F0F0F0',
         fontWeight: 'bold',
+        color: '#93E893',
     },
     summaryPage: {
-        paddingVertical: 20,
+        alignItems: 'center',
     },
     summaryList: {
         alignSelf: 'flex-start',
         marginBottom: 20,
-        paddingLeft: 10, // Indent list items slightly
     },
     summaryItem: {
-        fontSize: 17,
-        marginBottom: 8,
-        color: '#333',
-        lineHeight: 24,
+        fontSize: 18,
+        color: '#D2D5E1',
+        marginBottom: 10,
     },
     summaryEncouragement: {
         fontSize: 16,
-        color: '#555',
-        lineHeight: 22,
-        paddingHorizontal: 10, // Padding for better text flow
+        color: '#D2D5E1',
+        textAlign: 'center',
+        lineHeight: 24,
     },
     nextButton: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 15,
-        borderRadius: 25,
+        backgroundColor: '#93E893',
+        paddingVertical: 16,
+        marginHorizontal: 20,
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 10, // Space from content
-        marginBottom: 10, // Space from bottom
-        marginHorizontal: '10%', // Side margins
-        width: '80%', // Relative width
+        marginBottom: 20,
     },
     nextButtonText: {
-        color: '#FFFFFF',
+        color: '#111629',
         fontSize: 18,
         fontWeight: 'bold',
     },

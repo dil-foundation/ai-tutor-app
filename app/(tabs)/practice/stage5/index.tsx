@@ -1,16 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const Stage5Home = () => {
   const router = useRouter();
@@ -19,19 +17,19 @@ const Stage5Home = () => {
     {
       title: "Abstract & Critical Thinking Dialogues",
       description: "Engage in thought-provoking conversations on complex topics.",
-      image: require("../../../../assets/images/critical-thinking-dialogues.png"), // Placeholder
+      icon: "bulb-outline" as const,
       route: "/(tabs)/practice/stage5/critical-thinking-dialogues" as any,
     },
     {
       title: "Academic Presentations",
       description: "Practice delivering polished presentations on academic subjects.",
-      image: require("../../../../assets/images/academic-presentations.png"), // Placeholder
+      icon: "school-outline" as const,
       route: "/(tabs)/practice/stage5/academic-presentation" as any,
     },
     {
       title: "In-Depth Interview Simulation",
       description: "Simulate challenging interviews to refine your communication skills.",
-      image: require("../../../../assets/images/in-depth-interview.png"), // Placeholder
+      icon: "briefcase-outline" as const,
       route: "/(tabs)/practice/stage5/in-depth-interview" as any,
     },
   ];
@@ -39,12 +37,17 @@ const Stage5Home = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Stage 5" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Stage 5</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.goalContainer}>
-          <Text style={styles.goalTitle}>Fluent & Thoughtful Communication</Text>
+          <Text style={styles.goalTitle}>C1 Advanced</Text>
           <Text style={styles.goalDescription}>
-            Goal: Express complex ideas clearly, use nuanced vocabulary, and fluently manage discussions.
+            Goal: Understand and produce complex texts, and express ideas fluently and spontaneously.
           </Text>
         </View>
 
@@ -54,14 +57,12 @@ const Stage5Home = () => {
             style={styles.optionContainer}
             onPress={() => router.push(option.route as any)}
           >
+            <Ionicons name={option.icon} size={32} color="#93E893" style={styles.optionIcon} />
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>{option.title}</Text>
               <Text style={styles.optionDescription}>{option.description}</Text>
-              <View style={styles.startButton}>
-                <Text style={styles.startButtonText}>Start →</Text>
-              </View>
             </View>
-            <Image source={option.image} style={styles.optionImage} />
+            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -72,7 +73,21 @@ const Stage5Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
     paddingBottom: 20,
@@ -86,64 +101,39 @@ const styles = StyleSheet.create({
   goalTitle: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#000000",
+    color: "#D2D5E1",
     marginBottom: 8,
-    textAlign: "left",
   },
   goalDescription: {
     fontSize: 16,
-    color: "#555555",
-    textAlign: "left",
+    color: "#D2D5E1",
     lineHeight: 22,
   },
   optionContainer: {
     flexDirection: "row",
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#1E293B",
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginHorizontal: 20,
     marginBottom: 16,
     alignItems: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+  },
+  optionIcon: {
+    marginRight: 20,
   },
   optionTextContainer: {
     flex: 1,
-    marginRight: 12,
   },
   optionTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#000000",
+    color: "#93E893",
     marginBottom: 6,
   },
   optionDescription: {
     fontSize: 14,
-    color: "#666666",
-    marginBottom: 12,
+    color: "#D2D5E1",
     lineHeight: 18,
-  },
-  startButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E9ECEF",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  startButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#343A40",
-  },
-  optionImage: {
-    width: 100,
-    height: 110,
-    borderRadius: 8,
   },
 });
 

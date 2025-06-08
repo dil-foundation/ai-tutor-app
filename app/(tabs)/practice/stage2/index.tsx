@@ -1,16 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header"; // Assuming Header is in components folder
 
 const Stage2Home = () => {
   const router = useRouter();
@@ -19,19 +17,19 @@ const Stage2Home = () => {
     {
       title: "Daily Routine Narration",
       description: "Describe your daily activities in detail",
-      image: require("../../../../assets/images/daily-routine.png"), // Replace with actual image path
+      icon: 'sunny-outline' as const,
       route: "/(tabs)/practice/stage2/daily-routine" as any,
     },
     {
       title: "Quick & Answer Practice",
       description: "Engage in interactive Q&A sessions",
-      image: require("../../../../assets/images/quick-answer.png"), // Replace with actual image path
+      icon: 'flash-outline' as const,
       route: "/(tabs)/practice/stage2/quick-answer" as any,
     },
     {
       title: "Roleplay Simulation",
       description: "Practice ordering food in a restaurant",
-      image: require("../../../../assets/images/roleplay-simulation.png"), // Replace with actual image path
+      icon: 'restaurant-outline' as const,
       route: "/(tabs)/practice/stage2/roleplay-simulation" as any,
     },
   ];
@@ -39,7 +37,12 @@ const Stage2Home = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Stage 2" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Stage 2</Text>
+      </View>
       <ScrollView>
         <View style={styles.goalContainer}>
           <Text style={styles.goalTitle}>A2 Elementary</Text>
@@ -55,16 +58,14 @@ const Stage2Home = () => {
             style={styles.optionContainer}
             onPress={() => router.push(option.route as any)}
           >
+            <Ionicons name={option.icon} size={32} color="#93E893" style={styles.optionIcon} />
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>{option.title}</Text>
               <Text style={styles.optionDescription}>
                 {option.description}
               </Text>
-              <View style={styles.startButton}>
-                <Text style={styles.startButtonText}>Start →</Text>
-              </View>
             </View>
-            <Image source={option.image} style={styles.optionImage} />
+            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -75,80 +76,63 @@ const Stage2Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   goalContainer: {
     paddingHorizontal: 20,
     paddingVertical: 24,
-    alignItems: "flex-start", // Align to the left as per image
+    alignItems: "flex-start",
   },
   goalTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#000000",
+    color: "#D2D5E1",
     marginBottom: 8,
-    textAlign: "left",
   },
   goalDescription: {
     fontSize: 16,
-    color: "#666666",
-    textAlign: "left",
+    color: "#D2D5E1",
     lineHeight: 22,
   },
   optionContainer: {
     flexDirection: "row",
-    backgroundColor: "#F8F8F8", // Slightly off-white background for cards
+    backgroundColor: "#1E293B",
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginHorizontal: 20,
     marginBottom: 16,
     alignItems: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  optionIcon: {
+    marginRight: 20,
   },
   optionTextContainer: {
     flex: 1,
-    marginRight: 12,
   },
   optionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000",
+    color: "#93E893",
     marginBottom: 6,
   },
   optionDescription: {
     fontSize: 14,
-    color: "#666666",
-    marginBottom: 12,
+    color: "#D2D5E1",
     lineHeight: 18,
-  },
-  startButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  startButtonText: {
-    fontSize: 14,
-    fontWeight: "600", // Semi-bold
-    color: "#000000",
-    marginRight: 6,
-  },
-  arrowIcon: {
-    width: 14,
-    height: 14,
-    tintColor: "#000000",
-  },
-  optionImage: {
-    width: 100,
-    height: 120, // Adjusted height
-    borderRadius: 8,
   },
 });
 
