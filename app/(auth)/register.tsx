@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -190,11 +191,14 @@ const RegisterScreen: React.FC = () => {
     };
 
     const onDOBChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+        }
+        
         if (selectedDate) {
             setDob(selectedDate);
             setDobError(validateDOB(selectedDate));
-        } else if (!dob) {
+        } else if (Platform.OS === 'android' && !dob) {
             setDobError(validateDOB(null));
         }
     };
@@ -350,23 +354,51 @@ const RegisterScreen: React.FC = () => {
                 />
 
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                    <FloatingLabelInput
-                        label="Date of Birth *"
-                        value={dob ? dob.toLocaleDateString() : ''}
-                        onChangeText={() => {}}
-                        error={dobError}
-                    />
+                    <View pointerEvents="none">
+                        <FloatingLabelInput
+                            label="Date of Birth *"
+                            value={dob ? dob.toLocaleDateString() : ''}
+                            onChangeText={() => {}}
+                            error={dobError}
+                        />
+                    </View>
                 </TouchableOpacity>
 
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={dob || maxSelectableDate}
-                        mode="date"
-                        display="default"
-                        onChange={onDOBChange}
-                        minimumDate={minSelectableDate}
-                        maximumDate={maxSelectableDate}
-                    />
+                {Platform.OS === 'ios' ? (
+                    <Modal
+                        transparent={true}
+                        animationType="slide"
+                        visible={showDatePicker}
+                        onRequestClose={() => setShowDatePicker(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <DateTimePicker
+                                    value={dob || maxSelectableDate}
+                                    mode="date"
+                                    display="inline"
+                                    onChange={onDOBChange}
+                                    minimumDate={minSelectableDate}
+                                    maximumDate={maxSelectableDate}
+                                    themeVariant="dark"
+                                />
+                                <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.doneButton}>
+                                    <Text style={styles.doneButtonText}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+                ) : (
+                    showDatePicker && (
+                        <DateTimePicker
+                            value={dob || maxSelectableDate}
+                            mode="date"
+                            display="default"
+                            onChange={onDOBChange}
+                            minimumDate={minSelectableDate}
+                            maximumDate={maxSelectableDate}
+                        />
+                    )
                 )}
 
                 <FloatingLabelInput
@@ -487,5 +519,28 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 10,
         marginBottom: 10,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        backgroundColor: '#111629',
+        borderTopRightRadius: 20,
+        borderTopLeftRadius: 20,
+        padding: 20,
+    },
+    doneButton: {
+        backgroundColor: '#93E893',
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    doneButtonText: {
+        color: '#111629',
+        fontSize: 16,
+        fontFamily: 'Lexend-SemiBold',
     },
 });
