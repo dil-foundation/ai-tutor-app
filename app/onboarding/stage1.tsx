@@ -32,12 +32,12 @@ const LevelOneScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
+                        <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Stage 1</Text>
                     <View style={{ width: 24 }} /> {/* Spacer to balance title */}
@@ -64,7 +64,7 @@ const LevelOneScreen = () => {
                                 onPress={() => handleActivityStart('Repeat After Me')}
                             >
                                 <Text style={styles.startButtonText}>Start</Text>
-                                <Ionicons name="arrow-forward" size={16} color="#007AFF" style={styles.startButtonIcon} />
+                                <Ionicons name="arrow-forward" size={16} color="#111629" style={styles.startButtonIcon} />
                             </TouchableOpacity>
                         </View>
                         <Image
@@ -86,7 +86,7 @@ const LevelOneScreen = () => {
                                 onPress={() => handleActivityStart('Quick Response')}
                             >
                                 <Text style={styles.startButtonText}>Start</Text>
-                                <Ionicons name="arrow-forward" size={16} color="#007AFF" style={styles.startButtonIcon} />
+                                <Ionicons name="arrow-forward" size={16} color="#111629" style={styles.startButtonIcon} />
                             </TouchableOpacity>
                         </View>
                         <Image
@@ -108,7 +108,7 @@ const LevelOneScreen = () => {
                                 onPress={() => handleActivityStart('Listen and Reply')}
                             >
                                 <Text style={styles.startButtonText}>Start</Text>
-                                <Ionicons name="arrow-forward" size={16} color="#007AFF" style={styles.startButtonIcon} />
+                                <Ionicons name="arrow-forward" size={16} color="#111629" style={styles.startButtonIcon} />
                             </TouchableOpacity>
                         </View>
                         <Image
@@ -122,19 +122,19 @@ const LevelOneScreen = () => {
                 {/* Bottom Navigation */}
                 <View style={styles.bottomNavBar}>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Learn')}>
-                        <Ionicons name="school-outline" size={24} color="#666" />
+                        <Ionicons name="school-outline" size={24} color="#D2D5E1" />
                         <Text style={styles.navText}>Learn</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Practice')}>
-                        <MaterialCommunityIcons name="chat-processing-outline" size={24} color="#007AFF" />
+                        <MaterialCommunityIcons name="chat-processing-outline" size={24} color="#93E893" />
                         <Text style={[styles.navText, styles.activeNavText]}>Practice</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Progress')}>
-                        <Ionicons name="stats-chart-outline" size={24} color="#666" />
+                        <Ionicons name="stats-chart-outline" size={24} color="#D2D5E1" />
                         <Text style={styles.navText}>Progress</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Profile')}>
-                        <Ionicons name="person-outline" size={24} color="#666" />
+                        <Ionicons name="person-outline" size={24} color="#D2D5E1" />
                         <Text style={styles.navText}>Profile</Text>
                     </TouchableOpacity>
                 </View>
@@ -146,11 +146,11 @@ const LevelOneScreen = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -159,8 +159,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-        backgroundColor: '#FFFFFF',
+        borderBottomColor: '#1E293B',
+        backgroundColor: '#111629',
         // Add extra padding for Android status bar if not handled by SafeAreaView
         // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
     },
@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: '600',
-        color: '#000',
+        fontFamily: 'Lexend-SemiBold',
+        color: '#93E893',
         flex: 1, // Allows the title to take available space
         textAlign: 'center', // Center the title
         marginRight: 24, // Account for the back button's width
@@ -185,18 +185,19 @@ const styles = StyleSheet.create({
     },
     levelHeading: {
         fontSize: 26,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginBottom: 8,
     },
     goalText: {
         fontSize: 16,
-        color: '#555',
+        color: '#D2D5E1',
         lineHeight: 24,
+        fontFamily: 'Lexend-Regular',
     },
     activityCard: {
         flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#1E293B',
         borderRadius: 15,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -214,29 +215,30 @@ const styles = StyleSheet.create({
     },
     activityTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginBottom: 5,
     },
     activityDescription: {
         fontSize: 14,
-        color: '#666',
+        color: '#D2D5E1',
         marginBottom: 10,
         lineHeight: 20,
+        fontFamily: 'Lexend-Regular',
     },
     startButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E6F0FF', // Light blue background for the button
+        backgroundColor: '#93E893', // Light blue background for the button
         paddingVertical: 8,
         paddingHorizontal: 15,
         borderRadius: 20,
         alignSelf: 'flex-start', // Align button to the start
     },
     startButtonText: {
-        color: '#007AFF', // Blue text color
+        color: '#111629', // Blue text color
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: 'Lexend-SemiBold',
         marginRight: 5,
     },
     startButtonIcon: {
@@ -254,9 +256,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: '#E0E0E0',
+        borderTopColor: '#1E293B',
         paddingVertical: 10,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     navItem: {
         alignItems: 'center',
@@ -265,12 +267,13 @@ const styles = StyleSheet.create({
     },
     navText: {
         fontSize: 12,
-        color: '#666',
+        color: '#D2D5E1',
         marginTop: 4,
+        fontFamily: 'Lexend-Regular',
     },
     activeNavText: {
-        color: '#007AFF',
-        fontWeight: '600',
+        color: '#93E893', // Active tab text color
+        fontFamily: 'Lexend-SemiBold',
     },
 });
 

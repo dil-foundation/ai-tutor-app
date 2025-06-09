@@ -2,16 +2,13 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-import { Header } from "../../../../components/Header";
 
 const feedbackItems = [
   { id: "1", label: "Pronunciation", iconName: "microphone-outline", checked: true },
@@ -25,16 +22,18 @@ const QuestionsAnswersPracticeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="Questions & Answers Practice" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Quick Answer</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Responding to WH-questions</Text>
 
         <View style={styles.chatContainer}>
           <View style={styles.messageRowAI}>
-            <Image
-              source={require("../../../../assets/images/ai_tutor_avatar.png")}
-              style={styles.avatar}
-            />
+            <Ionicons name="hardware-chip-outline" size={28} color="#93E893" style={styles.avatar}/>
             <View style={[styles.messageBubble, styles.aiMessageBubble]}>
               <Text style={styles.messageSender}>AI Tutor</Text>
               <Text style={styles.messageText}>Where do you live?</Text>
@@ -43,42 +42,39 @@ const QuestionsAnswersPracticeScreen = () => {
 
           <View style={styles.messageRowUser}>
             <View style={[styles.messageBubble, styles.userMessageBubble]}>
-              <Text style={styles.messageSender}>Learner</Text>
               <Text style={[styles.messageText, styles.userMessageText]}>
                 I live in Karachi.
               </Text>
             </View>
-            <Image
-              source={require("../../../../assets/images/user_avatar.png")}
-              style={styles.avatar}
-            />
+             <Ionicons name="person-outline" size={28} color="#93E893" style={styles.avatar}/>
           </View>
         </View>
 
         <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackTitle}>Feedback</Text>
           {feedbackItems.map((item) => (
             <View key={item.id} style={styles.feedbackItem}>
               <View style={styles.feedbackIconLabelContainer}>
                 <MaterialCommunityIcons
                   name={item.iconName as any}
                   size={24}
-                  color="#555555"
+                  color="#D2D5E1"
                   style={styles.feedbackIcon}
                 />
                 <Text style={styles.feedbackLabel}>{item.label}</Text>
               </View>
               {item.checked && (
-                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                <Ionicons name="checkmark-circle" size={24} color="#93E893" />
               )}
             </View>
           ))}
         </View>
       </ScrollView>
 
-      <View style={styles.speakButtonContainer}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.speakButtonText}>Speak</Text>
+          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -88,22 +84,37 @@ const QuestionsAnswersPracticeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#000000",
+    color: "#D2D5E1",
     marginBottom: 24,
     textAlign: "center",
   },
   chatContainer: {
-    marginBottom: 24,
+    marginBottom: 30,
   },
   messageRowAI: {
     flexDirection: "row",
@@ -113,45 +124,51 @@ const styles = StyleSheet.create({
   },
   messageRowUser: {
     flexDirection: "row",
-    marginBottom: 16,
     alignItems: "flex-end",
     justifyContent: "flex-end",
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginHorizontal: 5,
   },
   messageBubble: {
-    borderRadius: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     maxWidth: "80%",
   },
   aiMessageBubble: {
-    backgroundColor: "#F0F0F0",
+    backgroundColor: "#1E293B",
     marginLeft: 10,
   },
   userMessageBubble: {
-    backgroundColor: "#D1E6FF",
+    backgroundColor: "#93E893",
     marginRight: 10,
   },
   messageSender: {
     fontSize: 12,
-    color: "#666666",
-    marginBottom: 2,
+    color: "#D2D5E1",
+    marginBottom: 4,
+    fontWeight: 'bold',
   },
   messageText: {
     fontSize: 16,
-    color: "#000000",
+    color: "#D2D5E1",
     lineHeight: 22,
   },
   userMessageText: {
-    color: "#000000",
+    color: "#111629",
   },
   feedbackContainer: {
     marginTop: 16,
-    paddingHorizontal: 8,
+    backgroundColor: '#1E293B',
+    borderRadius: 15,
+    padding: 20,
+  },
+  feedbackTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#93E893',
+    marginBottom: 15,
   },
   feedbackItem: {
     flexDirection: "row",
@@ -159,39 +176,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
+    borderBottomColor: "#111629",
   },
   feedbackIconLabelContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   feedbackIcon: {
-    marginRight: 12,
+    marginRight: 15,
   },
   feedbackLabel: {
     fontSize: 16,
-    color: "#333333",
+    color: "#D2D5E1",
   },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

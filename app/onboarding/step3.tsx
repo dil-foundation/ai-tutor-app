@@ -30,11 +30,11 @@ const EnglishLevelScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <ScrollView style={styles.scrollViewContent}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
+                        <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Your English Level</Text>
                     <View style={{ width: 24 }} /> {/* Spacer to balance title */}
@@ -85,7 +85,7 @@ const EnglishLevelScreen = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#111629',
     },
     scrollViewContent: {
         flex: 1,
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-        backgroundColor: '#FFFFFF',
+        borderBottomColor: '#1E293B',
+        backgroundColor: '#111629',
         // Add extra padding for Android status bar if not handled by SafeAreaView
         // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
     },
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: '600',
-        color: '#000',
+        fontFamily: 'Lexend-SemiBold',
+        color: '#93E893',
         flex: 1, // Allows the title to take available space
         textAlign: 'center', // Center the title
         marginRight: 24, // Account for the back button's width
@@ -119,53 +119,56 @@ const styles = StyleSheet.create({
     },
     levelHeading: {
         fontSize: 28,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginBottom: 8,
     },
     levelDescription: {
         fontSize: 16,
-        color: '#333',
+        color: '#D2D5E1',
         marginBottom: 30,
+        fontFamily: 'Lexend-Regular',
     },
     cefrLabel: {
         fontSize: 14,
-        color: '#666',
+        color: '#D2D5E1',
         marginBottom: 8,
+        fontFamily: 'Lexend-Regular',
     },
     cefrLevelContainer: {
         width: 30, // Adjust as needed
         height: 30, // Adjust as needed
         borderRadius: 15, // Half of width/height for a circle
-        backgroundColor: '#E0E0E0', // Light grey background
+        backgroundColor: '#1E293B', // Light grey background
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 30,
     },
     cefrLevelText: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#666',
+        fontFamily: 'Lexend-Bold',
+        color: '#D2D5E1',
     },
     divider: {
         height: 1,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: '#1E293B',
         marginVertical: 20,
     },
     sectionTitle: {
         fontSize: 20,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginBottom: 10,
     },
     sectionText: {
         fontSize: 16,
-        color: '#333',
+        color: '#D2D5E1',
         lineHeight: 24,
         marginBottom: 20,
+        fontFamily: 'Lexend-Regular',
     },
     learningPlanButton: {
-        backgroundColor: '#007AFF', // Blue button color
+        backgroundColor: '#93E893', // Blue button color
         paddingVertical: 15,
         paddingHorizontal: 20,
         borderRadius: 10,
@@ -175,9 +178,9 @@ const styles = StyleSheet.create({
         marginBottom: 40, // Space before the image
     },
     learningPlanButtonText: {
-        color: '#FFFFFF',
+        color: '#111629',
         fontSize: 18,
-        fontWeight: '600',
+        fontFamily: 'Lexend-SemiBold',
     },
     illustration: {
         width: '100%',

@@ -2,94 +2,82 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import * as Progress from "react-native-progress";
-
-import { Header } from "../../../../components/Header";
 
 const NewsSummaryChallengeScreen = () => {
   const router = useRouter();
   const [summary, setSummary] = useState("");
   const wordLimit = 100;
   const currentWordCount = summary.trim().split(/\s+/).filter(Boolean).length;
-  const progress = 1; // Example: clip is 1:00 long, assuming it's fully played for now
+  const progress = 1;
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header title="News Summary Challenge" />
+       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>News Summary</Text>
+      </View>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flexContainer}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.pageTitle}>Listen & Speak</Text>
+          <Text style={styles.pageTitle}>Listen, Summarize & Speak</Text>
 
           <View style={styles.newsClipContainer}>
             <View style={styles.newsTextContainer}>
               <Text style={styles.newsLevel}>B2 Level</Text>
               <Text style={styles.newsTitle}>School closures due to weather</Text>
-              <Text style={styles.newsInstruction}>
-                Listen to the news clip and summarize it in your own words.
-              </Text>
+              <TouchableOpacity style={styles.playButton}>
+                  <Ionicons name="play" size={24} color="#111629" />
+              </TouchableOpacity>
             </View>
-            <Image
-              source={require("../../../../assets/images/news-clip-image.png")} // Placeholder
-              style={styles.newsImage}
-            />
-          </View>
-
-          <View style={styles.progressBarContainer}>
-            <Progress.Bar
-              progress={progress}
-              width={null} // Full width
-              style={styles.progressBar}
-              color="#000000" // Black progress bar
-              unfilledColor="#E0E0E0"
-              borderWidth={0}
-              height={4} // Slimmer progress bar
-            />
-            <Text style={styles.progressTime}>1:00</Text>
-          </View>
-
-          <View style={styles.timerContainer}>
-            <View style={styles.timerBox}>
-              <Text style={styles.timerTextLg}>01</Text>
-              <Text style={styles.timerLabelSm}>Minutes</Text>
-            </View>
-            <View style={styles.timerBox}>
-              <Text style={styles.timerTextLg}>00</Text>
-              <Text style={styles.timerLabelSm}>Seconds</Text>
+            <View style={styles.progressBarContainer}>
+                <Progress.Bar
+                progress={progress}
+                width={null}
+                style={styles.progressBar}
+                color="#93E893"
+                unfilledColor="rgba(147, 232, 147, 0.2)"
+                borderWidth={0}
+                />
+                <Text style={styles.progressTime}>1:00</Text>
             </View>
           </View>
 
-          <TextInput
-            style={styles.summaryInput}
-            multiline
-            placeholder="Start writing your summary..."
-            value={summary}
-            onChangeText={setSummary}
-            maxLength={wordLimit * 6} // Approx max characters
-          />
-          <Text style={styles.wordCount}>
-            Word count: {currentWordCount}/{wordLimit}
-          </Text>
+           <View style={styles.summaryContainer}>
+                <TextInput
+                    style={styles.summaryInput}
+                    multiline
+                    placeholder="Start writing your summary..."
+                    placeholderTextColor="#666"
+                    value={summary}
+                    onChangeText={setSummary}
+                    maxLength={wordLimit * 6}
+                />
+                <Text style={styles.wordCount}>
+                    {currentWordCount}/{wordLimit} words
+                </Text>
+           </View>
         </ScrollView>
 
-        <View style={styles.speakButtonContainer}>
+        <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.speakButton}>
-            <Ionicons name="mic" size={24} color="#FFFFFF" />
-            <Text style={styles.speakButtonText}>Speak</Text>
+            <Ionicons name="mic-outline" size={28} color="#111629" />
+            <Text style={styles.speakButtonText}>Speak Now</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -100,137 +88,121 @@ const NewsSummaryChallengeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#111629",
   },
   flexContainer: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#111629',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
+  },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
   },
   pageTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    textAlign: "left", // Align left as per image
+    textAlign: "left",
     marginBottom: 20,
-    color: "#000000",
+    color: "#D2D5E1",
   },
   newsClipContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start", // Align items to the top
-    marginBottom: 16,
-    backgroundColor: "#F8F9FA",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#1E293B",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 24,
   },
   newsTextContainer: {
-    flex: 1,
-    marginRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
   },
   newsLevel: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#495057",
-    marginBottom: 4,
-    backgroundColor: "#E9ECEF",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: "flex-start", // Make background only fit text
+    fontWeight: "bold",
+    color: "#111629",
+    backgroundColor: "#93E893",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 5,
+    overflow: 'hidden',
   },
   newsTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#212529",
-    marginBottom: 4,
+    color: "#D2D5E1",
+    flex: 1,
+    marginHorizontal: 15,
   },
-  newsInstruction: {
-    fontSize: 14,
-    color: "#495057",
-    lineHeight: 18,
-  },
-  newsImage: {
-    width: 100,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: "#CED4DA", // Placeholder bg
+  playButton: {
+    backgroundColor: '#93E893',
+    padding: 10,
+    borderRadius: 30,
   },
   progressBarContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
   },
   progressBar: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
+    height: 8,
+    borderRadius: 4,
   },
   progressTime: {
     fontSize: 12,
-    color: "#495057",
+    color: "#D2D5E1",
   },
-  timerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
-  timerBox: {
-    backgroundColor: "#F8F9FA",
-    paddingVertical: 10, // Adjusted padding
-    paddingHorizontal: 20, // Adjusted padding
-    borderRadius: 8,
-    alignItems: "center",
-    flex: 1, // Make boxes take equal width
-    marginHorizontal: 5, // Add some space between boxes
-  },
-  timerTextLg: {
-    fontSize: 28, // Large timer text
-    fontWeight: "bold",
-    color: "#343A40",
-  },
-  timerLabelSm: {
-    fontSize: 12,
-    color: "#6C757D",
-    marginTop: 2, // Reduced margin
+  summaryContainer: {
+      backgroundColor: '#1E293B',
+      borderRadius: 15,
+      padding: 15,
   },
   summaryInput: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 120, // Adjusted height
+    minHeight: 150,
     fontSize: 16,
+    color: "#D2D5E1",
     textAlignVertical: "top",
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#DEE2E6",
   },
   wordCount: {
     fontSize: 12,
-    color: "#6C757D",
+    color: "#D2D5E1",
     textAlign: "right",
-    marginBottom: 20,
+    marginTop: 10,
   },
-  speakButtonContainer: {
+  bottomBar: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#111629',
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 25,
-    paddingVertical: 14,
+    backgroundColor: "#93E893",
+    borderRadius: 30,
+    paddingVertical: 20,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   speakButtonText: {
-    color: "#FFFFFF",
+    color: "#111629",
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });
 

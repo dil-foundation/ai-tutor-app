@@ -98,10 +98,11 @@ const styles = StyleSheet.create({
   backButton: {
     fontSize: 24,
     marginRight: 10,
+    fontFamily: 'Lexend-Regular',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: 'Lexend-Bold',
   },
   imageContainer: {
     position: "relative",
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     textAlign: "center",
-    fontWeight: "bold",
+    fontFamily: 'Lexend-Bold',
   },
   chatContainer: {
     flex: 1,
@@ -163,14 +164,16 @@ const styles = StyleSheet.create({
   chatTextAI: {
     fontSize: 14,
     color: "#000",
+    fontFamily: 'Lexend-Regular',
   },
   chatTextUser: {
     fontSize: 14,
     color: "#fff",
+    fontFamily: 'Lexend-Regular',
   },
   feedbackTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Lexend-Bold',
     marginHorizontal: 20,
     marginTop: 15,
     marginBottom: 5,
@@ -196,12 +199,13 @@ const styles = StyleSheet.create({
   },
   feedbackItemTitle: {
     fontSize: 13,
-    fontWeight: "bold",
+    fontFamily: 'Lexend-Bold',
   },
   feedbackItemValue: {
     fontSize: 11,
     color: "#444",
     marginTop: 2,
+    fontFamily: 'Lexend-Regular',
   },
   feedbackImage: {
     width: 50,
@@ -221,7 +225,7 @@ const styles = StyleSheet.create({
   speakButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'Lexend-Bold',
   },
 });
 

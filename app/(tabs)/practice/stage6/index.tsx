@@ -1,163 +1,140 @@
-import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useRouter } from "expo-router";
+import React from "react";
+import {
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-const Stage6Screen = () => {
+const Stage6Home = () => {
   const router = useRouter();
 
+  const practiceOptions = [
+    {
+      title: "AI-Guided Spontaneous Speech",
+      description: "Practice real-time conversations with AI, focusing on natural flow and quick thinking.",
+      icon: "rocket-outline" as const,
+      route: "/(tabs)/practice/stage6/ai-guided-spontaneous-speech" as any,
+    },
+    {
+      title: "Roleplay: Handle a Sensitive Scenario",
+      description: "Simulate real-world interviews to improve fluency and confidence.",
+      icon: "people-outline" as const,
+      route: "/(tabs)/practice/stage6/roleplay-handle-sensitive-scenario" as any,
+    },
+    {
+      title: "Critical Opinion Builder",
+      description: "Develop and articulate complex opinions on various topics, supported by evidence and logic.",
+      icon: "bulb-outline" as const,
+      route: "/(tabs)/practice/stage6/critical-opinion-builder" as any,
+    },
+  ];
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Stage 6</Text>
       </View>
-      <Text style={styles.title}>Native-like Fluency & Precision</Text>
-      <Text style={styles.goal}>
-        Goal: Master real-time fluency, advanced argumentation, and nuanced
-        emotional communication.
-      </Text>
-
-      <View style={styles.card}>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.cardTitle}>AI-Guided Spontaneous Speech</Text>
-          <Text style={styles.cardDescription}>
-            Practice real-time conversations with AI, focusing on natural flow
-            and quick thinking.
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.goalContainer}>
+          <Text style={styles.goalTitle}>C2 Proficiency</Text>
+          <Text style={styles.goalDescription}>
+            Goal: Master real-time fluency, advanced argumentation, and nuanced emotional communication.
           </Text>
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => router.push("/(tabs)/practice/stage6/ai-guided-spontaneous-speech" as any)}
-          >
-            <Text style={styles.startButtonText}>Start →</Text>
-          </TouchableOpacity>
         </View>
-        <Image
-          source={require("../../../../assets/images/abstract-topic.png")}
-          style={styles.cardImage}
-        />
-      </View>
 
-      <View style={styles.card}>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.cardTitle}>Roleplay: Handle a Sensitive Scenario</Text>
-          <Text style={styles.cardDescription}>
-            Simulate real-world interviews to improve fluency and confidence.
-          </Text>
+        {practiceOptions.map((option, index) => (
           <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => router.push("/(tabs)/practice/stage6/roleplay-handle-sensitive-scenario" as any)}
+            key={index}
+            style={styles.optionContainer}
+            onPress={() => router.push(option.route as any)}
           >
-            <Text style={styles.startButtonText}>Start →</Text>
+            <Ionicons name={option.icon} size={32} color="#93E893" style={styles.optionIcon} />
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionTitle}>{option.title}</Text>
+              <Text style={styles.optionDescription}>{option.description}</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
           </TouchableOpacity>
-        </View>
-        <Image
-          source={require("../../../../assets/images/mock-interview.png")}
-          style={styles.cardImage}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.cardTitle}>Critical Opinion Builder</Text>
-          <Text style={styles.cardDescription}>
-            Develop and articulate complex opinions on various topics, supported
-            by evidence and logic.
-          </Text>
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => router.push("/(tabs)/practice/stage6/critical-opinion-builder" as any)}
-          >
-            <Text style={styles.startButtonText}>Start →</Text>
-          </TouchableOpacity>
-        </View>
-        <Image
-          source={require("../../../../assets/images/news-summary.png")}
-          style={styles.cardImage}
-        />
-      </View>
-    </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#111629",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
   },
   backButton: {
-    fontSize: 24,
-    marginRight: 10,
+    marginRight: 15,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#93E893',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
+  scrollContent: {
+    paddingBottom: 20,
   },
-  goal: {
+  goalContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  goalTitle: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#D2D5E1",
+    marginBottom: 8,
+  },
+  goalDescription: {
     fontSize: 16,
-    textAlign: "center",
-    marginBottom: 20,
-    color: "#555",
+    color: "#D2D5E1",
+    lineHeight: 22,
   },
-  card: {
+  optionContainer: {
     flexDirection: "row",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: "#1E293B",
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 16,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
   },
-  cardTextContainer: {
+  optionIcon: {
+    marginRight: 20,
+  },
+  optionTextContainer: {
     flex: 1,
-    marginRight: 10,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+  optionTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#93E893",
+    marginBottom: 6,
   },
-  cardDescription: {
+  optionDescription: {
     fontSize: 14,
-    color: "#333",
-    marginBottom: 10,
-  },
-  startButton: {
-    backgroundColor: "#E0E0E0",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  startButtonText: {
-    color: "#000",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  cardImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+    color: "#D2D5E1",
+    lineHeight: 18,
   },
 });
 
-export default Stage6Screen; 
+export default Stage6Home; 

@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 22,
-        fontWeight: 'bold',
+        fontFamily: 'Lexend-Bold',
         textAlign: 'center',
         color: '#000',
         marginBottom: 8,
@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         marginBottom: 30,
+        fontFamily: 'Lexend-Regular',
     },
     inputBox: {
         backgroundColor: '#fff',
@@ -128,6 +129,7 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         color: '#000',
+        fontFamily: 'Lexend-Regular',
     },
     loginButton: {
         backgroundColor: '#3db5ff',
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
     },
     loginText: {
         color: '#000',
-        fontWeight: '700',
+        fontFamily: 'Lexend-Bold',
         fontSize: 16,
     },
     forgotContainer: {
@@ -150,10 +152,12 @@ const styles = StyleSheet.create({
     forgotText: {
         fontSize: 14,
         color: '#555',
+        fontFamily: 'Lexend-Regular',
     },
     registerText: {
         fontSize: 14,
         color: '#007bff',
         textAlign: 'center',
+        fontFamily: 'Lexend-Regular',
     },
 });

@@ -272,7 +272,7 @@ const RegisterScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#F5F6F7" />
+            <StatusBar barStyle="light-content" backgroundColor="#111629" />
             <View style={styles.header}>
                 <Text style={styles.appLanguageLabel}>App Language</Text>
                 <View style={styles.languageToggle}>
@@ -349,15 +349,13 @@ const RegisterScreen: React.FC = () => {
                     error={lastNameError}
                 />
 
-                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                    <View pointerEvents="none">
-                        <FloatingLabelInput
-                            label="Date of Birth *"
-                            value={dob ? dob.toLocaleDateString() : ''}
-                            onChangeText={() => {}}
-                            error={dobError}
-                        />
-                    </View>
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                    <FloatingLabelInput
+                        label="Date of Birth *"
+                        value={dob ? dob.toLocaleDateString() : ''}
+                        onChangeText={() => {}}
+                        error={dobError}
+                    />
                 </TouchableOpacity>
 
                 {showDatePicker && (
@@ -372,13 +370,14 @@ const RegisterScreen: React.FC = () => {
                 )}
 
                 <FloatingLabelInput
-                    label="Type 2-3 English sentences to assess your English proficiency. *"
+                    label="Proficiency Text *"
+                    placeholder="Type 2-3 English sentences to assess your English proficiency."
                     value={proficiencyText}
                     onChangeText={(text) => {
                         setProficiencyText(text);
                         setProficiencyTextError(validateProficiencyText(text));
                     }}
-                    multiline
+                    multiline={true}
                     error={proficiencyTextError}
                 />
 
@@ -405,7 +404,7 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F6F7',
+        backgroundColor: '#111629',
     },
     header: {
         flexDirection: 'row',
@@ -417,7 +416,8 @@ const styles = StyleSheet.create({
     },
     appLanguageLabel: {
         fontSize: 16,
-        color: '#333',
+        color: '#D2D5E1',
+        fontFamily: 'Lexend-Regular',
     },
     languageToggle: {
         flexDirection: 'row',
@@ -425,8 +425,8 @@ const styles = StyleSheet.create({
     },
     languageText: {
         fontSize: 16,
-        color: '#333',
-        marginRight: 8,
+        color: '#D2D5E1',
+        fontFamily: 'Lexend-Regular',
     },
     contentContainer: {
         paddingHorizontal: 20,
@@ -434,22 +434,23 @@ const styles = StyleSheet.create({
     },
     mainTitle: {
         fontSize: 28,
-        fontWeight: 'bold',
-        color: '#000',
+        fontFamily: 'Lexend-Bold',
+        color: '#93E893',
         marginTop: 40,
         marginBottom: 10,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
+        color: '#D2D5E1',
         textAlign: 'center',
         marginBottom: 30,
         paddingHorizontal: 15,
+        fontFamily: 'Lexend-Regular',
     },
     registerButton: {
         width: '100%',
-        backgroundColor: '#38A3FF',
+        backgroundColor: '#93E893',
         paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
@@ -458,9 +459,9 @@ const styles = StyleSheet.create({
         marginTop: 15,
     },
     registerButtonText: {
-        color: '#FFFFFF',
+        color: '#111629',
         fontSize: 18,
-        fontWeight: '600',
+        fontFamily: 'Lexend-SemiBold',
     },
     loginLinkContainer: {
         marginTop: 10,
@@ -469,7 +470,8 @@ const styles = StyleSheet.create({
     },
     loginLinkText: {
         fontSize: 14,
-        color: '#007bff',
+        color: '#93E893',
+        fontFamily: 'Lexend-Regular',
     },
     errorText: {
         color: 'red',
@@ -479,5 +481,11 @@ const styles = StyleSheet.create({
     },
     disabledButton: {
         backgroundColor: '#A9A9A9',
+    },
+    datePickerButton: {
+        backgroundColor: '#1E293B',
+        padding: 10,
+        borderRadius: 10,
+        marginBottom: 10,
     },
 });

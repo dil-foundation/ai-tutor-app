@@ -1,3 +1,5 @@
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { ThemedView } from '@/components/ThemedView';
 import BASE_API_URL from '@/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -7,9 +9,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Icons (can be customized further or replaced with actual image assets if needed)
-const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#000" />;
-const MicIcon = ({ color = "white" }) => <Ionicons name="mic" size={24} color={color} />;
-const PlayIcon = () => <Ionicons name="play" size={20} color="#000" />;
+const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#D2D5E1" />;
+const MicIcon = ({ color = "#111629" }) => <Ionicons name="mic" size={24} color={color} />;
+const PlayIcon = () => <Ionicons name="play" size={20} color="#111629" />;
 
 type ScreenState = 'initial' | 'listening' | 'processing' | 'playback' | 'error';
 
@@ -253,331 +255,259 @@ export default function LearnScreen() {
   };
 
   const playAudio = async (audioSource: string | Blob | null) => {
-    if (soundRef.current) {
-      console.log('Stopping and unloading previous sound...');
-      try {
-        await soundRef.current.stopAsync();
+    console.log('Attempting to play audio from source:', audioSource);
+  
+    if (!audioSource) {
+      console.error('Audio source is null or undefined.');
+      setErrorMessage('No audio to play.');
+      setScreenState('error');
+      return;
+    }
+  
+    try {
+      // Unload any previous sound
+      if (soundRef.current) {
+        console.log('Unloading previous sound');
         await soundRef.current.unloadAsync();
-      } catch (e) {
-        console.warn('Error stopping/unloading previous sound:', e);
       }
-      soundRef.current = null;
-    }
-
-    let effectiveUri: string | null = null;
-
-    if (audioSource instanceof Blob) {
-      console.log('playAudio received a Blob. Attempting to save to temp file.');
-      try {
-        const base64Data = await blobToBase64(audioSource);
-        const filename = `${FileSystem.cacheDirectory}tempaudio_${Date.now()}.wav`;
-        await FileSystem.writeAsStringAsync(filename, base64Data, {
-          encoding: FileSystem.EncodingType.Base64,
+  
+      console.log('Setting audio mode for playback...');
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true, // Important for playback
+      });
+  
+      let audioUri: string | null = null;
+  
+      // --- Handling Blob Source ---
+      if (audioSource instanceof Blob) {
+        console.log('Audio source is a Blob. Converting to URI...');
+  
+        const fileReader = new FileReader();
+        fileReader.readAsDataURL(audioSource); // Read blob as a data URL
+        
+        // Using a promise to handle asynchronous reading
+        await new Promise<void>((resolve, reject) => {
+          fileReader.onload = () => {
+            const base64Data = fileReader.result as string;
+            // Define a temporary file path in the app's cache directory
+            const tempFilePath = FileSystem.documentDirectory + `playback-${Date.now()}.wav`;
+  
+            // Write the base64 data (without the prefix) to the temporary file
+            FileSystem.writeAsStringAsync(tempFilePath, base64Data.split(',')[1], {
+              encoding: FileSystem.EncodingType.Base64,
+            })
+            .then(() => {
+              console.log('Blob converted and saved to temporary file:', tempFilePath);
+              audioUri = tempFilePath;
+              resolve();
+            })
+            .catch(e => {
+              console.error('Failed to write blob data to file:', e);
+              reject(e);
+            });
+          };
+          fileReader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            reject(error);
+          };
         });
-        effectiveUri = filename;
-        console.log('Blob saved to temp file for playback:', effectiveUri);
-      } catch (error: any) {
-        console.error('Failed to save blob to temp file for playback:', error);
-        setErrorMessage('Could not prepare audio for playback. ' + (error.message || ''));
-        return;
-      }
-    } else if (typeof audioSource === 'string') {
-      effectiveUri = audioSource;
-    }
-
-    if (effectiveUri) {
-      try {
-        console.log('Playing audio from URI:', effectiveUri);
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-        });
-
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: effectiveUri },
-          { shouldPlay: true }
-        );
-        soundRef.current = sound;
-
-        soundRef.current.setOnPlaybackStatusUpdate(async (status) => {
-          if (!status.isLoaded) {
-            if (status.error) {
-              console.error(`Playback Error: ${status.error}`);
-              setErrorMessage('Error playing audio: ' + status.error);
-              try {
-                await soundRef.current?.unloadAsync();
-              } catch (e) { /* ignore */ }
-              soundRef.current = null;
-            }
-          } else {
-            if (status.didJustFinish) {
-              console.log('Playback finished.');
-              try {
-                await soundRef.current?.unloadAsync();
-              } catch (e) { /* ignore */ }
-              soundRef.current = null;
-            }
-          }
-        });
-      } catch (error: any) {
-        console.error('Failed to play audio:', error);
-        setErrorMessage(error.message || 'Could not play the audio.');
-        if (soundRef.current) {
-            try {
-                await soundRef.current.unloadAsync();
-            } catch (e) { /* ignore */ }
-            soundRef.current = null;
+  
+        if (!audioUri) {
+          throw new Error('Failed to create a playable URI from the audio blob.');
         }
       }
+      // --- Handling String (URI) Source ---
+      else if (typeof audioSource === 'string') {
+        console.log('Audio source is a string URI:', audioSource);
+        audioUri = audioSource;
+      } else {
+        throw new Error('Unsupported audio source type.');
+      }
+  
+      // --- Creating and Playing Sound ---
+      console.log('Creating sound object with URI:', audioUri);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true } // Play immediately
+      );
+      soundRef.current = sound;
+  
+      console.log('Playback started.');
+  
+      // Optional: Add a callback for when playback finishes
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Playback finished.');
+          await sound.unloadAsync(); // Unload sound to free up resources
+          soundRef.current = null;
+          console.log('Sound unloaded.');
+        }
+      });
+  
+    } catch (error: any) {
+      console.error('Error during audio playback:', error);
+      setErrorMessage(error.message || 'Could not play audio.');
+      // Do not set screenState to 'error' here to allow other actions
     }
   };
 
   const handleSpeakPress = async () => {
-    setErrorMessage(''); // Clear previous errors at the beginning
-
-    if (screenState === 'initial' || screenState === 'playback' || screenState === 'error') {
-      // If we are starting a new session from playback or error, reset relevant states.
-      if (screenState === 'playback' || screenState === 'error') {
-        setEnglishSentence('');
-        setEnglishAudioBlob(null);
-        setOriginalAudioUri(null);
-        // soundRef (for playback) is managed by playAudio or useEffect cleanup
-        // Reset practice state as well when starting a new main cycle
-        if (practiceRecordingRef.current) {
-          console.log("handleSpeakPress: Unloading existing practiceRecordingRef due to new main cycle.");
-          try {
-            await practiceRecordingRef.current.stopAndUnloadAsync();
-          } catch (e) { /* ignore */ }
-          practiceRecordingRef.current = null;
-        }
-        setPracticeActivityState('idle');
-      }
-
-      // Explicitly ensure any previous recording is stopped and unloaded
-      if (recordingRef.current) {
-        console.log("handleSpeakPress: Unloading existing recordingRef before new recording.");
-        try {
-          await recordingRef.current.stopAndUnloadAsync();
-        } catch (e) {
-          console.warn("handleSpeakPress: Error unloading previous recordingRef", e);
-        }
-        recordingRef.current = null;
-      }
-
-      await startRecording(); // This will set screenState to 'listening'
-    } else if (screenState === 'listening') {
-      await stopRecordingAndProcess(); // This will set screenState to 'processing' -> 'playback'/'error'
+    // This function now toggles between starting and stopping the recording.
+    if (screenState === 'listening') {
+      await stopRecordingAndProcess();
+    } else {
+      await startRecording();
     }
-    // Unconditional state resets that were here previously have been removed or moved.
   };
+
 
   const handleReadAloudPress = () => {
-    if (!englishSentence) {
-        setErrorMessage("No English sentence to read.");
-        setScreenState('error');
-        return;
+    if (englishAudioBlob) {
+      console.log('Read Aloud pressed. Playing translated English audio.');
+      playAudio(englishAudioBlob);
+    } else {
+      console.warn('Read Aloud pressed, but no English audio blob is available.');
+      setErrorMessage("No translated audio available to play.");
     }
-    router.push({ pathname: '/(tabs)/learn/feedback', params: { urduSentence: '', englishSentence } });
   };
-  
+
   const resetState = () => {
-    if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch((e: any) => console.error("Error unloading previous rec:", e));
-        recordingRef.current = null;
-    }
     setScreenState('initial');
     setEnglishSentence('');
+    setErrorMessage('');
     setEnglishAudioBlob(null);
     setOriginalAudioUri(null);
-    setErrorMessage('');
-    // Reset practice state when the main state is reset
-    if (practiceRecordingRef.current) {
-        practiceRecordingRef.current.stopAndUnloadAsync().catch((e: any) => console.error("resetState: Error unloading practice rec:", e));
-        practiceRecordingRef.current = null;
-    }
     setPracticeActivityState('idle');
-  }
+  };
 
-  // --- Functions for Practice Recording Flow ---
+
   const startPracticeAudioRecording = async () => {
     const hasPermission = await requestAudioPermissions();
     if (!hasPermission) {
-      setErrorMessage('Audio permission is required to practice.');
-      // Potentially set screenState to 'error' or handle differently for practice
+      setErrorMessage('Audio permission is required for practice.');
+      // Don't change the main screen state, just show a temporary error or log it.
+      console.error('Audio permission denied for practice.');
       return;
     }
-
-    // Ensure any previous practice recording is stopped and unloaded
-    if (practiceRecordingRef.current) {
-      console.log("startPracticeAudioRecording: Unloading existing practiceRecordingRef.");
-      try {
-        await practiceRecordingRef.current.stopAndUnloadAsync();
-      } catch (e) {
-        console.warn("startPracticeAudioRecording: Error unloading previous practiceRecordingRef", e);
-      }
-      practiceRecordingRef.current = null;
-    }
-
+  
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
-
-      console.log('Starting practice recording..');
+  
+      console.log('Starting practice recording...');
       const { recording } = await Audio.Recording.createAsync(
-         Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       practiceRecordingRef.current = recording;
       setPracticeActivityState('recording_practice');
-      console.log('Practice recording started');
+      console.log('Practice recording started.');
+  
     } catch (err: any) {
       console.error('Failed to start practice recording', err);
+      // Handle error without changing main screen state
       setErrorMessage(err.message || 'Could not start practice recording.');
-      setPracticeActivityState('idle'); // Reset on error
     }
   };
 
   const stopPracticeAudioRecordingAndNavigate = async () => {
-    if (!practiceRecordingRef.current) {
-      return;
-    }
-    console.log('Stopping practice recording..');
+    if (!practiceRecordingRef.current) return;
+  
+    console.log('Stopping practice recording...');
     setPracticeActivityState('processing_practice');
-    let originalPracticeUri: string | null = null;
-
+  
     try {
-      // Get URI BEFORE stopAndUnloadAsync
-      originalPracticeUri = practiceRecordingRef.current.getURI(); 
-      console.log('Original practice recording URI:', originalPracticeUri);
-
+      const practiceAudioUri = practiceRecordingRef.current.getURI();
       await practiceRecordingRef.current.stopAndUnloadAsync();
       practiceRecordingRef.current = null;
-      
-      if (originalPracticeUri && englishSentence) {
-        // ---- Move file to a more permanent location ----
-        const directoryName = `${FileSystem.documentDirectory}audiopractice/`;
-        // Ensure the directory exists
-        await FileSystem.makeDirectoryAsync(directoryName, { intermediates: true });
+  
+      if (practiceAudioUri) {
+        console.log('Practice recording stopped, URI:', practiceAudioUri);
+  
+        const directory = `${FileSystem.documentDirectory}practice_audio/`;
+        await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
         
-        const fileNameParts = originalPracticeUri.split('/');
-        const originalFileName = fileNameParts[fileNameParts.length - 1];
-        const newPracticeFileUri = `${directoryName}${originalFileName}`;
+        const fileName = `practice-${Date.now()}.m4a`;
+        const newPracticeFileUri = `${directory}${fileName}`;
 
-        console.log(`Moving practice audio from ${originalPracticeUri} to ${newPracticeFileUri}`);
-        try {
-            await FileSystem.moveAsync({
-                from: originalPracticeUri,
-                to: newPracticeFileUri,
-            });
-            console.log('Practice audio moved successfully.');
-        } catch (moveError: any) {
-            console.error('Failed to move practice audio file:', moveError);
-            // Fallback: try to use original URI if move fails, though it might not exist later
-            // Or, better, show an error to the user.
-            setErrorMessage('Failed to save practice recording for feedback. ' + moveError.message);
-            setPracticeActivityState('idle');
-            return; // Stop if file cannot be reliably saved
-        }
-        // ---- End of move file ----
+        console.log(`Moving practice audio from ${practiceAudioUri} to ${newPracticeFileUri}`);
+        await FileSystem.moveAsync({
+            from: practiceAudioUri,
+            to: newPracticeFileUri,
+        });
+        console.log('Practice audio moved successfully.');
 
+        // Navigate to the feedback screen with all necessary data
+        console.log('Navigating to feedback screen...');
         router.push({
           pathname: '/(tabs)/learn/feedback',
-          // Pass the NEW URI of the moved file
-          params: { practicedAudioUri: newPracticeFileUri, targetEnglishText: englishSentence }, 
+          params: {
+            practicedAudioUri: newPracticeFileUri,
+            targetEnglishText: englishSentence,
+          },
         });
+  
+        // Reset state after successful navigation setup
+        setPracticeActivityState('idle');
+  
       } else {
-        throw new Error('Practice recording URI is null or target English sentence is missing after unload.');
+        throw new Error('Practice recording URI is null after stopping.');
       }
-      setPracticeActivityState('idle'); 
     } catch (error: any) {
       console.error('Error stopping practice recording or navigating:', error);
       setErrorMessage(error.message || 'Failed to process practice audio.');
-      setPracticeActivityState('idle');
-      // Ensure practiceRecordingRef is nulled out if an error occurred and it wasn't already
-      if (practiceRecordingRef.current) {
-        try {
-            console.warn("Error occurred, attempting to cleanup lingering practiceRecordingRef.");
-            await practiceRecordingRef.current.stopAndUnloadAsync();
-        } catch (cleanupError: any) {
-            console.warn("Cleanup error for practiceRecordingRef in catch block:", cleanupError.message);
-        }
-        practiceRecordingRef.current = null;
-      }
+      setPracticeActivityState('idle'); // Reset on error
     }
   };
 
+
  const handlePracticeButtonPress = async () => {
-    setErrorMessage(''); // Clear previous errors
     if (practiceActivityState === 'idle') {
       await startPracticeAudioRecording();
     } else if (practiceActivityState === 'recording_practice') {
       await stopPracticeAudioRecordingAndNavigate();
     }
+    // If 'processing_practice', do nothing to prevent multiple clicks
   };
-  // --- End of Functions for Practice Recording Flow ---
 
   const renderContent = () => {
     switch (screenState) {
       case 'initial':
         return (
-          <View style={styles.contentArea}>
-            <Text style={styles.instructionText}>Tap "Speak" and say your Urdu sentence</Text>
-            <View style={styles.inputBoxPlaceholder} />
+          <View style={styles.textContainer}>
+            <Text style={styles.initialText}>Press the button and speak in Urdu to get started.</Text>
           </View>
         );
       case 'listening':
         return (
-          <View style={styles.contentArea}>
-            <View style={styles.listeningContainer}>
-              <MicIcon color="#000" />
-              <Text style={styles.listeningTextLarge}>Listening...</Text>
-            </View>
-            <View style={styles.inputBoxPlaceholder}>
-                 <Text style={styles.urduTranscriptPreview}>{/* Live transcript could go here */}</Text>
-            </View>
+          <View style={styles.listeningView}>
+            <Text style={styles.listeningText}>Listening...</Text>
+            {/* You can add a visualizer here */}
           </View>
         );
       case 'processing':
         return (
-          <View style={styles.contentArea}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.processingText}>Translating & Transcribing...</Text>
+          <View style={styles.processingView}>
+            <ActivityIndicator size="large" color="#93E893" />
+            <Text style={styles.processingText}>Translating...</Text>
           </View>
         );
       case 'playback':
         return (
-          <View style={styles.contentAreaPlayback}>
-            {originalAudioUri && (
-              <View style={styles.sentencePair}>
-                <Text style={styles.sentenceLabel}>Your Original Recording (Urdu):</Text>
-                <TouchableOpacity style={styles.playButton} onPress={() => playAudio(originalAudioUri)}>
-                  <PlayIcon />
-                  <Text style={styles.playButtonText}>Play Original Recording</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            <View style={styles.sentencePair}>
-              <Text style={styles.sentenceLabel}>Try saying (English):</Text>
-              <Text style={styles.sentenceText}>{englishSentence}</Text>
-            </View>
-            {englishAudioBlob && (
-                <TouchableOpacity style={styles.playButton} onPress={() => playAudio(englishAudioBlob)}>
-                    <PlayIcon />
-                    <Text style={styles.playButtonText}>Play Translated Sound (English)</Text>
-                </TouchableOpacity>
-            )}
+          <View style={styles.textContainer}>
+            <Text style={styles.englishSentenceText}>{englishSentence}</Text>
           </View>
         );
       case 'error':
         return (
-            <View style={styles.contentArea}>
-                <Ionicons name="alert-circle-outline" size={48} color="red" />
-                <Text style={styles.errorText}>{errorMessage || "An unknown error occurred."}</Text>
-                <TouchableOpacity onPress={resetState} style={styles.tryAgainButton}>
-                    <Text style={styles.tryAgainButtonText}>Try Again</Text>
-                </TouchableOpacity>
-            </View>
+          <View style={styles.errorView}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+            <TouchableOpacity onPress={resetState} style={styles.playbackButton}>
+              <Text>Try Again</Text>
+            </TouchableOpacity>
+          </View>
         );
       default:
         return null;
@@ -585,270 +515,231 @@ export default function LearnScreen() {
   };
 
   const renderActionButton = () => {
-    // Disable main action button if practice is in progress
-    if (practiceActivityState === 'recording_practice' || practiceActivityState === 'processing_practice') {
+    if (screenState === 'playback' || screenState === 'error') return null;
+
+    if (practiceActivityState === 'recording_practice') {
       return (
-        <View style={[styles.actionButton, styles.disabledButton]}>
-            <MicIcon />
-            <Text style={styles.actionButtonText}>Practice in Progress...</Text>
-        </View>
+        <TouchableOpacity onPress={handlePracticeButtonPress} style={styles.stopButton}>
+          <Text style={{ color: 'white' }}>Stop Practice</Text>
+        </TouchableOpacity>
       );
     }
-
-    switch (screenState) {
-      case 'initial':
-      case 'playback':
-      case 'error':
-        return (
-          <TouchableOpacity onPress={handleSpeakPress} style={styles.actionButton}>
-            <MicIcon />
-            <Text style={styles.actionButtonText}>Speak</Text>
-          </TouchableOpacity>
-        );
-      case 'listening':
-        return (
-          <TouchableOpacity style={[styles.actionButton, styles.listeningButton]} onPress={handleSpeakPress}>
-            <MicIcon />
-            <Text style={styles.actionButtonText}>Stop & Process</Text>
-          </TouchableOpacity>
-        );
-      case 'processing':
-         return (
-            <View style={[styles.actionButton, styles.disabledButton]}>
-                <ActivityIndicator color="white" style={{marginRight: 10}} />
-                <Text style={styles.actionButtonText}>Processing...</Text>
-            </View>
-        );
-      case 'playback':
-        break;
-      default:
-        return null;
-    }
+    
+    const isListening = screenState === 'listening';
+    
+    return (
+      <TouchableOpacity
+        onPress={isListening ? stopRecordingAndProcess : startRecording}
+        style={isListening ? styles.stopButton : styles.actionButton}
+      >
+        <MicIcon color={isListening ? "white" : "#111629"} />
+      </TouchableOpacity>
+    );
   };
   
   const renderPlaybackActions = () => {
-    if (screenState === 'playback') {
-      if (englishSentence) {
-        return (
-          <TouchableOpacity 
-              style={[
-                  styles.secondaryActionButton,
-                  practiceActivityState === 'recording_practice' ? styles.listeningButton : {},
-                  practiceActivityState === 'processing_practice' ? styles.disabledButton : {}
-              ]} 
-              onPress={handlePracticeButtonPress}
-              disabled={practiceActivityState === 'processing_practice'}
-          >
-              <MicIcon color={"white"} />
-              <Text style={styles.secondaryActionButtonText}>
-                  {practiceActivityState === 'idle' && "Practice Speaking"}
-                  {practiceActivityState === 'recording_practice' && "Stop Recording Practice"}
-                  {practiceActivityState === 'processing_practice' && "Processing Practice..."}
-              </Text>
-          </TouchableOpacity>
-        );
-      }
+    if (screenState !== 'playback') {
+      return null;
     }
-    return null;
-  }
+    return (
+      <View style={styles.playbackActionsContainer}>
+        <TouchableOpacity onPress={resetState} style={styles.tryAgainButton}>
+           <Ionicons name="refresh" size={20} color="#111629" />
+           <Text style={styles.tryAgainButtonText}>Try Again</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.bottomActionsContainer}>
+            <TouchableOpacity onPress={handleReadAloudPress} style={styles.playbackButton}>
+              <Ionicons name="volume-high-outline" size={20} color="#111629" />
+              <Text style={styles.playbackButtonText}>Read Aloud</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={handlePracticeButtonPress} style={styles.practiceButton}>
+              {practiceActivityState === 'recording_practice' ? (
+                <>
+                  <Ionicons name="stop" size={20} color="#D2D5E1" style={{marginRight: 8}} />
+                  <Text style={styles.practiceButtonText}>Stop</Text>
+                </>
+              ) : practiceActivityState === 'processing_practice' ? (
+                <ActivityIndicator color="#D2D5E1" />
+              ) : (
+                <>
+                  <Ionicons name="mic" size={20} color="#D2D5E1" style={{marginRight: 8}} />
+                  <Text style={styles.practiceButtonText}>Practice</Text>
+                </>
+              )}
+            </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        onPress={() => { if (router.canGoBack()) { router.back(); } else { resetState(); /* Or navigate to a default tab route */ } }}
-        style={styles.backButton}
-      >
-        <BackIcon />
-      </TouchableOpacity>
-      <Text style={styles.title}>Real-time Urdu-to-English Tutor</Text>
-      
-      {renderContent()}
-      
-      <View style={styles.bottomContainer}>
-        {screenState !== 'playback' && renderActionButton()}
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: '#111629', dark: '#111629' }}
+      headerImage={
+        <ThemedView style={styles.headerImageContainer}>
+          <Text style={styles.headerText}>Speak to Translate</Text>
+        </ThemedView>
+      }>
+      <ThemedView style={styles.contentContainer}>
+        {renderContent()}
+        {renderActionButton()}
         {renderPlaybackActions()}
-      </View>
-    </View>
+      </ThemedView>
+    </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: '#F5F6F7', 
+    backgroundColor: '#111629',
   },
-  backButton: {
-    position: 'absolute',
-    top: 50, 
-    left: 20,
-    zIndex: 1,
-    padding: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#333',
-  },
-  contentArea: {
+  headerImageContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    backgroundColor: 'transparent',
   },
-  contentAreaPlayback: {
+  headerText: {
+    fontSize: 24,
+    color: '#93E893',
+    fontWeight: 'bold',
+  },
+  contentContainer: {
+    padding: 20,
+    minHeight: 300,
+    backgroundColor: '#111629',
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    width: '100%',
-    marginTop: 20,
+    justifyContent: 'space-between',
   },
-  instructionText: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputBoxPlaceholder: {
-    width: '100%',
-    minHeight: 100,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  textContainer: {
+    backgroundColor: '#1E293B',
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    padding: 40,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 15,
+    marginBottom: 30,
+    alignSelf: 'center',
   },
-  listeningContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  listeningTextLarge: {
-    fontSize: 20,
-    color: '#333',
-    marginLeft: 10,
-  },
-   urduTranscriptPreview: {
+  initialText: {
     fontSize: 18,
-    color: '#555',
+    color: '#D2D5E1',
     textAlign: 'center',
+  },
+  englishSentenceText: {
+    fontSize: 22,
+    color: '#93E893',
+    textAlign: 'center',
+  },
+  processingView: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
   },
   processingText: {
-    fontSize: 18,
-    color: '#007AFF',
-    marginTop: 15,
-    textAlign: 'center',
-  },
-  sentencePair: {
-    marginBottom: 25,
-    width: '100%',
-  },
-  sentenceLabel: {
     fontSize: 16,
-    color: '#555',
-    marginBottom: 5,
-  },
-  sentenceText: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: '#333',
-    padding: 10,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    width: '100%',
-  },
-  playButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E9E9E9',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
+    color: '#D2D5E1',
     marginTop: 10,
   },
-  playButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#000',
-  },
-  bottomContainer: {
-    paddingTop: 10,
-    alignItems: 'center',
-    width: '100%',
-  },
-  actionButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 30,
-    flexDirection: 'row',
+  listeningView: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: '90%',
-    minHeight: 55,
+    minHeight: 200,
+  },
+  listeningText: {
+    fontSize: 18,
+    color: '#93E893',
     marginBottom: 10,
   },
-  listeningButton: {
+  errorView: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  actionButton: {
+    backgroundColor: '#93E893',
+    borderRadius: 50,
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginVertical: 20,
+  },
+  stopButton: {
     backgroundColor: '#FF3B30',
+    borderRadius: 50,
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
-  disabledButton: {
-    backgroundColor: '#B0B0B0',
+  playbackActionsContainer: {
+    width: '100%',
   },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  secondaryActionButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 30,
+  tryAgainButton: {
+    backgroundColor: '#93E893',
     paddingVertical: 15,
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '90%',
-    minHeight: 55,
-    marginTop: 0,
-  },
-  secondaryActionButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 0,
-  },
-  micPrompt: {
-    marginTop: 15,
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  errorText: {
-      fontSize: 16,
-      color: 'red',
-      textAlign: 'center',
-      marginBottom: 20,
-      marginTop: 10,
-  },
-  tryAgainButton: {
-      backgroundColor: '#007AFF',
-      paddingHorizontal: 25,
-      paddingVertical: 12,
-      borderRadius: 25,
+    marginBottom: 15,
   },
   tryAgainButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: '500',
-  }
+    color: '#111629',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  bottomActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  playbackButton: {
+    backgroundColor: '#93E893',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 5,
+  },
+   playbackButtonText: {
+    color: '#111629',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  practiceButton: {
+    backgroundColor: '#1E293B',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#93E893',
+    flex: 1,
+    marginLeft: 5,
+  },
+  practiceButtonText: {
+    color: '#D2D5E1',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 }); 
