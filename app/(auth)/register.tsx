@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Modal,
     Platform,
     SafeAreaView,
@@ -290,143 +291,150 @@ const RegisterScreen: React.FC = () => {
                     />
                 </View>
             </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.contentContainer}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <Text style={styles.mainTitle}>Welcome to our English Journey</Text>
+                    <Text style={styles.subtitle}>
+                        Kindly Register to begin your English learning journey.
+                    </Text>
 
-            <ScrollView contentContainerStyle={styles.contentContainer}>
-                <Text style={styles.mainTitle}>Welcome to our English Journey</Text>
-                <Text style={styles.subtitle}>
-                    Kindly Register to begin your English learning journey.
-                </Text>
+                    <FloatingLabelInput
+                        label="Username *"
+                        value={username}
+                        onChangeText={(text) => {
+                            setUsername(text);
+                            setUsernameError(validateUsername(text));
+                        }}
+                        autoCapitalize="none"
+                        error={usernameError}
+                    />
 
-                <FloatingLabelInput
-                    label="Username *"
-                    value={username}
-                    onChangeText={(text) => {
-                        setUsername(text);
-                        setUsernameError(validateUsername(text));
-                    }}
-                    autoCapitalize="none"
-                    error={usernameError}
-                />
+                    <FloatingLabelInput
+                        label="Email Address *"
+                        value={email}
+                        onChangeText={(text) => {
+                            setEmail(text);
+                            setEmailError(validateEmail(text));
+                        }}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        error={emailError}
+                    />
 
-                <FloatingLabelInput
-                    label="Email Address *"
-                    value={email}
-                    onChangeText={(text) => {
-                        setEmail(text);
-                        setEmailError(validateEmail(text));
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    error={emailError}
-                />
+                    <FloatingLabelInput
+                        label="Password *"
+                        value={password}
+                        onChangeText={(text) => {
+                            setPassword(text);
+                            setPasswordError(validatePassword(text));
+                        }}
+                        secureTextEntry={!isPasswordVisible}
+                        onToggleVisibility={togglePasswordVisibility}
+                        isPasswordVisible={isPasswordVisible}
+                        error={passwordError}
+                    />
 
-                <FloatingLabelInput
-                    label="Password *"
-                    value={password}
-                    onChangeText={(text) => {
-                        setPassword(text);
-                        setPasswordError(validatePassword(text));
-                    }}
-                    secureTextEntry={!isPasswordVisible}
-                    onToggleVisibility={togglePasswordVisibility}
-                    isPasswordVisible={isPasswordVisible}
-                    error={passwordError}
-                />
+                    <FloatingLabelInput
+                        label="First Name *"
+                        value={firstName}
+                        onChangeText={(text) => {
+                            setFirstName(text);
+                            setFirstNameError(validateFirstName(text));
+                        }}
+                        error={firstNameError}
+                    />
 
-                <FloatingLabelInput
-                    label="First Name *"
-                    value={firstName}
-                    onChangeText={(text) => {
-                        setFirstName(text);
-                        setFirstNameError(validateFirstName(text));
-                    }}
-                    error={firstNameError}
-                />
+                    <FloatingLabelInput
+                        label="Last Name *"
+                        value={lastName}
+                        onChangeText={(text) => {
+                            setLastName(text);
+                            setLastNameError(validateLastName(text));
+                        }}
+                        error={lastNameError}
+                    />
 
-                <FloatingLabelInput
-                    label="Last Name *"
-                    value={lastName}
-                    onChangeText={(text) => {
-                        setLastName(text);
-                        setLastNameError(validateLastName(text));
-                    }}
-                    error={lastNameError}
-                />
-
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                    <View pointerEvents="none">
-                        <FloatingLabelInput
-                            label="Date of Birth *"
-                            value={dob ? dob.toLocaleDateString() : ''}
-                            onChangeText={() => {}}
-                            error={dobError}
-                        />
-                    </View>
-                </TouchableOpacity>
-
-                {Platform.OS === 'ios' ? (
-                    <Modal
-                        transparent={true}
-                        animationType="slide"
-                        visible={showDatePicker}
-                        onRequestClose={() => setShowDatePicker(false)}
-                    >
-                        <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
-                                <DateTimePicker
-                                    value={dob || maxSelectableDate}
-                                    mode="date"
-                                    display="inline"
-                                    onChange={onDOBChange}
-                                    minimumDate={minSelectableDate}
-                                    maximumDate={maxSelectableDate}
-                                    themeVariant="dark"
-                                />
-                                <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.doneButton}>
-                                    <Text style={styles.doneButtonText}>Done</Text>
-                                </TouchableOpacity>
-                            </View>
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                        <View pointerEvents="none">
+                            <FloatingLabelInput
+                                label="Date of Birth *"
+                                value={dob ? dob.toLocaleDateString() : ''}
+                                onChangeText={() => {}}
+                                error={dobError}
+                            />
                         </View>
-                    </Modal>
-                ) : (
-                    showDatePicker && (
-                        <DateTimePicker
-                            value={dob || maxSelectableDate}
-                            mode="date"
-                            display="default"
-                            onChange={onDOBChange}
-                            minimumDate={minSelectableDate}
-                            maximumDate={maxSelectableDate}
-                        />
-                    )
-                )}
+                    </TouchableOpacity>
 
-                <FloatingLabelInput
-                    label="Proficiency Text *"
-                    placeholder="Type 2-3 English sentences to assess your English proficiency."
-                    value={proficiencyText}
-                    onChangeText={(text) => {
-                        setProficiencyText(text);
-                        setProficiencyTextError(validateProficiencyText(text));
-                    }}
-                    multiline={true}
-                    error={proficiencyTextError}
-                />
-
-                {registrationError ? <Text style={[styles.errorText, {alignSelf: 'center', marginBottom:15}]}>{registrationError}</Text> : null}
-
-                <TouchableOpacity style={[styles.registerButton, isLoading && styles.disabledButton]} onPress={handleRegister} disabled={isLoading}>
-                    {isLoading ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
+                    {Platform.OS === 'ios' ? (
+                        <Modal
+                            transparent={true}
+                            animationType="slide"
+                            visible={showDatePicker}
+                            onRequestClose={() => setShowDatePicker(false)}
+                        >
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <DateTimePicker
+                                        value={dob || maxSelectableDate}
+                                        mode="date"
+                                        display="inline"
+                                        onChange={onDOBChange}
+                                        minimumDate={minSelectableDate}
+                                        maximumDate={maxSelectableDate}
+                                        themeVariant="dark"
+                                    />
+                                    <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.doneButton}>
+                                        <Text style={styles.doneButtonText}>Done</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
                     ) : (
-                        <Text style={styles.registerButtonText}>Register</Text>
+                        showDatePicker && (
+                            <DateTimePicker
+                                value={dob || maxSelectableDate}
+                                mode="date"
+                                display="default"
+                                onChange={onDOBChange}
+                                minimumDate={minSelectableDate}
+                                maximumDate={maxSelectableDate}
+                            />
+                        )
                     )}
-                </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLinkContainer}>
-                    <Text style={styles.loginLinkText}>Already have an account? Login</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                    <FloatingLabelInput
+                        label="Proficiency Text *"
+                        placeholder="Type 2-3 English sentences to assess your English proficiency."
+                        value={proficiencyText}
+                        onChangeText={(text) => {
+                            setProficiencyText(text);
+                            setProficiencyTextError(validateProficiencyText(text));
+                        }}
+                        multiline={true}
+                        error={proficiencyTextError}
+                    />
+
+                    {registrationError ? <Text style={[styles.errorText, {alignSelf: 'center', marginBottom:15}]}>{registrationError}</Text> : null}
+
+                    <TouchableOpacity style={[styles.registerButton, isLoading && styles.disabledButton]} onPress={handleRegister} disabled={isLoading}>
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.registerButtonText}>Register</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLinkContainer}>
+                        <Text style={styles.loginLinkText}>Already have an account? Login</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -461,6 +469,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Lexend-Regular',
     },
     contentContainer: {
+        flexGrow: 1,
         paddingHorizontal: 20,
         paddingBottom: 20,
     },
