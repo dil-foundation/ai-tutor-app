@@ -11,4 +11,6 @@ if (__DEV__) {
   BASE_API_URL = 'https://api.dil.lms-staging.com';
 }
 
+export const WORDPRESS_API_URL = 'https://dil.lms-staging.com';
+
 export default BASE_API_URL; 
