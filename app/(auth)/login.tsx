@@ -146,7 +146,10 @@ const LoginScreen: React.FC = () => {
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.forgotContainer}>
+                    <TouchableOpacity
+                        style={styles.forgotContainer}
+                        onPress={() => router.push('/(auth)/forgot-password' as any)}
+                    >
                         <FontAwesome5 name="lock" size={14} color="#D2D5E1" />
                         <Text style={styles.forgotText}> Forgot Password?</Text>
                     </TouchableOpacity>
