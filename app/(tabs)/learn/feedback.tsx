@@ -5,6 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 
 // Placeholder for actual icons
@@ -16,6 +17,7 @@ interface FeedbackData {
   user_text: string;
   pronunciation_score: number;
   fluency_feedback: string;
+  pronunciation_percent?: string;
 }
 
 // +++ Utility function to convert Blob to Base64 (if not already globally available/imported) +++
@@ -121,12 +123,14 @@ export default function FeedbackScreen() {
         typeof resultData.user_text === 'string' &&
         typeof resultData.pronunciation_score === 'number' &&
         resultData.fluency_feedback &&
-        typeof resultData.fluency_feedback.feedback === 'string' 
+        typeof resultData.fluency_feedback.feedback === 'string' &&
+        typeof resultData.fluency_feedback.pronunciation_score === 'string'
       ) {
         setFeedbackResult({
           user_text: resultData.user_text,
           pronunciation_score: Number(resultData.pronunciation_score),
           fluency_feedback: resultData.fluency_feedback.feedback,
+          pronunciation_percent: resultData.fluency_feedback.pronunciation_score
         });
       } else {
         console.warn("Feedback API response format unexpected after parsing check:", resultData);
@@ -242,9 +246,11 @@ export default function FeedbackScreen() {
               <MicIcon />
               <Text style={[styles.feedbackCategory, { marginLeft: 10 }]}>Pronunciation Score</Text>
             </View>
-            <Text style={styles.pronunciationScoreText}>{feedbackResult.pronunciation_score.toFixed(1)}%</Text>
+            <Text style={styles.pronunciationScoreText}>
+              {feedbackResult.pronunciation_percent}
+            </Text>
           </View>
-
+          
           <View style={styles.feedbackCard}>
             <Text style={[styles.feedbackCategory, { marginBottom: 10 }]}>Detailed Feedback:</Text>
             <Text style={styles.apiFeedbackText}>
@@ -254,18 +260,34 @@ export default function FeedbackScreen() {
         </View>
       )}
 
-      {(!isLoading) && (
-        <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity style={styles.tryAgainButton} onPress={() => router.back()}>
-                <Ionicons name="refresh-outline" size={20} color="#111629" />
-                <Text style={styles.tryAgainButtonText}>Try Again</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.practiceAnotherButton} onPress={() => router.push('/(tabs)/learn')}>
-                 <Ionicons name="play-forward-outline" size={20} color="#D2D5E1" />
-                <Text style={styles.practiceAnotherButtonText}>Practice Another</Text>
-            </TouchableOpacity>
-        </View>
-      )}
+    {/* 🎇 Spark Animation only if score > 75% */}
+    {parseInt(feedbackResult?.pronunciation_percent?.replace('%', '') || '0') > 75 && (
+      <LottieView
+        source={require('../../../assets/animations/sparkle.json')}
+        autoPlay
+        loop={false}
+        style={{ width: 300, height: 300, marginTop: 20, alignSelf: 'center' }}
+      />
+    )}
+    
+    {!isLoading && feedbackResult && (
+      <View style={styles.actionButtonsContainer}>
+        {parseInt(feedbackResult.pronunciation_percent?.replace('%', '') || '0') < 75 ? (
+          <TouchableOpacity style={styles.tryAgainButton} onPress={() => router.back()}>
+            <Ionicons name="refresh-outline" size={20} color="#111629" />
+            <Text style={styles.tryAgainButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.practiceAnotherButton} onPress={() => router.push('/(tabs)/learn')}>
+            <Ionicons name="play-forward-outline" size={20} color="#D2D5E1" />
+            <Text style={styles.practiceAnotherButtonText}>Practice Another</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    )}
+
+    
+
     </View>
   );
 }

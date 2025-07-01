@@ -13,7 +13,7 @@ const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#D2D5E1" />;
 const MicIcon = ({ color = "#111629" }) => <Ionicons name="mic" size={24} color={color} />;
 const PlayIcon = () => <Ionicons name="play" size={20} color="#111629" />;
 
-type ScreenState = 'initial' | 'listening' | 'processing' | 'playback' | 'error';
+type ScreenState = 'initial' | 'listening' | 'processing' | 'playback' | 'error' | 'continuous_listening';
 
 // +++ Utility function to convert Blob to Base64 +++
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -37,6 +37,8 @@ export default function LearnScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [englishAudioBlob, setEnglishAudioBlob] = useState<Blob | null>(null);
   const [originalAudioUri, setOriginalAudioUri] = useState<string | null>(null);
+  const [continuousTranscription, setContinuousTranscription] = useState('');
+  const [voiceIntensity, setVoiceIntensity] = useState(0.5);
 
   // State for practice recording flow
   const [practiceActivityState, setPracticeActivityState] = useState<'idle' | 'recording_practice' | 'processing_practice'>('idle');
