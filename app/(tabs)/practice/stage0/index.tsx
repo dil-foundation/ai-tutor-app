@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#1E293B',
         backgroundColor: '#111629',
+        marginTop: 35,
     },
     backButton: {
         padding: 8,

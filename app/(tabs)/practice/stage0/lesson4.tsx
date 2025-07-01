@@ -12,175 +12,193 @@ import {
     View
 } from 'react-native';
 
+import { Audio } from 'expo-av';
+import LottieView from 'lottie-react-native';
+import { fetchAudioFromText } from '../../../../config/api';
+
 const { width } = Dimensions.get('window');
 
+const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => {
+  try {
+    const fileUri = await fetchAudioFromText(text);
+    if (fileUri) {
+      const { sound } = await Audio.Sound.createAsync({ uri: fileUri });
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          onPlaybackFinish();
+          sound.unloadAsync();
+        }
+      });
+      await sound.playAsync();
+    } else {
+      onPlaybackFinish();
+    }
+  } catch (error) {
+    console.error("Audio playback failed", error);
+    onPlaybackFinish();
+  }
+};
+
+// Data for each page
+const sightWordsData = [
+  { english: "I", urdu: "میں", pron: "aai" },
+  { english: "You", urdu: "آپ", pron: "yoo" },
+  { english: "He", urdu: "وہ (مرد)", pron: "hee" },
+  { english: "She", urdu: "وہ (عورت)", pron: "shee" },
+  { english: "It", urdu: "یہ", pron: "it" },
+  { english: "We", urdu: "ہم", pron: "wee" },
+];
+
+const greetingsData = [
+  { english: "Hello", urdu: "السلام علیکم", pron: "he-lo" },
+  { english: "How are you?", urdu: "تم کیسے ہو؟", pron: "how ar yoo" },
+  { english: "My name is Ali", urdu: "میرا نام علی ہے", pron: "mai neim iz aa-lee" },
+];
+
+const phrasesData = [
+  { english: "How are you?", urdu: "آپ کیسے ہیں؟", pron: "how ar yoo" },
+  { english: "I'm doing well.", urdu: "میں ٹھیک ہوں-", pron: "aaim doo-ing wel" },
+  { english: "What's your name?", urdu: "تمہارا نام کیا ہے؟", pron: "wats yor neim" },
+  { english: "My name is Aaliyah.", urdu: "میرا نام عالیہ ہے-", pron: "mai neim iz aa-lee-ya" },
+  { english: "Nice to meet you.", urdu: "تم سے مل کر خوشی ہوئی-", pron: "nais to meet yoo" },
+];
+
+const uiWordsData = [
+  { english: "Inbox", urdu: "ان باکس", pron: "in-boks" },
+  { english: "Settings", urdu: "سیٹنگز", pron: "set-ings" },
+  { english: "Notifications", urdu: "اطلاعات", pron: "no-ti-fi-ka-shuns" },
+  { english: "Options", urdu: "اختیارات", pron: "op-shuns" },
+  { english: "Select", urdu: "منتخب کریں", pron: "se-lekt" },
+];
+
+const chunkArray = (arr: any[], chunkSize: number) => {
+  return Array.from({ length: Math.ceil(arr.length / chunkSize) }, (_, i) =>
+    arr.slice(i * chunkSize, i * chunkSize + chunkSize)
+  );
+};
+
 const Lesson4Screen: React.FC = () => {
-    const [currentPageIndex, setCurrentPageIndex] = useState(0); // 0-indexed
-    const totalPages = 5; // Common Sight Words, Greetings, Useful Phrases, UI Sight Words, Exercises
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [playingItem, setPlayingItem] = useState<string | null>(null);
+    const [showFinishAnimation, setShowFinishAnimation] = useState(false);
 
     const lessonPages = [
         // Page 1: Common Sight Words
         <View key="page1_common_sight_words" style={styles.pageContent}>
             <Text style={styles.pageTitle}>Common Sight Words</Text>
             <Text style={styles.pageSubtitle}>Essential words for everyday communication, with Urdu translations.</Text>
-            <View style={styles.listContainer}>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>I</Text>
-                        <Text style={styles.urduText}>میں</Text>
+            {sightWordsData.map(({ english, urdu, pron }) => (
+                <View key={english} style={styles.card}>
+                    <View style={styles.cardTextContainer}>
+                        <Text style={styles.englishWord}>{english} <Text style={styles.pronText}>({pron})</Text></Text>
+                        <Text style={styles.arabicWord}>{urdu}</Text>
                     </View>
+                    <TouchableOpacity
+                        style={styles.playButtonCircle}
+                        disabled={playingItem !== null}
+                        onPress={async () => {
+                            setPlayingItem(english);
+                            await playAudioFromText(english, () => setPlayingItem(null));
+                        }}
+                    >
+                        {playingItem === english ? (
+                            <Ionicons name="pause" size={24} color="#fff" />
+                        ) : (
+                            <Ionicons name="play" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>You</Text>
-                        <Text style={styles.urduText}>آپ</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>He</Text>
-                        <Text style={styles.urduText}>وہ (مرد)</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>She</Text>
-                        <Text style={styles.urduText}>وہ (عورت)</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>It</Text>
-                        <Text style={styles.urduText}>یہ</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="text-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>We</Text>
-                        <Text style={styles.urduText}>ہم</Text>
-                    </View>
-                </View>
-            </View>
+            ))}
         </View>,
+        
         // Page 2: Greetings & Introductions
         <View key="page2_greetings" style={styles.pageContent}>
             <Text style={styles.pageTitle}>Greetings & Introductions</Text>
             <Text style={styles.pageSubtitle}>Learn essential English greetings and introductory phrases with Urdu translations.</Text>
-            <View style={styles.listContainer}>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="hand-left-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Hello</Text>
-                        <Text style={styles.urduText}>السلام علیکم</Text>
+            {greetingsData.map(({ english, urdu, pron }) => (
+                <View key={english} style={styles.card}>
+                    <View style={styles.cardTextContainer}>
+                        <Text style={styles.englishWord}>{english} <Text style={styles.pronText}>({pron})</Text></Text>
+                        <Text style={styles.arabicWord}>{urdu}</Text>
                     </View>
+                    <TouchableOpacity
+                        style={styles.playButtonCircle}
+                        disabled={playingItem !== null}
+                        onPress={async () => {
+                            setPlayingItem(english);
+                            await playAudioFromText(english, () => setPlayingItem(null));
+                        }}
+                    >
+                        {playingItem === english ? (
+                            <Ionicons name="pause" size={24} color="#fff" />
+                        ) : (
+                            <Ionicons name="play" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="help-circle-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>How are you?</Text>
-                        <Text style={styles.urduText}>تم کیسے ہو؟</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="person-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>My name is Ali</Text>
-                        <Text style={styles.urduText}>میرا نام علی ہے</Text>
-                    </View>
-                </View>
-            </View>
+            ))}
         </View>,
+        
         // Page 3: Useful Phrases
         <View key="page3_phrases" style={styles.pageContent}>
             <Text style={styles.pageTitle}>Useful Phrases</Text>
-            <View style={styles.listContainer}>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="happy-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>How are you?</Text>
-                        <Text style={styles.urduText}>آپ کیسے ہیں؟</Text>
+            <Text style={styles.pageSubtitle}>Everyday phrases for better communication.</Text>
+            {phrasesData.map(({ english, urdu, pron }) => (
+                <View key={english} style={styles.card}>
+                    <View style={styles.cardTextContainer}>
+                        <Text style={styles.englishWord}>{english} <Text style={styles.pronText}>({pron})</Text></Text>
+                        <Text style={styles.arabicWord}>{urdu}</Text>
                     </View>
+                    <TouchableOpacity
+                        style={styles.playButtonCircle}
+                        disabled={playingItem !== null}
+                        onPress={async () => {
+                            setPlayingItem(english);
+                            await playAudioFromText(english, () => setPlayingItem(null));
+                        }}
+                    >
+                        {playingItem === english ? (
+                            <Ionicons name="pause" size={24} color="#fff" />
+                        ) : (
+                            <Ionicons name="play" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="happy-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>I'm doing well.</Text>
-                        <Text style={styles.urduText}>میں ٹھیک ہوں-</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="person-circle-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>What's your name?</Text>
-                        <Text style={styles.urduText}>تمہارا نام کیا ہے؟</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="person-circle-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>My name is Aaliyah.</Text>
-                        <Text style={styles.urduText}>میرا نام عالیہ ہے-</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="diamond-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Nice to meet you.</Text>
-                        <Text style={styles.urduText}>تم سے مل کر خوشی ہوئی-</Text>
-                    </View>
-                </View>
-            </View>
+            ))}
         </View>,
+        
         // Page 4: Sight Words (UI)
         <View key="page4_ui_sight_words" style={styles.pageContent}>
             <Text style={styles.pageTitle}>Sight Words</Text>
-            <View style={styles.listContainer}>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="mail-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Inbox</Text>
-                        <Text style={styles.urduText}>ان باکس</Text>
+            <Text style={styles.pageSubtitle}>Common UI words you'll encounter in apps and websites.</Text>
+            {uiWordsData.map(({ english, urdu, pron }) => (
+                <View key={english} style={styles.card}>
+                    <View style={styles.cardTextContainer}>
+                        <Text style={styles.englishWord}>{english} <Text style={styles.pronText}>({pron})</Text></Text>
+                        <Text style={styles.arabicWord}>{urdu}</Text>
                     </View>
+                    <TouchableOpacity
+                        style={styles.playButtonCircle}
+                        disabled={playingItem !== null}
+                        onPress={async () => {
+                            setPlayingItem(english);
+                            await playAudioFromText(english, () => setPlayingItem(null));
+                        }}
+                    >
+                        {playingItem === english ? (
+                            <Ionicons name="pause" size={24} color="#fff" />
+                        ) : (
+                            <Ionicons name="play" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="settings-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Settings</Text>
-                        <Text style={styles.urduText}>سیٹنگز</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="notifications-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Notifications</Text>
-                        <Text style={styles.urduText}>اطلاعات</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="list-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Options</Text>
-                        <Text style={styles.urduText}>اختیارات</Text>
-                    </View>
-                </View>
-                <View style={styles.listItem}>
-                    <View style={styles.iconContainer}><Ionicons name="keypad-outline" size={28} color="#4A90E2" /></View>
-                    <View style={styles.textPairContainer}>
-                        <Text style={styles.englishText}>Select</Text>
-                        <Text style={styles.urduText}>منتخب کریں</Text>
-                    </View>
-                </View>
-            </View>
+            ))}
         </View>,
+        
         // Page 5: Fill in the blanks Exercise
         <View key="page5_exercise" style={[styles.pageContent, styles.exercisePageContent]}>
             <Text style={styles.pageTitle}>Fill in the blanks</Text>
+            <Text style={styles.pageSubtitle}>Practice what you've learned with these exercises.</Text>
             <View style={styles.fillBlankContainer}>
                 <View style={styles.fillBlankItem}>
                     <Text style={styles.fillBlankSentence}>_____ is a beautiful day.</Text>
@@ -198,6 +216,8 @@ const Lesson4Screen: React.FC = () => {
         </View>,
     ];
 
+    const totalPages = lessonPages.length;
+
     const handleGoBack = () => {
         if (currentPageIndex > 0) {
             setCurrentPageIndex(currentPageIndex - 1);
@@ -211,7 +231,11 @@ const Lesson4Screen: React.FC = () => {
             setCurrentPageIndex(currentPageIndex + 1);
         } else {
             console.log('Lesson 4 Finished!');
-            router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
+            setShowFinishAnimation(true);
+            // Wait for animation to complete before navigating
+            setTimeout(() => {
+                router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
+            }, 3000); // 3 seconds to allow animation to play
         }
     };
 
@@ -265,6 +289,18 @@ const Lesson4Screen: React.FC = () => {
                         {currentPageIndex === totalPages - 1 ? 'Finish' : 'Next'}
                     </Text>
                 </TouchableOpacity>
+
+                {/* 🎇 Full Screen Spark Animation when finishing lesson */}
+                {showFinishAnimation && (
+                    <View style={styles.animationOverlay}>
+                        <LottieView
+                            source={require('../../../../assets/animations/sparkle.json')}
+                            autoPlay
+                            loop={false}
+                            style={styles.fullScreenAnimation}
+                        />
+                    </View>
+                )}
             </View>
         </SafeAreaView>
     );
@@ -286,6 +322,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         backgroundColor: '#111629',
+        marginTop: 35,
     },
     backButton: {
         padding: 8,
@@ -325,10 +362,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     pageContent: {
-        padding: 20,
-        backgroundColor: '#1E293B',
-        borderRadius: 15,
-        marginBottom: 20,
+        // Remove alignItems: 'center' for left alignment
     },
     pageTitle: {
         fontSize: 24,
@@ -343,32 +377,54 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
-    listContainer: {
-        marginTop: 10,
-    },
-    listItem: {
+    card: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#111629',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 10,
+        justifyContent: 'space-between',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    iconContainer: {
-        marginRight: 15,
-    },
-    textPairContainer: {
+    cardTextContainer: {
         flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center',
     },
-    englishText: {
+    englishWord: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#93E893',
+        color: '#111629',
+        fontWeight: '600',
+        marginBottom: 2,
     },
-    urduText: {
+    arabicWord: {
         fontSize: 16,
-        color: '#D2D5E1',
-        marginTop: 4,
+        color: '#6B7280',
+        marginBottom: 0,
+    },
+    pronText: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#6B7280',
+    },
+    playButtonCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#93E893', // AI Tutor theme green
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     exercisePageContent: {
         alignItems: 'center',
@@ -410,6 +466,20 @@ const styles = StyleSheet.create({
         color: '#111629',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    animationOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullScreenAnimation: {
+        width: '100%',
+        height: '100%',
     },
 });
 

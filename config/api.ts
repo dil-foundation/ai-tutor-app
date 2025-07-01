@@ -1,8 +1,9 @@
+import * as FileSystem from 'expo-file-system';
+
 let BASE_API_URL: string;
 
-
 if (__DEV__) {
-  // Development URLs
+  // Development URL - update to your local IP and port
   BASE_API_URL = 'http://192.168.144.11:8000';
 } else {
   // Production URL
@@ -10,5 +11,44 @@ if (__DEV__) {
 }
 
 export const WORDPRESS_API_URL = 'https://dil.lms-staging.com';
+
+/**
+ * Send text to backend and receive TTS audio (.wav) file
+ * @param text - Word to convert to audio (e.g. "Apple")
+ * @returns audio URL as blob object URL or null on error
+ */
+export const fetchAudioFromText = async (text: string): Promise<string | null> => {
+  try {
+    const response = await fetch(`${BASE_API_URL}/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+
+    const blob = await response.blob();
+
+    const reader = new FileReader();
+    return await new Promise((resolve, reject) => {
+      reader.onloadend = async () => {
+        const base64data = reader.result?.toString().split(',')[1];
+        if (base64data) {
+          const fileUri = FileSystem.cacheDirectory + `${text}.mp3`;
+          await FileSystem.writeAsStringAsync(fileUri, base64data, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          resolve(fileUri);
+        } else {
+          reject("Base64 conversion failed");
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("Error fetching audio:", error);
+    return null;
+  }
+};
+
 
 export default BASE_API_URL;

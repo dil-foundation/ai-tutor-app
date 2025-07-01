@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import { router } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import React, { useState } from 'react';
 import {
     Dimensions,
@@ -11,111 +13,139 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { fetchAudioFromText } from '../../../../config/api';
 
 const { width } = Dimensions.get('window');
 
+const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => {
+  try {
+    const fileUri = await fetchAudioFromText(text);
+    if (fileUri) {
+      const { sound } = await Audio.Sound.createAsync({ uri: fileUri });
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          onPlaybackFinish();
+          sound.unloadAsync();
+        }
+      });
+      await sound.playAsync();
+    } else {
+      onPlaybackFinish();
+    }
+  } catch (error) {
+    console.error("Audio playback failed", error);
+    onPlaybackFinish();
+  }
+};
+
+const numbersData = [
+  { number: "1", english: "One", urdu: "ایک", pron: "wun" },
+  { number: "2", english: "Two", urdu: "دو", pron: "too" },
+  { number: "3", english: "Three", urdu: "تین", pron: "three" },
+  { number: "4", english: "Four", urdu: "چار", pron: "for" },
+  { number: "5", english: "Five", urdu: "پانچ", pron: "faiv" },
+  { number: "6", english: "Six", urdu: "چھ", pron: "siks" },
+  { number: "7", english: "Seven", urdu: "سات", pron: "se-ven" },
+  { number: "8", english: "Eight", urdu: "آٹھ", pron: "eit" },
+  { number: "9", english: "Nine", urdu: "نو", pron: "nain" },
+  { number: "10", english: "Ten", urdu: "دس", pron: "ten" },
+];
+
+const daysData = [
+  { english: "Monday", urdu: "پیر", pron: "mun-day" },
+  { english: "Tuesday", urdu: "منگل", pron: "tuz-day" },
+  { english: "Wednesday", urdu: "بدھ", pron: "wenz-day" },
+  { english: "Thursday", urdu: "جمعرات", pron: "thurz-day" },
+  { english: "Friday", urdu: "جمعہ", pron: "frai-day" },
+  { english: "Saturday", urdu: "ہفتہ", pron: "sa-tur-day" },
+  { english: "Sunday", urdu: "اتوار", pron: "sun-day" },
+];
+
+const colorsData = [
+  { english: "Red", urdu: "سرخ", pron: "red" },
+  { english: "Blue", urdu: "نیلا", pron: "bloo" },
+  { english: "Green", urdu: "سبز", pron: "green" },
+  { english: "Yellow", urdu: "پیلا", pron: "ye-lo" },
+  { english: "Black", urdu: "کالا", pron: "blak" },
+  { english: "White", urdu: "سفید", pron: "wait" },
+];
+
+const classroomItemsData = [
+  { english: "Book", urdu: "کتاب", pron: "buk" },
+  { english: "Pen", urdu: "قلم", pron: "pen" },
+  { english: "Chair", urdu: "کرسی", pron: "chair" },
+  { english: "Table", urdu: "میز", pron: "tei-bl" },
+  { english: "Bag", urdu: "بستہ", pron: "bag" },
+];
+
+const chunkArray = (arr: any[], chunkSize: number) => {
+  return Array.from({ length: Math.ceil(arr.length / chunkSize) }, (_, i) =>
+    arr.slice(i * chunkSize, i * chunkSize + chunkSize)
+  );
+};
+
+const numbersPages = chunkArray(numbersData, 10);
+const daysPages = chunkArray(daysData, 7);
+const colorsPages = chunkArray(colorsData, 6);
+const classroomItemsPages = chunkArray(classroomItemsData, 5);
+
 const Lesson3Screen: React.FC = () => {
-    const [currentPageIndex, setCurrentPageIndex] = useState(0); // 0-indexed
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [playingItem, setPlayingItem] = useState<string | null>(null);
+    const [showFinishAnimation, setShowFinishAnimation] = useState(false);
     const totalPages = 5; // Numbers, Days, Colors, Classroom Items, Summary
+
+    const renderCards = (data: any[], pageData: any[], title: string, isNumber: boolean = false) => {
+        return pageData.map((item, index) => (
+            <View key={index} style={styles.card}>
+                <View style={styles.cardTextContainer}>
+                    {isNumber ? (
+                        <Text style={styles.numberText}>{item.number} <Text style={styles.pronText}>({item.pron})</Text></Text>
+                    ) : (
+                        <Text style={styles.englishWord}>{item.english} <Text style={styles.pronText}>({item.pron})</Text></Text>
+                    )}
+                    {isNumber && <Text style={styles.englishWord}>{item.english}</Text>}
+                    <Text style={styles.arabicWord}>{item.urdu}</Text>
+                </View>
+                <TouchableOpacity
+                    style={styles.playButtonCircle}
+                    disabled={playingItem !== null}
+                    onPress={async () => {
+                        const audioText = isNumber ? `${item.number} for ${item.english}` : item.english;
+                        setPlayingItem(audioText);
+                        await playAudioFromText(audioText, () => setPlayingItem(null));
+                    }}
+                >
+                    {playingItem === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
+                        <Ionicons name="pause" size={24} color="#fff" />
+                    ) : (
+                        <Ionicons name="play" size={24} color="#fff" />
+                    )}
+                </TouchableOpacity>
+            </View>
+        ));
+    };
 
     const vocabularyPages = [
         // Page 1: Learn Numbers 1-10
         <View key="page1_numbers" style={styles.pageContent}>
             <Text style={styles.stepTitle}>📚 Learn Numbers 1 - 10</Text>
-            <View style={styles.vocabGrid}>
-                <View style={styles.vocabRow}>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>English</Text>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>Urdu</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>One</Text>
-                    <Text style={styles.vocabCell}>ایک</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Two</Text>
-                    <Text style={styles.vocabCell}>دو</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Three</Text>
-                    <Text style={styles.vocabCell}>تین</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Four</Text>
-                    <Text style={styles.vocabCell}>چار</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Five</Text>
-                    <Text style={styles.vocabCell}>پانچ</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Six</Text>
-                    <Text style={styles.vocabCell}>چھ</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Seven</Text>
-                    <Text style={styles.vocabCell}>سات</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Eight</Text>
-                    <Text style={styles.vocabCell}>آٹھ</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Nine</Text>
-                    <Text style={styles.vocabCell}>نو</Text>
-                </View>
-                <View style={styles.vocabRow}>
-                    <Text style={styles.vocabCell}>Ten</Text>
-                    <Text style={styles.vocabCell}>دس</Text>
-                </View>
-            </View>
+            {numbersPages[0] && renderCards(numbersData, numbersPages[0], "Numbers", true)}
         </View>,
         // Page 2: Learn Days of the Week
         <View key="page2_days" style={styles.pageContent}>
             <Text style={styles.stepTitle}>🗓️ Learn Days of the Week</Text>
-            <View style={styles.vocabGrid}>
-                <View style={styles.vocabRow}>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>English</Text>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>Urdu</Text>
-                </View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Monday</Text><Text style={styles.vocabCell}>پیر</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Tuesday</Text><Text style={styles.vocabCell}>منگل</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Wednesday</Text><Text style={styles.vocabCell}>بدھ</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Thursday</Text><Text style={styles.vocabCell}>جمعرات</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Friday</Text><Text style={styles.vocabCell}>جمعہ</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Saturday</Text><Text style={styles.vocabCell}>ہفتہ</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Sunday</Text><Text style={styles.vocabCell}>اتوار</Text></View>
-            </View>
+            {daysPages[0] && renderCards(daysData, daysPages[0], "Days")}
         </View>,
         // Page 3: Learn Basic Colors
         <View key="page3_colors" style={styles.pageContent}>
             <Text style={styles.stepTitle}>🎨 Learn Basic Colors</Text>
-            <View style={styles.vocabGrid}>
-                <View style={styles.vocabRow}>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>English</Text>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>Urdu</Text>
-                </View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Red</Text><Text style={styles.vocabCell}>سرخ</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Blue</Text><Text style={styles.vocabCell}>نیلا</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Green</Text><Text style={styles.vocabCell}>سبز</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Yellow</Text><Text style={styles.vocabCell}>پیلا</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Black</Text><Text style={styles.vocabCell}>کالا</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>White</Text><Text style={styles.vocabCell}>سفید</Text></View>
-            </View>
+            {colorsPages[0] && renderCards(colorsData, colorsPages[0], "Colors")}
         </View>,
         // Page 4: Common Classroom Items
         <View key="page4_items" style={styles.pageContent}>
             <Text style={styles.stepTitle}>🎒 Common Classroom Items</Text>
-            <View style={styles.vocabGrid}>
-                <View style={styles.vocabRow}>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>English</Text>
-                    <Text style={[styles.vocabCell, styles.vocabHeader]}>Urdu</Text>
-                </View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Book</Text><Text style={styles.vocabCell}>کتاب</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Pen</Text><Text style={styles.vocabCell}>قلم</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Chair</Text><Text style={styles.vocabCell}>کرسی</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Table</Text><Text style={styles.vocabCell}>میز</Text></View>
-                <View style={styles.vocabRow}><Text style={styles.vocabCell}>Bag</Text><Text style={styles.vocabCell}>بستہ</Text></View>
-            </View>
+            {classroomItemsPages[0] && renderCards(classroomItemsData, classroomItemsPages[0], "Classroom Items")}
         </View>,
         // Page 5: Summary
         <View key="page5_summary" style={[styles.pageContent, styles.summaryPage]}>
@@ -148,7 +178,11 @@ const Lesson3Screen: React.FC = () => {
         } else {
             // Handle lesson completion
             console.log('Lesson 3 Finished!');
-            router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
+            setShowFinishAnimation(true);
+            // Wait for animation to complete before navigating
+            setTimeout(() => {
+                router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
+            }, 3000); // 3 seconds to allow animation to play
         }
     };
 
@@ -194,6 +228,18 @@ const Lesson3Screen: React.FC = () => {
                         {currentPageIndex === totalPages - 1 ? 'Finish' : 'Next'}
                     </Text>
                 </TouchableOpacity>
+
+                {/* 🎇 Full Screen Spark Animation when finishing lesson */}
+                {showFinishAnimation && (
+                    <View style={styles.animationOverlay}>
+                        <LottieView
+                            source={require('../../../../assets/animations/sparkle.json')}
+                            autoPlay
+                            loop={false}
+                            style={styles.fullScreenAnimation}
+                        />
+                    </View>
+                )}
             </View>
         </SafeAreaView>
     );
@@ -215,6 +261,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         backgroundColor: '#111629',
+        marginTop: 35,
     },
     backButton: {
         padding: 8,
@@ -266,25 +313,60 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
-    vocabGrid: {
-        width: '100%',
-    },
-    vocabRow: {
+    card: {
         flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#111629',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    vocabCell: {
-        fontSize: 18,
-        color: '#D2D5E1',
-        width: '48%',
-        textAlign: 'center',
+    cardTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center',
     },
-    vocabHeader: {
+    numberText: {
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#93E893',
+        color: '#111629',
+        marginBottom: 2,
+    },
+    pronText: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#6B7280',
+    },
+    englishWord: {
+        fontSize: 18,
+        color: '#111629',
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    arabicWord: {
+        fontSize: 16,
+        color: '#6B7280',
+        marginBottom: 0,
+    },
+    playButtonCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#93E893',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     summaryPage: {
         alignItems: 'center',
@@ -317,6 +399,20 @@ const styles = StyleSheet.create({
         color: '#111629',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    animationOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullScreenAnimation: {
+        width: '100%',
+        height: '100%',
     },
 });
 
