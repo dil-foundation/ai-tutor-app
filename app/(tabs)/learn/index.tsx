@@ -481,7 +481,7 @@ export default function LearnScreen() {
           <View style={styles.textContainer}>
             <Text style={styles.initialText}>Press the button and speak in Urdu to get started.</Text>
             <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/learn/conversation')} 
+              onPress={() => router.push({ pathname: '/(tabs)/learn/conversation', params: { autoStart: 'true' } })} 
               style={styles.conversationButton}
             >
               <Ionicons name="chatbubbles" size={20} color="#111629" />

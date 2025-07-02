@@ -2,19 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Buffer } from 'buffer';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Platform,
+    Animated,
+    Easing,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
-import BASE_API_URL from '../../../config/api';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
 
 interface Message {
@@ -31,24 +31,42 @@ interface ConversationState {
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
+  lastStopWasSilence: boolean;
 }
 
 export default function ConversationScreen() {
+  const { autoStart } = useLocalSearchParams();
+  const router = useRouter();
   const [state, setState] = useState<ConversationState>({
     messages: [],
     currentStep: 'waiting',
     isConnected: false,
     inputText: '',
+    lastStopWasSilence: false,
   });
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isTalking, setIsTalking] = useState(false); // True voice activity detection
+  const silenceTimerRef = useRef<any>(null);
+  const speechStartTimeRef = useRef<number | null>(null);
+  const micAnim = useRef(new Animated.Value(1)).current;
+
+  // Voice Activity Detection threshold (in dB)
+  const VAD_THRESHOLD = -45; // dB, adjust as needed
+  const SILENCE_DURATION = 3000; // 3 seconds of silence
+  const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
 
   useEffect(() => {
     initializeAudio();
     connectToWebSocket();
-    
+    // Auto-start recording if param is set
+    if (autoStart === 'true') {
+      setTimeout(() => {
+        startRecording();
+      }, 500);
+    }
     return () => {
       cleanup();
     };
@@ -173,6 +191,14 @@ export default function ConversationScreen() {
   };
 
   const startRecording = async () => {
+    // Stop and unload any previous recording before starting a new one
+    if (recordingRef.current) {
+      try {
+        await recordingRef.current.stopAndUnloadAsync();
+      } catch (e) {}
+      recordingRef.current = null;
+    }
+
     if (!isSocketConnected()) {
       Alert.alert('Error', 'WebSocket connection is not available');
       return;
@@ -180,11 +206,56 @@ export default function ConversationScreen() {
 
     try {
       setState(prev => ({ ...prev, currentStep: 'listening' }));
-      
+
+      // Helper to clear and set silence timer
+      const resetSilenceTimer = () => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          // Use a callback to get current state
+          setState(prevState => {
+            if (prevState.currentStep === 'listening') {
+              setIsTalking(false);
+              // Stop listening, do not process audio
+              stopRecording(true); // pass true to indicate silence
+            }
+            return prevState;
+          });
+        }, SILENCE_DURATION);
+      };
+
+      // Enable metering in options
+      const options = {
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
+      };
+
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        options,
+        (status) => {
+          if (status.metering != null && status.isRecording) {
+            const currentTime = Date.now();
+            
+            if (status.metering > VAD_THRESHOLD) {
+              // Voice detected
+              if (!isTalking) {
+                setIsTalking(true);
+                speechStartTimeRef.current = currentTime;
+              }
+              resetSilenceTimer(); // Reset silence timer when talking
+            } else {
+              // No voice detected
+              if (isTalking) {
+                setIsTalking(false);
+                speechStartTimeRef.current = null;
+              }
+              // Don't reset timer - let it count down
+            }
+          }
+        },
+        200 // update interval ms
       );
       recordingRef.current = recording;
+      resetSilenceTimer(); // Start timer in case no voice at all
     } catch (error) {
       console.error('Failed to start recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -192,20 +263,36 @@ export default function ConversationScreen() {
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = async (stoppedBySilence = false) => {
     if (!recordingRef.current) return;
 
     try {
-      setState(prev => ({ ...prev, currentStep: 'processing' }));
-      
+      setState(prev => ({ ...prev, currentStep: 'waiting' }));
+
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
 
-      if (uri) {
-        // Upload audio and get transcription
+      // Check if we had enough speech to process
+      const hadValidSpeech = speechStartTimeRef.current && 
+        (Date.now() - speechStartTimeRef.current) >= MIN_SPEECH_DURATION;
+
+      // Only upload/process if NOT stopped by silence AND had valid speech
+      if (uri && !stoppedBySilence && hadValidSpeech) {
         await uploadAudioAndSendMessage(uri);
+      } else if (stoppedBySilence) {
+        console.log('Recording stopped due to silence - no audio sent');
+        setState(prev => ({
+          ...prev,
+          lastStopWasSilence: true,
+          currentStep: 'waiting',
+        }));
+      } else if (!hadValidSpeech) {
+        console.log('Recording too short - no audio sent');
       }
+      
+      // Reset speech tracking
+      speechStartTimeRef.current = null;
     } catch (error) {
       console.error('Failed to stop recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -311,7 +398,9 @@ export default function ConversationScreen() {
         return (
           <View style={styles.statusContainer}>
             <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={styles.statusText}>Listening...</Text>
+            <Text style={styles.statusText}>
+              {isTalking ? 'Voice Detected' : 'Listening...'}
+            </Text>
           </View>
         );
       case 'processing':
@@ -340,6 +429,55 @@ export default function ConversationScreen() {
     }
   };
 
+  // Function to end conversation and go back
+  const endConversation = () => {
+    cleanup();
+    router.back();
+  };
+
+  // Animate mic button when listening or talking
+  useEffect(() => {
+    if (state.currentStep === 'listening') {
+      Animated.timing(micAnim, {
+        toValue: isTalking ? 0.5 : 0.7,
+        duration: 200,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease),
+      }).start();
+    } else {
+      Animated.timing(micAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease),
+      }).start();
+    }
+  }, [state.currentStep, isTalking]);
+
+  // After AI responds, auto-start listening again
+  useEffect(() => {
+    if (state.currentStep === 'waiting' && state.isConnected && autoStart === 'true') {
+      // Only auto-listen if last message was from AI
+      if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
+        setTimeout(() => {
+          startRecording();
+        }, 600);
+      }
+    }
+  }, [state.currentStep, state.messages, state.isConnected, autoStart]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('Current step:', state.currentStep);
+  }, [state.currentStep]);
+
+  // UI for real-time conversation mode
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -359,43 +497,55 @@ export default function ConversationScreen() {
         {renderStatusIndicator()}
       </ScrollView>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          value={state.inputText}
-          onChangeText={(text) => setState(prev => ({ ...prev, inputText: text }))}
-          placeholder="Type your message in Urdu..."
-          multiline
-          maxLength={500}
-        />
-        
-        <View style={styles.buttonContainer}>
+      {/* Center round button and wrong button */}
+      <View style={styles.bottomContainer}>
+        {/* Wrong (X) button */}
+        <TouchableOpacity style={styles.wrongButton} onPress={endConversation}>
+          <Ionicons name="close" size={32} color="#222" />
+        </TouchableOpacity>
+        {/* Center mic/stop button */}
+        <Animated.View style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'absolute',
+          left: 0, right: 0, bottom: 60,
+          transform: [{ scale: micAnim }],
+        }}>
           <TouchableOpacity
             style={[
-              styles.micButton,
-              state.currentStep === 'listening' && styles.micButtonActive
+              styles.centerMicButton,
+              state.currentStep === 'listening' && isTalking
+                ? styles.centerMicButtonTalking
+                : state.currentStep === 'listening'
+                  ? styles.centerMicButtonActive
+                  : styles.centerMicButtonIdle
             ]}
-            onPress={state.currentStep === 'listening' ? stopRecording : startRecording}
+            onPress={() => {
+              if (state.currentStep === 'listening') {
+                stopRecording();
+              } else {
+                setState(prev => ({ ...prev, lastStopWasSilence: false }));
+                startRecording();
+              }
+            }}
             disabled={state.currentStep === 'processing' || state.currentStep === 'speaking'}
+            activeOpacity={0.7}
           >
-            <Ionicons 
-              name={state.currentStep === 'listening' ? 'stop' : 'mic'} 
-              size={24} 
-              color="white" 
+            <Ionicons
+              name={state.currentStep === 'listening' ? 'stop' : 'mic'}
+              size={48}
+              color="white"
             />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !state.inputText.trim() && styles.sendButtonDisabled
-            ]}
-            onPress={sendTextMessage}
-            disabled={!state.inputText.trim() || state.currentStep === 'processing'}
-          >
-            <Ionicons name="send" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
+          {state.currentStep === 'waiting' && state.lastStopWasSilence && (
+            <Text style={styles.silenceInfoLabel}>
+              No speech detected{"\n"}Tap the mic to try again.
+            </Text>
+          )}
+          {state.currentStep === 'waiting' && !state.lastStopWasSilence && (
+            <Text style={styles.tapToSpeakLabel}>Tap to speak</Text>
+          )}
+        </Animated.View>
       </View>
     </View>
   );
@@ -520,5 +670,63 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#C7C7CC',
+  },
+  bottomContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerMicButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  centerMicButtonIdle: {
+    backgroundColor: '#222',
+  },
+  centerMicButtonActive: {
+    backgroundColor: '#2196F3',
+  },
+  centerMicButtonTalking: {
+    backgroundColor: '#00C853', // Green when talking
+  },
+  wrongButton: {
+    position: 'absolute',
+    left: 32,
+    bottom: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  tapToSpeakLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+  },
+  silenceInfoLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
   },
 }); 
