@@ -480,6 +480,13 @@ export default function LearnScreen() {
         return (
           <View style={styles.textContainer}>
             <Text style={styles.initialText}>Press the button and speak in Urdu to get started.</Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/learn/conversation')} 
+              style={styles.conversationButton}
+            >
+              <Ionicons name="chatbubbles" size={20} color="#111629" />
+              <Text style={styles.conversationButtonText}>Start Real-time Conversation</Text>
+            </TouchableOpacity>
           </View>
         );
       case 'listening':
@@ -743,5 +750,21 @@ const styles = StyleSheet.create({
     color: '#D2D5E1',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  conversationButton: {
+    backgroundColor: '#93E893',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  conversationButtonText: {
+    color: '#111629',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 }); 

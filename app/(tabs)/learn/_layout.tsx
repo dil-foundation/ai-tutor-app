@@ -26,6 +26,7 @@ export default function LearnLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="feedback" />
       <Stack.Screen name="greeting" />
+      <Stack.Screen name="conversation" />
     </Stack>
   );
 }
