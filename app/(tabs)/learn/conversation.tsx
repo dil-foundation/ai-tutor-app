@@ -43,6 +43,7 @@ interface ConversationState {
   isPlayingIntro: boolean; // New state for tracking intro playing animation
   isContinuingConversation: boolean; // New state for tracking continuing conversation animation
   isPlayingRetry: boolean; // New state for tracking retry playing animation
+  currentMessageText: string; // New state for tracking current message to display above animation
 }
 
 export default function ConversationScreen() {
@@ -64,6 +65,7 @@ export default function ConversationScreen() {
     isPlayingIntro: false,
     isContinuingConversation: false,
     isPlayingRetry: false,
+    currentMessageText: '',
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -145,6 +147,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_intro',
         isIntroAudioPlaying: true,
         isPlayingIntro: true,
+        currentMessageText: 'Welcome to your AI tutor conversation!',
       }));
 
       // Unload any previous intro sound
@@ -176,6 +179,7 @@ export default function ConversationScreen() {
             currentStep: 'waiting',
             isIntroAudioPlaying: false,
             isPlayingIntro: false,
+            currentMessageText: '', // Clear the message when intro ends
           }));
           
           // Start the conversation flow after intro audio
@@ -194,6 +198,7 @@ export default function ConversationScreen() {
         currentStep: 'waiting',
         isIntroAudioPlaying: false,
         isPlayingIntro: false,
+        currentMessageText: '', // Clear the message when intro ends
       }));
       setTimeout(() => {
         startRecording();
@@ -209,6 +214,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_await_next',
         isAwaitNextPlaying: true,
         isContinuingConversation: true,
+        currentMessageText: 'Nice! Let\'s try another sentence.',
       }));
 
       // Unload any previous await_next sound
@@ -240,6 +246,7 @@ export default function ConversationScreen() {
             currentStep: 'waiting',
             isAwaitNextPlaying: false,
             isContinuingConversation: false,
+            currentMessageText: '', // Clear the message when await next ends
           }));
           
           // Continue the conversation loop by starting to listen again
@@ -258,6 +265,7 @@ export default function ConversationScreen() {
         currentStep: 'waiting',
         isAwaitNextPlaying: false,
         isContinuingConversation: false,
+        currentMessageText: '', // Clear the message when await next ends
       }));
       setTimeout(() => {
         startRecording();
@@ -273,6 +281,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_retry',
         isRetryPlaying: true,
         isPlayingRetry: true,
+        currentMessageText: 'Try again. Please repeat the sentence.',
       }));
 
       // Unload any previous retry sound
@@ -304,6 +313,7 @@ export default function ConversationScreen() {
             currentStep: 'waiting',
             isRetryPlaying: false,
             isPlayingRetry: false,
+            currentMessageText: '', // Clear the message when retry ends
           }));
           
           // Continue the conversation by starting to listen again
@@ -322,6 +332,7 @@ export default function ConversationScreen() {
         currentStep: 'waiting',
         isRetryPlaying: false,
         isPlayingRetry: false,
+        currentMessageText: '', // Clear the message when retry ends
       }));
       setTimeout(() => {
         startRecording();
@@ -356,7 +367,7 @@ export default function ConversationScreen() {
       timestamp: new Date(),
     };
   
-    // Stop processing animation
+    // Stop processing animation and set current message text
     setState(prev => ({
       ...prev,
       isProcessingAudio: false,
@@ -366,6 +377,7 @@ export default function ConversationScreen() {
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      currentMessageText: data.response || 'AI response',
     }));
   
     // 🟡 Step 1: Handle `no_speech` step
@@ -446,6 +458,7 @@ export default function ConversationScreen() {
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      currentMessageText: '',
     }));
   };
 
@@ -476,6 +489,7 @@ export default function ConversationScreen() {
             ...prev, 
             currentStep: 'waiting',
             isAISpeaking: false,
+            currentMessageText: '', // Clear the message when AI speaking ends
           }));
         }
       });
@@ -511,6 +525,7 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        currentMessageText: '',
       }));
 
       // Helper to clear and set silence timer
@@ -592,6 +607,7 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        currentMessageText: '',
       }));
 
       await recordingRef.current.stopAndUnloadAsync();
@@ -659,6 +675,7 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        currentMessageText: '',
       }));
     }
   };
@@ -715,6 +732,7 @@ export default function ConversationScreen() {
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      currentMessageText: '',
     }));
   };
 
@@ -845,9 +863,14 @@ export default function ConversationScreen() {
         ]} />
       </View>
 
-      {/* Show processing animation overlay when processing audio */}
+      {/* Show animation overlays with current message text */}
       {state.isProcessingAudio ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/sent_audio_for_processing.json')}
             autoPlay
@@ -858,6 +881,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isListening ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/listening.json')}
             autoPlay
@@ -868,6 +896,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isVoiceDetected ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/voice_detected.json')}
             autoPlay
@@ -878,6 +911,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isAISpeaking ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/ai_speaking.json')}
             autoPlay
@@ -888,6 +926,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isPlayingIntro ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/ai_speaking.json')}
             autoPlay
@@ -898,6 +941,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isContinuingConversation ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/ai_speaking.json')}
             autoPlay
@@ -908,6 +956,11 @@ export default function ConversationScreen() {
         </View>
       ) : state.isPlayingRetry ? (
         <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
           <LottieView
             source={require('../../../assets/animations/ai_speaking.json')}
             autoPlay
@@ -916,16 +969,7 @@ export default function ConversationScreen() {
           />
           <Text style={styles.processingText}>AI Speaking</Text>
         </View>
-      ) : (
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-        >
-          {state.messages.map(renderMessage)}
-          {renderStatusIndicator()}
-        </ScrollView>
-      )}
+      ) : null}
 
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
@@ -1227,5 +1271,23 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     fontWeight: '500',
     textAlign: 'center',
+  },
+  messageBox: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    maxWidth: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  currentMessageText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 }); 
