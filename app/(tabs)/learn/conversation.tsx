@@ -13,10 +13,14 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Dimensions
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
+
+const { width, height } = Dimensions.get('window');
 
 interface Message {
   id: string;
@@ -867,13 +871,35 @@ export default function ConversationScreen() {
 
   // UI for real-time conversation mode
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#0B0E1C', '#1a1f3a', '#0B0E1C']}
+      style={styles.container}
+    >
+      {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.title}>AI Tutor Conversation</Text>
-        <View style={[
-          styles.connectionIndicator,
-          { backgroundColor: state.isConnected ? '#34C759' : '#FF3B30' }
-        ]} />
+        <LinearGradient
+          colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.iconContainer}>
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.iconGradient}
+              >
+                <Ionicons name="chatbubbles" size={24} color="#0B0E1C" />
+              </LinearGradient>
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>AI Tutor Conversation</Text>
+              <Text style={styles.subtitle}>Real-time learning experience</Text>
+            </View>
+            <View style={[
+              styles.connectionIndicator,
+              { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
+            ]} />
+          </View>
+        </LinearGradient>
       </View>
 
       {/* Show animation overlays with current message text */}
@@ -1003,7 +1029,12 @@ export default function ConversationScreen() {
       <View style={styles.bottomContainer}>
         {/* Wrong (X) button */}
         <TouchableOpacity style={styles.wrongButton} onPress={endConversation}>
-          <Ionicons name="close" size={32} color="#222" />
+          <LinearGradient
+            colors={['rgba(255, 107, 107, 0.2)', 'rgba(255, 107, 107, 0.1)']}
+            style={styles.wrongButtonGradient}
+          >
+            <Ionicons name="close" size={28} color="#FF6B6B" />
+          </LinearGradient>
         </TouchableOpacity>
         {/* Center mic/stop button */}
         <Animated.View style={{
@@ -1039,21 +1070,38 @@ export default function ConversationScreen() {
             disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry'}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={
-                state.currentStep === 'listening' 
-                  ? 'stop' 
-                  : state.currentStep === 'playing_intro'
-                    ? 'volume-high'
-                    : state.currentStep === 'playing_await_next'
-                      ? 'volume-high'
-                      : state.currentStep === 'playing_retry'
-                        ? 'volume-high'
-                        : 'mic'
+            <LinearGradient
+              colors={
+                state.currentStep === 'listening' && isTalking
+                  ? ['#00C853', '#4CAF50']
+                  : state.currentStep === 'listening'
+                    ? ['#58D68D', '#45B7A8']
+                    : state.currentStep === 'playing_intro'
+                      ? ['#FF9500', '#FF6B35']
+                      : state.currentStep === 'playing_await_next'
+                        ? ['#FF9500', '#FF6B35']
+                        : state.currentStep === 'playing_retry'
+                          ? ['#FF9500', '#FF6B35']
+                          : ['#58D68D', '#45B7A8']
               }
-              size={48}
-              color="white"
-            />
+              style={styles.micButtonGradient}
+            >
+              <Ionicons
+                name={
+                  state.currentStep === 'listening' 
+                    ? 'stop' 
+                    : state.currentStep === 'playing_intro'
+                      ? 'volume-high'
+                      : state.currentStep === 'playing_await_next'
+                        ? 'volume-high'
+                        : state.currentStep === 'playing_retry'
+                          ? 'volume-high'
+                          : 'mic'
+                }
+                size={48}
+                color="white"
+              />
+            </LinearGradient>
           </TouchableOpacity>
           {state.currentStep === 'waiting' && state.lastStopWasSilence && (
             <Text style={styles.silenceInfoLabel}>
@@ -1074,33 +1122,84 @@ export default function ConversationScreen() {
           )}
         </Animated.View>
       </View>
-    </View>
+
+      {/* Decorative Elements */}
+      <View style={styles.decorativeCircle1} />
+      <View style={styles.decorativeCircle2} />
+      <View style={styles.decorativeCircle3} />
+      <View style={styles.particle1} />
+      <View style={styles.particle2} />
+      <View style={styles.particle3} />
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    paddingTop: 60,
   },
   header: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  headerGradient: {
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.2)',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+  },
+  iconContainer: {
+    marginRight: 16,
+  },
+  iconGradient: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#B8B8B8',
+    fontWeight: '500',
   },
   connectionIndicator: {
     width: 12,
     height: 12,
     borderRadius: 6,
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 3,
   },
   messagesContainer: {
     flex: 1,
@@ -1213,29 +1312,24 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
   },
   centerMicButtonIdle: {
-    backgroundColor: '#222',
+    backgroundColor: 'transparent',
   },
   centerMicButtonActive: {
-    backgroundColor: '#2196F3',
+    backgroundColor: 'transparent',
   },
   centerMicButtonTalking: {
-    backgroundColor: '#00C853', // Green when talking
+    backgroundColor: 'transparent',
   },
   centerMicButtonIntro: {
-    backgroundColor: '#FF9500', // Orange when playing intro
+    backgroundColor: 'transparent',
   },
   centerMicButtonAwaitNext: {
-    backgroundColor: '#FF9500', // Orange when playing await_next
+    backgroundColor: 'transparent',
   },
   centerMicButtonRetry: {
-    backgroundColor: '#FF9500', // Orange when playing retry
+    backgroundColor: 'transparent',
   },
   wrongButton: {
     position: 'absolute',
@@ -1244,51 +1338,64 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
   },
   tapToSpeakLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#888',
+    color: '#B8B8B8',
     textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   silenceInfoLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#888',
+    color: '#B8B8B8',
     textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   introLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#888',
+    color: '#B8B8B8',
     textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   awaitNextLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#888',
+    color: '#B8B8B8',
     textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   retryLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#888',
+    color: '#B8B8B8',
     textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   processingOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    marginTop: -80, // Move everything up by 60 pixels
+    marginTop: -120, // Move everything up by 120 pixels
   },
   processingAnimation: {
     width: 200,
@@ -1297,26 +1404,119 @@ const styles = StyleSheet.create({
   processingText: {
     marginTop: 20,
     fontSize: 18,
-    color: '#1C1C1E',
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontWeight: '600',
     textAlign: 'center',
+    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   messageBox: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20,
+    borderRadius: 16,
     marginBottom: 20,
-    maxWidth: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    maxWidth: '85%',
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.2)',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    backdropFilter: 'blur(10px)',
   },
   currentMessageText: {
     fontSize: 16,
-    color: '#1C1C1E',
+    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 22,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  wrongButtonGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  micButtonGradient: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    top: height * 0.15,
+    right: -60,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(88, 214, 141, 0.08)',
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    bottom: height * 0.25,
+    left: -40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(88, 214, 141, 0.06)',
+  },
+  decorativeCircle3: {
+    position: 'absolute',
+    top: height * 0.7,
+    right: -30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(88, 214, 141, 0.04)',
+  },
+  particle1: {
+    position: 'absolute',
+    top: height * 0.3,
+    left: width * 0.1,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#58D68D',
+    opacity: 0.6,
+  },
+  particle2: {
+    position: 'absolute',
+    top: height * 0.6,
+    right: width * 0.15,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#45B7A8',
+    opacity: 0.4,
+  },
+  particle3: {
+    position: 'absolute',
+    bottom: height * 0.3,
+    left: width * 0.2,
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#58D68D',
+    opacity: 0.5,
   },
 }); 
