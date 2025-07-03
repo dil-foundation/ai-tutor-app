@@ -9,7 +9,7 @@ export default function LearnLayout() {
     const checkFirstTime = async () => {
 
       // ⚠️ TEMP: For testing only — comment this out in production
-      // await AsyncStorage.removeItem('hasVisitedLearn');
+      await AsyncStorage.removeItem('hasVisitedLearn');
       
       const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
       console.log('hasVisited', hasVisited);
