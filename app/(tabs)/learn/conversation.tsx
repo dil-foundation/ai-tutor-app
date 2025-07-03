@@ -324,41 +324,56 @@ export default function ConversationScreen() {
 
   const handleWebSocketMessage = (data: any) => {
     console.log('Received WebSocket message:', data);
-    
+  
     const newMessage: Message = {
       id: Date.now().toString(),
       text: data.response || 'AI response',
       isAI: true,
       timestamp: new Date(),
     };
-
+  
+    // 🟡 Step 1: Handle `no_speech` step
+    if (data.step === 'no_speech') {
+      console.log('🟡 No speech detected from backend');
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, newMessage],
+        currentStep: 'waiting',
+        lastStopWasSilence: true, // ✅ Triggers "No speech detected" UI
+      }));
+      return; // 🛑 Don't proceed further
+    }
+  
+    // 🟢 Step 2: Default message update
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, newMessage],
       currentStep: data.step === 'retry' ? 'waiting' : 'waiting',
+      lastStopWasSilence: false, // ✅ Reset silence flag for other steps
     }));
-
-    // Handle retry step - play AI audio and continue conversation
+  
+    // 🔁 Step 3: Handle retry playback
     if (data.step === 'retry') {
-      console.log('Received retry step, playing AI audio and continuing conversation...');
+      console.log('🔁 Received retry step, playing retry audio...');
       setTimeout(() => {
         playRetryAudio();
       }, 500);
     }
-
-    // Handle await_next step - play audio and continue conversation loop
+  
+    // 🔁 Step 4: Handle await_next playback
     if (data.step === 'await_next') {
-      console.log('Received await_next step, playing audio and continuing conversation...');
+      console.log('✅ Received await_next step, playing next audio...');
       setTimeout(() => {
         playAwaitNextAudio();
       }, 500);
     }
-
-    // Auto-scroll to bottom
+  
+    // 📜 Step 5: Auto-scroll UI
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
+  
 
   const handleAudioData = async (audioBuffer: ArrayBuffer) => {
     try {
