@@ -44,6 +44,7 @@ interface ConversationState {
   isContinuingConversation: boolean; // New state for tracking continuing conversation animation
   isPlayingRetry: boolean; // New state for tracking retry playing animation
   currentMessageText: string; // New state for tracking current message to display above animation
+  isNoSpeechDetected: boolean; // New state for tracking no speech detected animation
 }
 
 export default function ConversationScreen() {
@@ -66,6 +67,7 @@ export default function ConversationScreen() {
     isContinuingConversation: false,
     isPlayingRetry: false,
     currentMessageText: '',
+    isNoSpeechDetected: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -378,6 +380,7 @@ export default function ConversationScreen() {
       isContinuingConversation: false,
       isPlayingRetry: false,
       currentMessageText: data.response || 'AI response',
+      isNoSpeechDetected: false,
     }));
   
     // 🟡 Step 1: Handle `no_speech` step
@@ -459,6 +462,7 @@ export default function ConversationScreen() {
       isContinuingConversation: false,
       isPlayingRetry: false,
       currentMessageText: '',
+      isNoSpeechDetected: false,
     }));
   };
 
@@ -526,6 +530,8 @@ export default function ConversationScreen() {
         isContinuingConversation: false,
         isPlayingRetry: false,
         currentMessageText: '',
+        isNoSpeechDetected: false,
+        lastStopWasSilence: false,
       }));
 
       // Helper to clear and set silence timer
@@ -608,6 +614,7 @@ export default function ConversationScreen() {
         isContinuingConversation: false,
         isPlayingRetry: false,
         currentMessageText: '',
+        isNoSpeechDetected: false,
       }));
 
       await recordingRef.current.stopAndUnloadAsync();
@@ -627,6 +634,10 @@ export default function ConversationScreen() {
           ...prev,
           lastStopWasSilence: true,
           currentStep: 'waiting',
+          isListening: false,
+          isVoiceDetected: false,
+          isNoSpeechDetected: true,
+          currentMessageText: 'No speech detected. Tap the mic to try again.',
         }));
       } else if (!hadValidSpeech) {
         console.log('Recording too short - no audio sent');
@@ -676,6 +687,7 @@ export default function ConversationScreen() {
         isContinuingConversation: false,
         isPlayingRetry: false,
         currentMessageText: '',
+        isNoSpeechDetected: false,
       }));
     }
   };
@@ -733,6 +745,7 @@ export default function ConversationScreen() {
       isContinuingConversation: false,
       isPlayingRetry: false,
       currentMessageText: '',
+      isNoSpeechDetected: false,
     }));
   };
 
@@ -968,6 +981,21 @@ export default function ConversationScreen() {
             style={styles.processingAnimation}
           />
           <Text style={styles.processingText}>AI Speaking</Text>
+        </View>
+      ) : state.isNoSpeechDetected ? (
+        <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
+          <LottieView
+            source={require('../../../assets/animations/tap_the_mic_try_again.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>No Speech Detected</Text>
         </View>
       ) : null}
 
@@ -1260,6 +1288,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F2F2F7',
+    marginTop: -80, // Move everything up by 60 pixels
   },
   processingAnimation: {
     width: 200,
