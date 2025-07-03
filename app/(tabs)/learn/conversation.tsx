@@ -15,6 +15,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
 
 interface Message {
@@ -35,6 +36,11 @@ interface ConversationState {
   isIntroAudioPlaying: boolean;
   isAwaitNextPlaying: boolean;
   isRetryPlaying: boolean;
+  isProcessingAudio: boolean;
+  isListening: boolean; // New state for tracking listening animation
+  isVoiceDetected: boolean; // New state for tracking voice detected animation
+  isAISpeaking: boolean; // New state for tracking AI speaking animation
+  isPlayingIntro: boolean; // New state for tracking intro playing animation
 }
 
 export default function ConversationScreen() {
@@ -49,6 +55,11 @@ export default function ConversationScreen() {
     isIntroAudioPlaying: false,
     isAwaitNextPlaying: false,
     isRetryPlaying: false,
+    isProcessingAudio: false,
+    isListening: false,
+    isVoiceDetected: false,
+    isAISpeaking: false,
+    isPlayingIntro: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -128,7 +139,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'playing_intro',
-        isIntroAudioPlaying: true 
+        isIntroAudioPlaying: true,
+        isPlayingIntro: true,
       }));
 
       // Unload any previous intro sound
@@ -158,7 +170,8 @@ export default function ConversationScreen() {
           setState(prev => ({ 
             ...prev, 
             currentStep: 'waiting',
-            isIntroAudioPlaying: false 
+            isIntroAudioPlaying: false,
+            isPlayingIntro: false,
           }));
           
           // Start the conversation flow after intro audio
@@ -175,7 +188,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'waiting',
-        isIntroAudioPlaying: false 
+        isIntroAudioPlaying: false,
+        isPlayingIntro: false,
       }));
       setTimeout(() => {
         startRecording();
@@ -332,6 +346,16 @@ export default function ConversationScreen() {
       timestamp: new Date(),
     };
   
+    // Stop processing animation
+    setState(prev => ({
+      ...prev,
+      isProcessingAudio: false,
+      isListening: false,
+      isVoiceDetected: false,
+      isAISpeaking: false,
+      isPlayingIntro: false,
+    }));
+  
     // 🟡 Step 1: Handle `no_speech` step
     if (data.step === 'no_speech') {
       console.log('🟡 No speech detected from backend');
@@ -388,6 +412,7 @@ export default function ConversationScreen() {
         ...prev,
         currentAudioUri: audioUri,
         currentStep: 'speaking',
+        isAISpeaking: true,
       }));
   
       await playAudio(audioUri);
@@ -402,6 +427,11 @@ export default function ConversationScreen() {
       ...prev,
       isConnected: false,
       currentStep: 'error',
+      isProcessingAudio: false, // Stop processing animation on connection error
+      isListening: false,
+      isVoiceDetected: false,
+      isAISpeaking: false,
+      isPlayingIntro: false,
     }));
   };
 
@@ -428,7 +458,11 @@ export default function ConversationScreen() {
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
-          setState(prev => ({ ...prev, currentStep: 'waiting' }));
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isAISpeaking: false,
+          }));
         }
       });
 
@@ -454,7 +488,14 @@ export default function ConversationScreen() {
     }
 
     try {
-      setState(prev => ({ ...prev, currentStep: 'listening' }));
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'listening',
+        isListening: true,
+        isVoiceDetected: false,
+        isAISpeaking: false,
+        isPlayingIntro: false,
+      }));
 
       // Helper to clear and set silence timer
       const resetSilenceTimer = () => {
@@ -489,6 +530,11 @@ export default function ConversationScreen() {
               if (!isTalking) {
                 setIsTalking(true);
                 speechStartTimeRef.current = currentTime;
+                setState(prev => ({ 
+                  ...prev, 
+                  isVoiceDetected: true,
+                  isListening: false,
+                }));
               }
               resetSilenceTimer(); // Reset silence timer when talking
             } else {
@@ -496,6 +542,11 @@ export default function ConversationScreen() {
               if (isTalking) {
                 setIsTalking(false);
                 speechStartTimeRef.current = null;
+                setState(prev => ({ 
+                  ...prev, 
+                  isVoiceDetected: false,
+                  isListening: true,
+                }));
               }
               // Don't reset timer - let it count down
             }
@@ -516,7 +567,14 @@ export default function ConversationScreen() {
     if (!recordingRef.current) return;
 
     try {
-      setState(prev => ({ ...prev, currentStep: 'waiting' }));
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isListening: false,
+        isVoiceDetected: false,
+        isAISpeaking: false,
+        isPlayingIntro: false,
+      }));
 
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
@@ -564,25 +622,24 @@ export default function ConversationScreen() {
       // Send JSON stringified base64 payload via WebSocket
       sendLearnMessage(JSON.stringify(messagePayload));
   
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        text: "Sent audio for processing...",
-        isAI: false,
-        timestamp: new Date(),
-      };
-  
+      // Set processing state to show animation
       setState(prev => ({
         ...prev,
-        messages: [...prev.messages, userMessage],
-        currentStep: 'waiting',
+        isProcessingAudio: true,
+        currentStep: 'processing',
       }));
   
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
     } catch (error) {
       console.error('Failed to convert/send audio:', error);
-      setState(prev => ({ ...prev, currentStep: 'error' }));
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'error',
+        isProcessingAudio: false, // Stop processing animation on error
+        isListening: false,
+        isVoiceDetected: false,
+        isAISpeaking: false,
+        isPlayingIntro: false,
+      }));
     }
   };
   
@@ -627,29 +684,46 @@ export default function ConversationScreen() {
       retrySoundRef.current.unloadAsync();
     }
     closeLearnSocket();
+    
+    // Reset animation states
+    setState(prev => ({
+      ...prev,
+      isProcessingAudio: false,
+      isListening: false,
+      isVoiceDetected: false,
+      isAISpeaking: false,
+      isPlayingIntro: false,
+    }));
   };
 
-  const renderMessage = (message: Message) => (
-    <View key={message.id} style={[
-      styles.messageContainer,
-      message.isAI ? styles.aiMessage : styles.userMessage
-    ]}>
-      <View style={[
-        styles.messageBubble,
-        message.isAI ? styles.aiBubble : styles.userBubble
+  const renderMessage = (message: Message) => {
+    // Don't render the "Sent audio for processing..." message
+    if (message.text === "Sent audio for processing...") {
+      return null;
+    }
+    
+    return (
+      <View key={message.id} style={[
+        styles.messageContainer,
+        message.isAI ? styles.aiMessage : styles.userMessage
       ]}>
-        <Text style={[
-          styles.messageText,
-          message.isAI ? styles.aiText : styles.userText
+        <View style={[
+          styles.messageBubble,
+          message.isAI ? styles.aiBubble : styles.userBubble
         ]}>
-          {message.text}
-        </Text>
-        <Text style={styles.timestamp}>
-          {message.timestamp.toLocaleTimeString()}
-        </Text>
+          <Text style={[
+            styles.messageText,
+            message.isAI ? styles.aiText : styles.userText
+          ]}>
+            {message.text}
+          </Text>
+          <Text style={styles.timestamp}>
+            {message.timestamp.toLocaleTimeString()}
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderStatusIndicator = () => {
     switch (state.currentStep) {
@@ -749,14 +823,67 @@ export default function ConversationScreen() {
         ]} />
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-      >
-        {state.messages.map(renderMessage)}
-        {renderStatusIndicator()}
-      </ScrollView>
+      {/* Show processing animation overlay when processing audio */}
+      {state.isProcessingAudio ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/sent_audio_for_processing.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Audio is processing</Text>
+        </View>
+      ) : state.isListening ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/listening.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Listening</Text>
+        </View>
+      ) : state.isVoiceDetected ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/voice_detected.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Voice detecting</Text>
+        </View>
+      ) : state.isAISpeaking ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>AI Speaking</Text>
+        </View>
+      ) : state.isPlayingIntro ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Playing Introduction</Text>
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+        >
+          {state.messages.map(renderMessage)}
+          {renderStatusIndicator()}
+        </ScrollView>
+      )}
 
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
@@ -1040,6 +1167,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#888',
+    textAlign: 'center',
+  },
+  processingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+  },
+  processingAnimation: {
+    width: 200,
+    height: 200,
+  },
+  processingText: {
+    marginTop: 20,
+    fontSize: 18,
+    color: '#1C1C1E',
+    fontWeight: '500',
     textAlign: 'center',
   },
 }); 
