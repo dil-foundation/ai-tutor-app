@@ -3,7 +3,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,18 +30,52 @@ export default function GreetingScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
   const [lineAnimations, setLineAnimations] = useState<Animated.Value[]>([]);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  
+  // Add sound reference to manage audio instance
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     let lineTimeouts: number[] = [];
 
     const playGreeting = async () => {
+      // Prevent multiple audio instances
+      if (isAudioPlaying || hasStartedRef.current) {
+        return;
+      }
+      
+      // Check if user has already visited this screen
       try {
+        const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
+        if (hasVisited === 'true') {
+          // User has already visited, skip audio and show content directly
+          setIsAudioFinished(true);
+          revealLines();
+          return;
+        }
+      } catch (error) {
+        console.log('Error checking visit status:', error);
+      }
+      
+      hasStartedRef.current = true;
+      setIsAudioPlaying(true);
+
+      try {
+        // Clean up any existing sound first
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+
         const { sound } = await Audio.Sound.createAsync(
           {
             uri: 'https://docs.google.com/uc?export=download&id=1xmM93cgS7LjYlvt-0Na8uoIqFqqgkLus',
           },
-          { shouldPlay: true }
+          { shouldPlay: false } // Don't auto-play, we'll control it
         );
+        
+        soundRef.current = sound;
         
         // Start revealing lines immediately when audio starts
         revealLines();
@@ -50,6 +85,7 @@ export default function GreetingScreen() {
           if (status.isLoaded && status.didJustFinish) {
             await AsyncStorage.setItem('hasVisitedLearn', 'true');
             setIsAudioFinished(true);
+            setIsAudioPlaying(false);
             
             // Animate the chat container after animation ends
             Animated.parallel([
@@ -68,6 +104,7 @@ export default function GreetingScreen() {
         });
       } catch (error) {
         console.log('Audio error:', error);
+        setIsAudioPlaying(false);
         // If audio fails, still show lines
         revealLines();
       }
@@ -100,11 +137,51 @@ export default function GreetingScreen() {
     playGreeting();
 
     return () => {
+      // Cleanup function
       lineTimeouts.forEach(clearTimeout);
+      
+      // Clean up audio
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(console.error);
+        soundRef.current = null;
+      }
+      setIsAudioPlaying(false);
+      hasStartedRef.current = false;
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
+
+  // Handle screen focus/blur to manage audio
+  useFocusEffect(
+    React.useCallback(() => {
+      // When screen comes into focus, ensure audio is not playing if we've already finished
+      if (isAudioFinished) {
+        if (soundRef.current) {
+          soundRef.current.unloadAsync().catch(console.error);
+          soundRef.current = null;
+        }
+        setIsAudioPlaying(false);
+        hasStartedRef.current = true; // Prevent restarting
+      }
+      
+      return () => {
+        // When screen loses focus, stop audio
+        if (soundRef.current) {
+          soundRef.current.unloadAsync().catch(console.error);
+          soundRef.current = null;
+        }
+        setIsAudioPlaying(false);
+      };
+    }, [isAudioFinished])
+  );
 
   const handleContinue = () => {
+    // Clean up audio before navigating
+    if (soundRef.current) {
+      soundRef.current.unloadAsync().catch(console.error);
+      soundRef.current = null;
+    }
+    setIsAudioPlaying(false);
+    hasStartedRef.current = false;
     router.replace('/(tabs)/learn');
   };
 
