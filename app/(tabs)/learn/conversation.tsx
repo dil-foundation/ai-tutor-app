@@ -913,7 +913,7 @@ export default function ConversationScreen() {
             loop
             style={styles.processingAnimation}
           />
-          <Text style={styles.processingText}>Audio is processing</Text>
+          <Text style={styles.processingText}>Audio is processing...</Text>
         </View>
       ) : state.isListening ? (
         <View style={styles.processingOverlay}>
@@ -1026,12 +1026,17 @@ export default function ConversationScreen() {
       <View style={styles.bottomContainer}>
         {/* Wrong (X) button */}
         <TouchableOpacity style={styles.wrongButton} onPress={endConversation}>
-          <LinearGradient
-            colors={['rgba(255, 107, 107, 0.2)', 'rgba(255, 107, 107, 0.1)']}
-            style={styles.wrongButtonGradient}
-          >
-            <Ionicons name="close" size={28} color="#000000" />
-          </LinearGradient>
+          <View style={styles.wrongButtonContainer}>
+            <LinearGradient
+              colors={['#FFFFFF', '#F8F9FA']}
+              style={styles.wrongButtonGradient}
+            >
+              <View style={styles.wrongButtonInner}>
+                <Ionicons name="close" size={24} color="#000000" />
+              </View>
+            </LinearGradient>
+            <View style={styles.wrongButtonShadow} />
+          </View>
         </TouchableOpacity>
         {/* Center mic/stop button */}
         <Animated.View style={{
@@ -1332,11 +1337,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 32,
     bottom: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  wrongButtonContainer: {
+    position: 'relative',
+    width: 64,
+    height: 64,
   },
   tapToSpeakLabel: {
     marginTop: 12,
@@ -1412,19 +1421,38 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   wrongButtonGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  wrongButtonInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  wrongButtonShadow: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    zIndex: -1,
   },
   micButtonGradient: {
     width: 120,
