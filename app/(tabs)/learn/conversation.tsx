@@ -871,10 +871,7 @@ export default function ConversationScreen() {
 
   // UI for real-time conversation mode
   return (
-    <LinearGradient
-      colors={['#0B0E1C', '#1a1f3a', '#0B0E1C']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <LinearGradient
@@ -887,7 +884,7 @@ export default function ConversationScreen() {
                 colors={['#58D68D', '#45B7A8']}
                 style={styles.iconGradient}
               >
-                <Ionicons name="chatbubbles" size={24} color="#0B0E1C" />
+                <Ionicons name="chatbubbles" size={24} color="#000000" />
               </LinearGradient>
             </View>
             <View style={styles.titleContainer}>
@@ -1033,7 +1030,7 @@ export default function ConversationScreen() {
             colors={['rgba(255, 107, 107, 0.2)', 'rgba(255, 107, 107, 0.1)']}
             style={styles.wrongButtonGradient}
           >
-            <Ionicons name="close" size={28} color="#FF6B6B" />
+            <Ionicons name="close" size={28} color="#000000" />
           </LinearGradient>
         </TouchableOpacity>
         {/* Center mic/stop button */}
@@ -1130,7 +1127,7 @@ export default function ConversationScreen() {
       <View style={styles.particle1} />
       <View style={styles.particle2} />
       <View style={styles.particle3} />
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -1138,6 +1135,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: 24,
@@ -1147,12 +1145,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.2)',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 12,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#F8F9FA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1168,11 +1167,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    backgroundColor: '#E9ECEF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   titleContainer: {
     flex: 1,
@@ -1180,26 +1180,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#000000',
     marginBottom: 4,
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: '#B8B8B8',
+    color: '#6C757D',
     fontWeight: '500',
   },
   connectionIndicator: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   messagesContainer: {
     flex: 1,
@@ -1344,58 +1341,43 @@ const styles = StyleSheet.create({
   tapToSpeakLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   silenceInfoLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   introLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   awaitNextLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   retryLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   processingOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -120, // Move everything up by 120 pixels
+    marginTop: -160, // Move everything up by 140 pixels
   },
   processingAnimation: {
     width: 200,
@@ -1404,37 +1386,30 @@ const styles = StyleSheet.create({
   processingText: {
     marginTop: 20,
     fontSize: 18,
-    color: '#FFFFFF',
+    color: '#000000',
     fontWeight: '600',
     textAlign: 'center',
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   messageBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#F8F9FA',
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
     maxWidth: '85%',
     borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.2)',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-    backdropFilter: 'blur(10px)',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
   },
   currentMessageText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#000000',
     textAlign: 'center',
     lineHeight: 22,
     fontWeight: '500',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   wrongButtonGradient: {
     width: 56,
@@ -1443,12 +1418,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 107, 0.3)',
-    shadowColor: '#FF6B6B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    borderColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   micButtonGradient: {
     width: 120,
@@ -1456,11 +1432,11 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   decorativeCircle1: {
     position: 'absolute',
@@ -1469,7 +1445,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(88, 214, 141, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
   },
   decorativeCircle2: {
     position: 'absolute',
@@ -1478,7 +1454,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(88, 214, 141, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   decorativeCircle3: {
     position: 'absolute',
@@ -1487,7 +1463,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(88, 214, 141, 0.04)',
+    backgroundColor: 'rgba(0, 0, 0, 0.015)',
   },
   particle1: {
     position: 'absolute',
@@ -1496,8 +1472,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#58D68D',
-    opacity: 0.6,
+    backgroundColor: '#6C757D',
+    opacity: 0.3,
   },
   particle2: {
     position: 'absolute',
@@ -1506,8 +1482,8 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#45B7A8',
-    opacity: 0.4,
+    backgroundColor: '#ADB5BD',
+    opacity: 0.2,
   },
   particle3: {
     position: 'absolute',
@@ -1516,7 +1492,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    backgroundColor: '#58D68D',
-    opacity: 0.5,
+    backgroundColor: '#CED4DA',
+    opacity: 0.25,
   },
 }); 
