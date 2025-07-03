@@ -41,6 +41,8 @@ interface ConversationState {
   isVoiceDetected: boolean; // New state for tracking voice detected animation
   isAISpeaking: boolean; // New state for tracking AI speaking animation
   isPlayingIntro: boolean; // New state for tracking intro playing animation
+  isContinuingConversation: boolean; // New state for tracking continuing conversation animation
+  isPlayingRetry: boolean; // New state for tracking retry playing animation
 }
 
 export default function ConversationScreen() {
@@ -60,6 +62,8 @@ export default function ConversationScreen() {
     isVoiceDetected: false,
     isAISpeaking: false,
     isPlayingIntro: false,
+    isContinuingConversation: false,
+    isPlayingRetry: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -203,7 +207,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'playing_await_next',
-        isAwaitNextPlaying: true 
+        isAwaitNextPlaying: true,
+        isContinuingConversation: true,
       }));
 
       // Unload any previous await_next sound
@@ -233,7 +238,8 @@ export default function ConversationScreen() {
           setState(prev => ({ 
             ...prev, 
             currentStep: 'waiting',
-            isAwaitNextPlaying: false 
+            isAwaitNextPlaying: false,
+            isContinuingConversation: false,
           }));
           
           // Continue the conversation loop by starting to listen again
@@ -250,7 +256,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'waiting',
-        isAwaitNextPlaying: false 
+        isAwaitNextPlaying: false,
+        isContinuingConversation: false,
       }));
       setTimeout(() => {
         startRecording();
@@ -264,7 +271,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'playing_retry',
-        isRetryPlaying: true 
+        isRetryPlaying: true,
+        isPlayingRetry: true,
       }));
 
       // Unload any previous retry sound
@@ -294,7 +302,8 @@ export default function ConversationScreen() {
           setState(prev => ({ 
             ...prev, 
             currentStep: 'waiting',
-            isRetryPlaying: false 
+            isRetryPlaying: false,
+            isPlayingRetry: false,
           }));
           
           // Continue the conversation by starting to listen again
@@ -311,7 +320,8 @@ export default function ConversationScreen() {
       setState(prev => ({ 
         ...prev, 
         currentStep: 'waiting',
-        isRetryPlaying: false 
+        isRetryPlaying: false,
+        isPlayingRetry: false,
       }));
       setTimeout(() => {
         startRecording();
@@ -354,6 +364,8 @@ export default function ConversationScreen() {
       isVoiceDetected: false,
       isAISpeaking: false,
       isPlayingIntro: false,
+      isContinuingConversation: false,
+      isPlayingRetry: false,
     }));
   
     // 🟡 Step 1: Handle `no_speech` step
@@ -432,6 +444,8 @@ export default function ConversationScreen() {
       isVoiceDetected: false,
       isAISpeaking: false,
       isPlayingIntro: false,
+      isContinuingConversation: false,
+      isPlayingRetry: false,
     }));
   };
 
@@ -495,6 +509,8 @@ export default function ConversationScreen() {
         isVoiceDetected: false,
         isAISpeaking: false,
         isPlayingIntro: false,
+        isContinuingConversation: false,
+        isPlayingRetry: false,
       }));
 
       // Helper to clear and set silence timer
@@ -574,6 +590,8 @@ export default function ConversationScreen() {
         isVoiceDetected: false,
         isAISpeaking: false,
         isPlayingIntro: false,
+        isContinuingConversation: false,
+        isPlayingRetry: false,
       }));
 
       await recordingRef.current.stopAndUnloadAsync();
@@ -639,6 +657,8 @@ export default function ConversationScreen() {
         isVoiceDetected: false,
         isAISpeaking: false,
         isPlayingIntro: false,
+        isContinuingConversation: false,
+        isPlayingRetry: false,
       }));
     }
   };
@@ -693,6 +713,8 @@ export default function ConversationScreen() {
       isVoiceDetected: false,
       isAISpeaking: false,
       isPlayingIntro: false,
+      isContinuingConversation: false,
+      isPlayingRetry: false,
     }));
   };
 
@@ -873,6 +895,26 @@ export default function ConversationScreen() {
             style={styles.processingAnimation}
           />
           <Text style={styles.processingText}>Playing Introduction</Text>
+        </View>
+      ) : state.isContinuingConversation ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Continuing conversation</Text>
+        </View>
+      ) : state.isPlayingRetry ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>AI Speaking</Text>
         </View>
       ) : (
         <ScrollView
