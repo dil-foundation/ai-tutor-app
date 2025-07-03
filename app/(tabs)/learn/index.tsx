@@ -83,10 +83,7 @@ export default function LearnScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#0B0E1C', '#1a1f3a', '#0B0E1C']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <Animated.View
@@ -103,7 +100,7 @@ export default function LearnScreen() {
               colors={['#58D68D', '#45B7A8']}
               style={styles.iconGradient}
             >
-              <Ionicons name="mic" size={32} color="#0B0E1C" />
+              <Ionicons name="mic" size={32} color="#000000" />
             </LinearGradient>
           </View>
           <Text style={styles.headerTitle}>Speak to Translate</Text>
@@ -191,14 +188,14 @@ export default function LearnScreen() {
             >
               <View style={styles.buttonContent}>
                 <View style={styles.buttonIconContainer}>
-                  <Ionicons name="chatbubbles" size={24} color="#0B0E1C" />
+                  <Ionicons name="chatbubbles" size={24} color="#000000" />
                 </View>
                 <View style={styles.buttonTextContainer}>
                   <Text style={styles.buttonText}>Start Real-time Conversation</Text>
                   <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
                 </View>
                 <View style={styles.arrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color="#0B0E1C" />
+                  <Ionicons name="arrow-forward" size={20} color="#000000" />
                 </View>
               </View>
             </LinearGradient>
@@ -236,7 +233,7 @@ export default function LearnScreen() {
       <View style={styles.particle1} />
       <View style={styles.particle2} />
       <View style={styles.particle3} />
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -244,6 +241,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
@@ -262,25 +260,25 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.1,
     shadowRadius: 16,
     elevation: 12,
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.3)',
+    textShadowColor: 'rgba(88, 214, 141, 0.2)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -297,10 +295,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.2)',
-    shadowColor: '#58D68D',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#F8F9FA',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 24,
     elevation: 16,
     position: 'relative',
@@ -314,7 +313,7 @@ const styles = StyleSheet.create({
   },
   mainText: {
     fontSize: 20,
-    color: '#FFFFFF',
+    color: '#000000',
     textAlign: 'center',
     lineHeight: 28,
     fontWeight: '600',
@@ -322,7 +321,7 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     fontSize: 14,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -357,9 +356,9 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     borderRadius: 30,
     overflow: 'hidden',
-    shadowColor: '#58D68D',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
   },
@@ -376,7 +375,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(11, 14, 28, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -385,13 +384,13 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   buttonText: {
-    color: '#0B0E1C',
+    color: '#000000',
     fontWeight: 'bold',
     fontSize: 18,
     marginBottom: 4,
   },
   buttonSubtext: {
-    color: '#0B0E1C',
+    color: '#000000',
     fontSize: 14,
     opacity: 0.8,
   },
@@ -399,7 +398,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(11, 14, 28, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -410,17 +409,17 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   infoText: {
     fontSize: 12,
-    color: '#B8B8B8',
+    color: '#6C757D',
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 16,
@@ -432,7 +431,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(88, 214, 141, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
   },
   decorativeCircle2: {
     position: 'absolute',
@@ -441,7 +440,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(88, 214, 141, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   decorativeCircle3: {
     position: 'absolute',
@@ -450,7 +449,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(88, 214, 141, 0.04)',
+    backgroundColor: 'rgba(0, 0, 0, 0.015)',
   },
   decorativeCircle4: {
     position: 'absolute',
@@ -459,7 +458,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(88, 214, 141, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.025)',
   },
   particle1: {
     position: 'absolute',
@@ -468,8 +467,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#58D68D',
-    opacity: 0.6,
+    backgroundColor: '#6C757D',
+    opacity: 0.3,
   },
   particle2: {
     position: 'absolute',
@@ -478,8 +477,8 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#45B7A8',
-    opacity: 0.4,
+    backgroundColor: '#ADB5BD',
+    opacity: 0.2,
   },
   particle3: {
     position: 'absolute',
@@ -488,7 +487,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    backgroundColor: '#58D68D',
-    opacity: 0.5,
+    backgroundColor: '#CED4DA',
+    opacity: 0.25,
   },
 }); 

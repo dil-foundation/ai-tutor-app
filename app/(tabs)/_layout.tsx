@@ -1,5 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -12,12 +14,33 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#93E893',
-        tabBarInactiveTintColor: '#D2D5E1',
+        tabBarActiveTintColor: '#58D68D',
+        tabBarInactiveTintColor: '#6C757D',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#111629',
-          borderTopColor: '#1E293B',
+          backgroundColor: '#FFFFFF',
+          borderTopColor: 'rgba(0, 0, 0, 0.1)',
+          borderTopWidth: 1,
+          height: 85,
+          paddingTop: 8,
+          paddingBottom: 20,
+          paddingHorizontal: 16,
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 16,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginBottom: 2,
         },
       }}>
       <Tabs.Screen
@@ -25,7 +48,20 @@ export default function TabLayout() {
         options={{
           title: 'Learn',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="graduationcap.fill" color={color} />
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  style={styles.activeIconGradient}
+                >
+                  <IconSymbol size={24} name="graduationcap.fill" color="#FFFFFF" />
+                </LinearGradient>
+              ) : (
+                <View style={styles.inactiveIconContainer}>
+                  <IconSymbol size={24} name="graduationcap.fill" color={color} />
+                </View>
+              )}
+            </View>
           )
         }}
         listeners={{
@@ -40,7 +76,20 @@ export default function TabLayout() {
         options={{
           title: 'Practice',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="rectangle.inset.filled.on.rectangle" color={color} />
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  style={styles.activeIconGradient}
+                >
+                  <IconSymbol size={24} name="rectangle.inset.filled.on.rectangle" color="#FFFFFF" />
+                </LinearGradient>
+              ) : (
+                <View style={styles.inactiveIconContainer}>
+                  <IconSymbol size={24} name="rectangle.inset.filled.on.rectangle" color={color} />
+                </View>
+              )}
+            </View>
           )
         }}
         listeners={{
@@ -55,7 +104,20 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="chart.line.uptrend.xyaxis" color={color} />
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  style={styles.activeIconGradient}
+                >
+                  <IconSymbol size={24} name="chart.line.uptrend.xyaxis" color="#FFFFFF" />
+                </LinearGradient>
+              ) : (
+                <View style={styles.inactiveIconContainer}>
+                  <IconSymbol size={24} name="chart.line.uptrend.xyaxis" color={color} />
+                </View>
+              )}
+            </View>
           )
         }}
         listeners={{
@@ -70,7 +132,20 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  style={styles.activeIconGradient}
+                >
+                  <IconSymbol size={24} name="person.fill" color="#FFFFFF" />
+                </LinearGradient>
+              ) : (
+                <View style={styles.inactiveIconContainer}>
+                  <IconSymbol size={24} name="person.fill" color={color} />
+                </View>
+              )}
+            </View>
           )
         }}
         listeners={{
@@ -83,3 +158,32 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeIconGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  inactiveIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+});
