@@ -27,11 +27,14 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
   lastStopWasSilence: boolean;
+  isIntroAudioPlaying: boolean;
+  isAwaitNextPlaying: boolean;
+  isRetryPlaying: boolean;
 }
 
 export default function ConversationScreen() {
@@ -43,10 +46,17 @@ export default function ConversationScreen() {
     isConnected: false,
     inputText: '',
     lastStopWasSilence: false,
+    isIntroAudioPlaying: false,
+    isAwaitNextPlaying: false,
+    isRetryPlaying: false,
   });
 
+  const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const introSoundRef = useRef<Audio.Sound | null>(null);
+  const awaitNextSoundRef = useRef<Audio.Sound | null>(null);
+  const retrySoundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const [isTalking, setIsTalking] = useState(false); // True voice activity detection
   const silenceTimerRef = useRef<any>(null);
@@ -58,19 +68,44 @@ export default function ConversationScreen() {
   const SILENCE_DURATION = 3000; // 3 seconds of silence
   const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
 
+
   useEffect(() => {
     initializeAudio();
     connectToWebSocket();
-    // Auto-start recording if param is set
+    // Auto-start with intro audio if param is set
     if (autoStart === 'true') {
       setTimeout(() => {
-        startRecording();
+        playIntroAudio();
       }, 500);
     }
     return () => {
       cleanup();
     };
   }, []);
+
+  
+
+  useEffect(() => {
+    // Only auto-listen if we just finished speaking (AI audio done) and not during intro, await_next, or retry
+    if (
+      state.currentStep === 'waiting' &&
+      state.isConnected &&
+      autoStart === 'true' &&
+      !state.lastStopWasSilence &&
+      !state.isIntroAudioPlaying &&
+      !state.isAwaitNextPlaying &&
+      !state.isRetryPlaying &&
+      previousStepRef.current === 'speaking' 
+    ) {
+      if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
+        setTimeout(() => {
+          startRecording();
+        }, 600);
+      }
+    }
+    // Update previousStepRef after every state change
+    previousStepRef.current = state.currentStep;
+  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying]);
 
   const initializeAudio = async () => {
     try {
@@ -84,6 +119,189 @@ export default function ConversationScreen() {
     } catch (error) {
       console.error('Failed to initialize audio:', error);
       Alert.alert('Error', 'Failed to initialize audio permissions');
+    }
+  };
+
+  const playIntroAudio = async () => {
+    try {
+      console.log('Playing intro audio...');
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'playing_intro',
+        isIntroAudioPlaying: true 
+      }));
+
+      // Unload any previous intro sound
+      if (introSoundRef.current) {
+        await introSoundRef.current.unloadAsync();
+      }
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      // Create sound from the Google Drive URL
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/welcome_message.mp3' },
+        { shouldPlay: true }
+      );
+      introSoundRef.current = sound;
+
+      // Set up playback status update to handle completion
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Intro audio finished, starting conversation...');
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isIntroAudioPlaying: false 
+          }));
+          
+          // Start the conversation flow after intro audio
+          setTimeout(() => {
+            startRecording();
+          }, 1000);
+        }
+      });
+
+      await sound.playAsync();
+    } catch (error) {
+      console.error('Failed to play intro audio:', error);
+      // If intro audio fails, start conversation anyway
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isIntroAudioPlaying: false 
+      }));
+      setTimeout(() => {
+        startRecording();
+      }, 1000);
+    }
+  };
+
+  const playAwaitNextAudio = async () => {
+    try {
+      console.log('Playing await_next audio...');
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'playing_await_next',
+        isAwaitNextPlaying: true 
+      }));
+
+      // Unload any previous await_next sound
+      if (awaitNextSoundRef.current) {
+        await awaitNextSoundRef.current.unloadAsync();
+      }
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      // Create sound from the await_next audio URL
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/try_another_sentence.mp3' }, // Replace with your actual URL for "Nice! Let's try another sentence."
+        { shouldPlay: true }
+      );
+      awaitNextSoundRef.current = sound;
+
+      // Set up playback status update to handle completion
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Await next audio finished, continuing conversation...');
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isAwaitNextPlaying: false 
+          }));
+          
+          // Continue the conversation loop by starting to listen again
+          setTimeout(() => {
+            startRecording();
+          }, 1000);
+        }
+      });
+
+      await sound.playAsync();
+    } catch (error) {
+      console.error('Failed to play await_next audio:', error);
+      // If await_next audio fails, continue conversation anyway
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isAwaitNextPlaying: false 
+      }));
+      setTimeout(() => {
+        startRecording();
+      }, 1000);
+    }
+  };
+
+  const playRetryAudio = async () => {
+    try {
+      console.log('Playing retry audio...');
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'playing_retry',
+        isRetryPlaying: true 
+      }));
+
+      // Unload any previous retry sound
+      if (retrySoundRef.current) {
+        await retrySoundRef.current.unloadAsync();
+      }
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      // Create sound from the retry audio URL
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/retry_sentence.mp3' }, // Replace with your actual retry audio URL for "Try again. Please say: 'hello how are you'"
+        { shouldPlay: true }
+      );
+      retrySoundRef.current = sound;
+
+      // Set up playback status update to handle completion
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('Retry audio finished, continuing conversation...');
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isRetryPlaying: false 
+          }));
+          
+          // Continue the conversation by starting to listen again
+          setTimeout(() => {
+            startRecording();
+          }, 1000);
+        }
+      });
+
+      await sound.playAsync();
+    } catch (error) {
+      console.error('Failed to play retry audio:', error);
+      // If retry audio fails, continue conversation anyway
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isRetryPlaying: false 
+      }));
+      setTimeout(() => {
+        startRecording();
+      }, 1000);
     }
   };
 
@@ -119,6 +337,22 @@ export default function ConversationScreen() {
       messages: [...prev.messages, newMessage],
       currentStep: data.step === 'retry' ? 'waiting' : 'waiting',
     }));
+
+    // Handle retry step - play AI audio and continue conversation
+    if (data.step === 'retry') {
+      console.log('Received retry step, playing AI audio and continuing conversation...');
+      setTimeout(() => {
+        playRetryAudio();
+      }, 500);
+    }
+
+    // Handle await_next step - play audio and continue conversation loop
+    if (data.step === 'await_next') {
+      console.log('Received await_next step, playing audio and continuing conversation...');
+      setTimeout(() => {
+        playAwaitNextAudio();
+      }, 500);
+    }
 
     // Auto-scroll to bottom
     setTimeout(() => {
@@ -278,7 +512,7 @@ export default function ConversationScreen() {
         (Date.now() - speechStartTimeRef.current) >= MIN_SPEECH_DURATION;
 
       // Only upload/process if NOT stopped by silence AND had valid speech
-      if (uri && !stoppedBySilence && hadValidSpeech) {
+      if (uri && hadValidSpeech) {
         await uploadAudioAndSendMessage(uri);
       } else if (stoppedBySilence) {
         console.log('Recording stopped due to silence - no audio sent');
@@ -289,6 +523,7 @@ export default function ConversationScreen() {
         }));
       } else if (!hadValidSpeech) {
         console.log('Recording too short - no audio sent');
+        setState(prev => ({ ...prev, currentStep: 'waiting' }));
       }
       
       // Reset speech tracking
@@ -367,6 +602,15 @@ export default function ConversationScreen() {
     if (soundRef.current) {
       soundRef.current.unloadAsync();
     }
+    if (introSoundRef.current) {
+      introSoundRef.current.unloadAsync();
+    }
+    if (awaitNextSoundRef.current) {
+      awaitNextSoundRef.current.unloadAsync();
+    }
+    if (retrySoundRef.current) {
+      retrySoundRef.current.unloadAsync();
+    }
     closeLearnSocket();
   };
 
@@ -394,6 +638,27 @@ export default function ConversationScreen() {
 
   const renderStatusIndicator = () => {
     switch (state.currentStep) {
+      case 'playing_intro':
+        return (
+          <View style={styles.statusContainer}>
+            <Ionicons name="volume-high" size={20} color="#007AFF" />
+            <Text style={styles.statusText}>Playing Introduction...</Text>
+          </View>
+        );
+      case 'playing_await_next':
+        return (
+          <View style={styles.statusContainer}>
+            <Ionicons name="volume-high" size={20} color="#007AFF" />
+            <Text style={styles.statusText}>Continuing Conversation...</Text>
+          </View>
+        );
+      case 'playing_retry':
+        return (
+          <View style={styles.statusContainer}>
+            <Ionicons name="volume-high" size={20} color="#007AFF" />
+            <Text style={styles.statusText}>AI Speaking...</Text>
+          </View>
+        );
       case 'listening':
         return (
           <View style={styles.statusContainer}>
@@ -454,25 +719,6 @@ export default function ConversationScreen() {
     }
   }, [state.currentStep, isTalking]);
 
-  // After AI responds, auto-start listening again
-  useEffect(() => {
-    if (state.currentStep === 'waiting' && state.isConnected && autoStart === 'true') {
-      // Only auto-listen if last message was from AI
-      if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
-        setTimeout(() => {
-          startRecording();
-        }, 600);
-      }
-    }
-  }, [state.currentStep, state.messages, state.isConnected, autoStart]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    };
-  }, []);
-
   useEffect(() => {
     console.log('Current step:', state.currentStep);
   }, [state.currentStep]);
@@ -518,7 +764,13 @@ export default function ConversationScreen() {
                 ? styles.centerMicButtonTalking
                 : state.currentStep === 'listening'
                   ? styles.centerMicButtonActive
-                  : styles.centerMicButtonIdle
+                  : state.currentStep === 'playing_intro'
+                    ? styles.centerMicButtonIntro
+                    : state.currentStep === 'playing_await_next'
+                      ? styles.centerMicButtonAwaitNext
+                      : state.currentStep === 'playing_retry'
+                        ? styles.centerMicButtonRetry
+                        : styles.centerMicButtonIdle
             ]}
             onPress={() => {
               if (state.currentStep === 'listening') {
@@ -528,11 +780,21 @@ export default function ConversationScreen() {
                 startRecording();
               }
             }}
-            disabled={state.currentStep === 'processing' || state.currentStep === 'speaking'}
+            disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry'}
             activeOpacity={0.7}
           >
             <Ionicons
-              name={state.currentStep === 'listening' ? 'stop' : 'mic'}
+              name={
+                state.currentStep === 'listening' 
+                  ? 'stop' 
+                  : state.currentStep === 'playing_intro'
+                    ? 'volume-high'
+                    : state.currentStep === 'playing_await_next'
+                      ? 'volume-high'
+                      : state.currentStep === 'playing_retry'
+                        ? 'volume-high'
+                        : 'mic'
+              }
               size={48}
               color="white"
             />
@@ -544,6 +806,15 @@ export default function ConversationScreen() {
           )}
           {state.currentStep === 'waiting' && !state.lastStopWasSilence && (
             <Text style={styles.tapToSpeakLabel}>Tap to speak</Text>
+          )}
+          {state.currentStep === 'playing_intro' && (
+            <Text style={styles.introLabel}>Playing Introduction...</Text>
+          )}
+          {state.currentStep === 'playing_await_next' && (
+            <Text style={styles.awaitNextLabel}>Continuing Conversation...</Text>
+          )}
+          {state.currentStep === 'playing_retry' && (
+            <Text style={styles.retryLabel}>AI Speaking...</Text>
           )}
         </Animated.View>
       </View>
@@ -701,6 +972,15 @@ const styles = StyleSheet.create({
   centerMicButtonTalking: {
     backgroundColor: '#00C853', // Green when talking
   },
+  centerMicButtonIntro: {
+    backgroundColor: '#FF9500', // Orange when playing intro
+  },
+  centerMicButtonAwaitNext: {
+    backgroundColor: '#FF9500', // Orange when playing await_next
+  },
+  centerMicButtonRetry: {
+    backgroundColor: '#FF9500', // Orange when playing retry
+  },
   wrongButton: {
     position: 'absolute',
     left: 32,
@@ -724,6 +1004,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   silenceInfoLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+  },
+  introLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+  },
+  awaitNextLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+  },
+  retryLabel: {
     marginTop: 12,
     fontSize: 16,
     color: '#888',
