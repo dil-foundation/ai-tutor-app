@@ -65,7 +65,7 @@ const LoginScreen: React.FC = () => {
             if (response.ok) {
                 if (responseData.access_token && responseData.user_id) {
                     await saveAuthData(String(responseData.access_token), String(responseData.user_id));
-                    router.push('/(tabs)/practice' as any);
+                    router.push('/(tabs)/learn' as any);
                 } else {
                     Alert.alert('Login Failed', 'Invalid response from server.');
                 }

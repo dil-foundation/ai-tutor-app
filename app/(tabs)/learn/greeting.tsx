@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { getAuthData } from '../../utils/authStorage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,8 @@ export default function GreetingScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
   const [lineAnimations, setLineAnimations] = useState<Animated.Value[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Add sound reference to properly manage audio
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -132,20 +135,34 @@ export default function GreetingScreen() {
     };
 
     const initializeGreeting = async () => {
-      // Check if user has already visited this screen
       try {
+        // First check if user is authenticated
+        const { token } = await getAuthData();
+        if (!token) {
+          // User is not authenticated, redirect to login
+          router.replace('/(auth)/login');
+          return;
+        }
+        
+        setIsAuthenticated(true);
+        
+        // Check if user has already visited this screen
         const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
         if (hasVisitedLearn === 'true') {
           // User has already visited, skip to main learn screen
           router.replace('/(tabs)/learn');
           return;
         }
-      } catch (error) {
-        console.log('Error checking AsyncStorage:', error);
-      }
 
-      // Start the greeting if user hasn't visited
-      playGreeting();
+        // User is authenticated and hasn't visited, start the greeting
+        playGreeting();
+      } catch (error) {
+        console.log('Error checking authentication or AsyncStorage:', error);
+        // If there's an error, redirect to login for safety
+        router.replace('/(auth)/login');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     // Start everything immediately
@@ -167,6 +184,22 @@ export default function GreetingScreen() {
   const handleContinue = () => {
     router.replace('/(tabs)/learn');
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect to login)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -578,6 +611,16 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#CED4DA',
     opacity: 0.25,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
   },
 });
   

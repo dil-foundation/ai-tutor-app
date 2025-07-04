@@ -1,20 +1,31 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
+import { getAuthData } from '../../utils/authStorage';
 
 export default function LearnLayout() {
   const router = useRouter();
 
   useEffect(() => {
     const checkFirstTime = async () => {
+      try {
+        // First check if user is authenticated
+        const { token } = await getAuthData();
+        if (!token) {
+          // User is not authenticated, redirect to login
+          router.replace('/(auth)/login');
+          return;
+        }
 
-      // ⚠️ TEMP: For testing only — comment this out in production
-      await AsyncStorage.removeItem('hasVisitedLearn');
-      
-      const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
-      console.log('hasVisited', hasVisited);
-      if (!hasVisited) {
-        router.replace('/(tabs)/learn/greeting'); // Navigate to greeting screen
+        const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
+        console.log('hasVisited', hasVisited);
+        if (!hasVisited) {
+          router.replace('/(tabs)/learn/greeting'); // Navigate to greeting screen
+        }
+      } catch (error) {
+        console.log('Error checking authentication or AsyncStorage:', error);
+        // If there's an error, redirect to login for safety
+        router.replace('/(auth)/login');
       }
     };
 
