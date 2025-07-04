@@ -1079,14 +1079,17 @@ export default function ConversationScreen() {
                   : state.currentStep === 'listening'
                     ? ['#58D68D', '#45B7A8']
                     : state.currentStep === 'playing_intro'
-                      ? ['#FF9500', '#FF6B35']
+                      ? ['#58D68D', '#45B7A8']
                       : state.currentStep === 'playing_await_next'
-                        ? ['#FF9500', '#FF6B35']
+                        ? ['#58D68D', '#45B7A8']
                         : state.currentStep === 'playing_retry'
-                          ? ['#FF9500', '#FF6B35']
+                          ? ['#58D68D', '#45B7A8']
                           : ['#58D68D', '#45B7A8']
               }
-              style={styles.micButtonGradient}
+              style={[
+                styles.micButtonGradient,
+                state.currentStep === 'playing_intro' && styles.introButtonGradient
+              ]}
             >
               <Ionicons
                 name={
@@ -1100,7 +1103,7 @@ export default function ConversationScreen() {
                           ? 'volume-high'
                           : 'mic'
                 }
-                size={48}
+                size={state.currentStep === 'playing_intro' ? 52 : 48}
                 color="white"
               />
             </LinearGradient>
@@ -1364,23 +1367,23 @@ const styles = StyleSheet.create({
   introLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6C757D',
+    color: '#58D68D',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   awaitNextLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6C757D',
+    color: '#58D68D',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   retryLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6C757D',
+    color: '#58D68D',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   processingOverlay: {
     flex: 1,
@@ -1460,11 +1463,9 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+  },
+  introButtonGradient: {
+    // No additional styling - clean appearance
   },
   decorativeCircle1: {
     position: 'absolute',
