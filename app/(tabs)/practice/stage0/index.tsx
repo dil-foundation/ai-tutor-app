@@ -31,6 +31,7 @@ const lesson5Image = require('../../../../assets/images/05.png');   // Adjusted 
 const BeginnerLessonsScreen: React.FC = () => {
     const [fadeAnim] = useState(new Animated.Value(0));
     const [slideAnim] = useState(new Animated.Value(30));
+    const [scaleAnim] = useState(new Animated.Value(0.8));
     // Create individual scale animations for each lesson
     const [scaleAnims] = useState(() => 
         Array(5).fill(0).map(() => new Animated.Value(1))
@@ -47,6 +48,11 @@ const BeginnerLessonsScreen: React.FC = () => {
             Animated.timing(slideAnim, {
                 toValue: 0,
                 duration: 1000,
+                useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 800,
                 useNativeDriver: true,
             }),
         ]).start();
@@ -139,13 +145,14 @@ const BeginnerLessonsScreen: React.FC = () => {
     ];
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#111629" />
-            <View style={styles.container}>
-                {/* Header */}
+        <View style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            
+            {/* Header */}
+            <View style={styles.header}>
                 <Animated.View 
                     style={[
-                        styles.header,
+                        styles.headerContent,
                         {
                             opacity: fadeAnim,
                             transform: [{ translateY: slideAnim }],
@@ -154,165 +161,167 @@ const BeginnerLessonsScreen: React.FC = () => {
                 >
                     <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
                         <LinearGradient
-                            colors={['rgba(147, 232, 147, 0.2)', 'rgba(147, 232, 147, 0.1)']}
+                            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
                             style={styles.backButtonGradient}
                         >
-                            <Ionicons name="arrow-back" size={24} color="#93E893" />
+                            <Ionicons name="arrow-back" size={24} color="#58D68D" />
                         </LinearGradient>
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
                         <LinearGradient
-                            colors={['rgba(147, 232, 147, 0.1)', 'rgba(147, 232, 147, 0.05)']}
+                            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
                             style={styles.headerTitleGradient}
                         >
-                            <Ionicons name="library-outline" size={24} color="#93E893" />
+                            <Ionicons name="library-outline" size={24} color="#58D68D" />
                             <Text style={styles.headerTitle}>Beginner Lessons</Text>
                         </LinearGradient>
                     </View>
                     <View style={{ width: 56 }} />
                 </Animated.View>
-
-                <ScrollView 
-                    contentContainerStyle={styles.scrollViewContent}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Welcome Section */}
-                    <Animated.View 
-                        style={[
-                            styles.welcomeSection,
-                            {
-                                opacity: fadeAnim,
-                                transform: [{ translateY: slideAnim }],
-                            },
-                        ]}
-                    >
-                        <LinearGradient
-                            colors={['rgba(147, 232, 147, 0.1)', 'rgba(147, 232, 147, 0.05)']}
-                            style={styles.welcomeGradient}
-                        >
-                            <View style={styles.welcomeIconContainer}>
-                                <LinearGradient
-                                    colors={['#58D68D', '#45B7A8']}
-                                    style={styles.welcomeIconGradient}
-                                >
-                                    <Ionicons name="school" size={32} color="#FFFFFF" />
-                                </LinearGradient>
-                            </View>
-                            <Text style={styles.welcomeTitle}>Welcome to your first steps in English</Text>
-                            <Text style={styles.welcomeDescription}>
-                                The lessons are designed to introduce you to the basics of English, focusing on essential
-                                vocabulary and simple sentence structures.
-                            </Text>
-                        </LinearGradient>
-                    </Animated.View>
-
-                    {/* Lessons */}
-                    {lessons.map((lesson, index) => (
-                        <Animated.View
-                            key={lesson.id}
-                            style={[
-                                styles.lessonCard,
-                                {
-                                    opacity: fadeAnim,
-                                    transform: [
-                                        { translateY: slideAnim },
-                                        { scale: scaleAnims[index] }
-                                    ],
-                                },
-                            ]}
-                        >
-                            <TouchableOpacity
-                                style={styles.lessonButton}
-                                onPress={() => handleStartLesson(lesson.title, lesson.id, index)}
-                                activeOpacity={0.8}
-                            >
-                                <LinearGradient
-                                    colors={lesson.gradient}
-                                    style={styles.lessonGradient}
-                                >
-                                    <Image source={lesson.image} style={styles.lessonImage} />
-                                    <View style={styles.lessonContent}>
-                                        <View style={styles.lessonIconContainer}>
-                                            <Ionicons name={lesson.icon as any} size={24} color="#FFFFFF" />
-                                        </View>
-                                        <View style={styles.lessonTextContainer}>
-                                            <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                                            <Text style={styles.lessonDescription}>{lesson.description}</Text>
-                                        </View>
-                                        <View style={styles.startButtonContainer}>
-                                            <LinearGradient
-                                                colors={['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.1)']}
-                                                style={styles.startButtonGradient}
-                                            >
-                                                <Text style={styles.startButtonText}>Start</Text>
-                                                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                                            </LinearGradient>
-                                        </View>
-                                    </View>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    ))}
-
-                    {/* Progress Info Card */}
-                    <Animated.View
-                        style={[
-                            styles.progressCard,
-                            {
-                                opacity: fadeAnim,
-                                transform: [{ translateY: slideAnim }],
-                            },
-                        ]}
-                    >
-                        <LinearGradient
-                            colors={['rgba(147, 232, 147, 0.1)', 'rgba(147, 232, 147, 0.05)']}
-                            style={styles.progressGradient}
-                        >
-                            <View style={styles.progressContent}>
-                                <Ionicons name="trending-up" size={32} color="#93E893" />
-                                <Text style={styles.progressTitle}>Track Your Progress</Text>
-                                <Text style={styles.progressDescription}>
-                                    Complete all 5 lessons to unlock advanced stages
-                                </Text>
-                            </View>
-                        </LinearGradient>
-                    </Animated.View>
-                </ScrollView>
-
-                {/* Decorative Elements */}
-                <View style={styles.decorativeCircle1} />
-                <View style={styles.decorativeCircle2} />
-                <View style={styles.decorativeCircle3} />
-                <View style={styles.decorativeCircle4} />
-                
-                {/* Floating Particles */}
-                <View style={styles.particle1} />
-                <View style={styles.particle2} />
-                <View style={styles.particle3} />
             </View>
-        </SafeAreaView>
+
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Welcome Section */}
+                <Animated.View 
+                    style={[
+                        styles.welcomeSection,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    <LinearGradient
+                        colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                        style={styles.welcomeGradient}
+                    >
+                        <View style={styles.welcomeIconContainer}>
+                            <LinearGradient
+                                colors={['#58D68D', '#45B7A8']}
+                                style={styles.welcomeIconGradient}
+                            >
+                                <Ionicons name="school" size={32} color="#FFFFFF" />
+                            </LinearGradient>
+                        </View>
+                        <Text style={styles.welcomeTitle}>Welcome to your first steps in English</Text>
+                        <Text style={styles.welcomeDescription}>
+                            The lessons are designed to introduce you to the basics of English, focusing on essential
+                            vocabulary and simple sentence structures.
+                        </Text>
+                    </LinearGradient>
+                </Animated.View>
+
+                {/* Lessons */}
+                {lessons.map((lesson, index) => (
+                    <Animated.View
+                        key={lesson.id}
+                        style={[
+                            styles.lessonCard,
+                            {
+                                opacity: fadeAnim,
+                                transform: [
+                                    { translateY: slideAnim },
+                                    { scale: scaleAnims[index] }
+                                ],
+                            },
+                        ]}
+                    >
+                        <TouchableOpacity
+                            style={styles.lessonButton}
+                            onPress={() => handleStartLesson(lesson.title, lesson.id, index)}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={lesson.gradient}
+                                style={styles.lessonGradient}
+                            >
+                                <Image source={lesson.image} style={styles.lessonImage} />
+                                <View style={styles.lessonContent}>
+                                    <View style={styles.lessonIconContainer}>
+                                        <Ionicons name={lesson.icon as any} size={24} color="#FFFFFF" />
+                                    </View>
+                                    <View style={styles.lessonTextContainer}>
+                                        <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                                        <Text style={styles.lessonDescription}>{lesson.description}</Text>
+                                    </View>
+                                    <View style={styles.startButtonContainer}>
+                                        <LinearGradient
+                                            colors={['#58D68D', '#45B7A8']}
+                                            style={styles.startButtonGradient}
+                                        >
+                                            <View style={styles.startButtonContent}>
+                                                <Text style={styles.startButtonText}>Start</Text>
+                                                <View style={styles.startButtonIconContainer}>
+                                                    <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                                                </View>
+                                            </View>
+                                        </LinearGradient>
+                                    </View>
+                                </View>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </Animated.View>
+                ))}
+
+                {/* Progress Info Card */}
+                <Animated.View
+                    style={[
+                        styles.progressCard,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    <LinearGradient
+                        colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                        style={styles.progressGradient}
+                    >
+                        <View style={styles.progressContent}>
+                            <Ionicons name="trending-up" size={32} color="#58D68D" />
+                            <Text style={styles.progressTitle}>Track Your Progress</Text>
+                            <Text style={styles.progressDescription}>
+                                Complete all 5 lessons to unlock advanced stages
+                            </Text>
+                        </View>
+                    </LinearGradient>
+                </Animated.View>
+            </ScrollView>
+
+            {/* Decorative Elements */}
+            <View style={styles.decorativeCircle1} />
+            <View style={styles.decorativeCircle2} />
+            <View style={styles.decorativeCircle3} />
+            <View style={styles.decorativeCircle4} />
+            
+            {/* Floating Particles */}
+            <View style={styles.particle1} />
+            <View style={styles.particle2} />
+            <View style={styles.particle3} />
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#111629',
-    },
     container: {
         flex: 1,
-        backgroundColor: '#111629',
+        paddingTop: 60,
+        backgroundColor: '#FFFFFF',
     },
     header: {
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        marginBottom: 30,
+    },
+    headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1E293B',
-        backgroundColor: '#111629',
-        marginTop: 35,
+        width: '100%',
     },
     backButton: {
         padding: 8,
@@ -321,7 +330,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: 'rgba(147, 232, 147, 0.2)',
+        borderColor: 'rgba(88, 214, 141, 0.2)',
     },
     headerTitleContainer: {
         flex: 1,
@@ -334,30 +343,35 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(147, 232, 147, 0.2)',
+        borderColor: 'rgba(88, 214, 141, 0.2)',
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#93E893',
+        color: '#58D68D',
         marginLeft: 8,
     },
+    scrollView: {
+        flex: 1,
+    },
     scrollViewContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         paddingBottom: 40,
     },
     welcomeSection: {
-        backgroundColor: '#1E293B',
-        borderRadius: 15,
-        padding: 20,
-        marginTop: 20,
-        marginBottom: 20,
+        marginBottom: 30,
     },
     welcomeGradient: {
         borderRadius: 20,
         padding: 24,
         borderWidth: 1,
-        borderColor: 'rgba(147, 232, 147, 0.2)',
+        borderColor: 'rgba(88, 214, 141, 0.2)',
+        backgroundColor: '#F8F9FA',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 8,
         alignItems: 'center',
     },
     welcomeIconContainer: {
@@ -378,31 +392,28 @@ const styles = StyleSheet.create({
     welcomeTitle: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#93E893',
+        color: '#000000',
         marginBottom: 10,
         textAlign: 'center',
-        textShadowColor: 'rgba(147, 232, 147, 0.3)',
+        textShadowColor: 'rgba(88, 214, 141, 0.2)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
     welcomeDescription: {
         fontSize: 15,
-        color: '#D2D5E1',
+        color: '#6C757D',
         lineHeight: 22,
         textAlign: 'center',
     },
     lessonCard: {
-        backgroundColor: '#1E293B',
-        borderRadius: 15,
-        marginBottom: 20,
-        overflow: 'hidden',
+        marginBottom: 16,
     },
     lessonButton: {
         borderRadius: 20,
         overflow: 'hidden',
         shadowColor: '#000000',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.15,
         shadowRadius: 16,
         elevation: 12,
     },
@@ -450,17 +461,38 @@ const styles = StyleSheet.create({
     startButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 10,
+    },
+    startButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     startButtonText: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginRight: 6,
+        marginRight: 8,
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+    },
+    startButtonIconContainer: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     progressCard: {
         marginTop: 20,
@@ -469,8 +501,13 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 24,
         borderWidth: 1,
-        borderColor: 'rgba(147, 232, 147, 0.2)',
-        alignItems: 'center',
+        borderColor: 'rgba(88, 214, 141, 0.2)',
+        backgroundColor: '#F8F9FA',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 8,
     },
     progressContent: {
         alignItems: 'center',
@@ -478,13 +515,13 @@ const styles = StyleSheet.create({
     progressTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#93E893',
+        color: '#000000',
         marginTop: 12,
         marginBottom: 8,
     },
     progressDescription: {
         fontSize: 14,
-        color: '#D2D5E1',
+        color: '#6C757D',
         textAlign: 'center',
         lineHeight: 20,
     },
@@ -495,7 +532,7 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: 'rgba(147, 232, 147, 0.05)',
+        backgroundColor: 'rgba(0, 0, 0, 0.03)',
     },
     decorativeCircle2: {
         position: 'absolute',
@@ -504,7 +541,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(147, 232, 147, 0.03)',
+        backgroundColor: 'rgba(0, 0, 0, 0.02)',
     },
     decorativeCircle3: {
         position: 'absolute',
@@ -513,7 +550,7 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: 'rgba(147, 232, 147, 0.04)',
+        backgroundColor: 'rgba(0, 0, 0, 0.015)',
     },
     decorativeCircle4: {
         position: 'absolute',
@@ -522,7 +559,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(147, 232, 147, 0.06)',
+        backgroundColor: 'rgba(0, 0, 0, 0.025)',
     },
     particle1: {
         position: 'absolute',
@@ -531,7 +568,7 @@ const styles = StyleSheet.create({
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: '#93E893',
+        backgroundColor: '#6C757D',
         opacity: 0.3,
     },
     particle2: {
@@ -541,7 +578,7 @@ const styles = StyleSheet.create({
         width: 3,
         height: 3,
         borderRadius: 1.5,
-        backgroundColor: '#58D68D',
+        backgroundColor: '#ADB5BD',
         opacity: 0.2,
     },
     particle3: {
@@ -551,7 +588,7 @@ const styles = StyleSheet.create({
         width: 2,
         height: 2,
         borderRadius: 1,
-        backgroundColor: '#45B7A8',
+        backgroundColor: '#CED4DA',
         opacity: 0.25,
     },
 });
