@@ -44,7 +44,8 @@ export const connectLearnSocket = (
 
 export const sendLearnMessage = (message: string) => {
   if (socket && socket.readyState === WebSocket.OPEN) {
-    console.log("Sending message:", message);
+    // console.log("Sending message:", message);
+    console.log("sending message");
     socket.send(message);
   } else {
     console.error("WebSocket is not open. Current state:", socket?.readyState);

@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'accessToken';
 const USER_ID_KEY = 'userId';
@@ -27,6 +28,7 @@ export const clearAuthData = async () => {
   try {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(USER_ID_KEY);
+    await AsyncStorage.removeItem('hasVisitedLearn');
   } catch (error) {
     console.error('Error clearing auth data', error);
   }

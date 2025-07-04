@@ -32,7 +32,7 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
@@ -47,6 +47,7 @@ interface ConversationState {
   isPlayingIntro: boolean; // New state for tracking intro playing animation
   isContinuingConversation: boolean; // New state for tracking continuing conversation animation
   isPlayingRetry: boolean; // New state for tracking retry playing animation
+  isPlayingFeedback: boolean; // New state for tracking feedback playing animation
   currentMessageText: string; // New state for tracking current message to display above animation
   isNoSpeechDetected: boolean; // New state for tracking no speech detected animation
 }
@@ -70,6 +71,7 @@ export default function ConversationScreen() {
     isPlayingIntro: false,
     isContinuingConversation: false,
     isPlayingRetry: false,
+    isPlayingFeedback: false,
     currentMessageText: '',
     isNoSpeechDetected: false,
   });
@@ -78,8 +80,8 @@ export default function ConversationScreen() {
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const introSoundRef = useRef<Audio.Sound | null>(null);
-  const awaitNextSoundRef = useRef<Audio.Sound | null>(null);
   const retrySoundRef = useRef<Audio.Sound | null>(null);
+  const feedbackSoundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const [isTalking, setIsTalking] = useState(false); // True voice activity detection
   const silenceTimerRef = useRef<any>(null);
@@ -118,6 +120,7 @@ export default function ConversationScreen() {
       !state.isIntroAudioPlaying &&
       !state.isAwaitNextPlaying &&
       !state.isRetryPlaying &&
+      !state.isPlayingFeedback &&
       previousStepRef.current === 'speaking' 
     ) {
       if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
@@ -128,7 +131,7 @@ export default function ConversationScreen() {
     }
     // Update previousStepRef after every state change
     previousStepRef.current = state.currentStep;
-  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying]);
+  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying, state.isPlayingFeedback]);
 
   const initializeAudio = async () => {
     try {
@@ -212,72 +215,7 @@ export default function ConversationScreen() {
     }
   };
 
-  const playAwaitNextAudio = async () => {
-    try {
-      console.log('Playing await_next audio...');
-      setState(prev => ({ 
-        ...prev, 
-        currentStep: 'playing_await_next',
-        isAwaitNextPlaying: true,
-        isContinuingConversation: true,
-        currentMessageText: 'Nice! Let\'s try another sentence.',
-      }));
 
-      // Unload any previous await_next sound
-      if (awaitNextSoundRef.current) {
-        await awaitNextSoundRef.current.unloadAsync();
-      }
-
-      // Set audio mode for playback
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-      });
-
-      // Create sound from the await_next audio URL
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/try_another_sentence.mp3' }, // Replace with your actual URL for "Nice! Let's try another sentence."
-        { shouldPlay: true }
-      );
-      awaitNextSoundRef.current = sound;
-
-      // Set up playback status update to handle completion
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          console.log('Await next audio finished, continuing conversation...');
-          setState(prev => ({ 
-            ...prev, 
-            currentStep: 'waiting',
-            isAwaitNextPlaying: false,
-            isContinuingConversation: false,
-            currentMessageText: '', // Clear the message when await next ends
-          }));
-          
-          // Continue the conversation loop by starting to listen again
-          setTimeout(() => {
-            startRecording();
-          }, 1000);
-        }
-      });
-
-      await sound.playAsync();
-    } catch (error) {
-      console.error('Failed to play await_next audio:', error);
-      // If await_next audio fails, continue conversation anyway
-      setState(prev => ({ 
-        ...prev, 
-        currentStep: 'waiting',
-        isAwaitNextPlaying: false,
-        isContinuingConversation: false,
-        currentMessageText: '', // Clear the message when await next ends
-      }));
-      setTimeout(() => {
-        startRecording();
-      }, 1000);
-    }
-  };
 
   const playRetryAudio = async () => {
     try {
@@ -346,6 +284,49 @@ export default function ConversationScreen() {
     }
   };
 
+  const playFeedbackAudio = async () => {
+    try {
+      console.log('Playing feedback audio...');
+      // Set up feedback state but keep processing animation until audio arrives
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'playing_feedback',
+        isPlayingFeedback: true,
+        isProcessingAudio: true, // Keep processing animation until audio arrives
+        // Don't clear currentMessageText - keep the feedback message
+      }));
+
+      // Unload any previous feedback sound
+      if (feedbackSoundRef.current) {
+        await feedbackSoundRef.current.unloadAsync();
+      }
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      // The feedback audio will be received via handleAudioData
+      // This function just sets up the state for when audio arrives
+    } catch (error) {
+      console.error('Failed to set up feedback audio:', error);
+      // If feedback audio setup fails, continue conversation anyway
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isPlayingFeedback: false,
+        isProcessingAudio: false, // Stop processing animation on error
+        currentMessageText: '', // Clear the message when feedback ends
+      }));
+      setTimeout(() => {
+        startRecording();
+      }, 1000);
+    }
+  };
+
   const connectToWebSocket = () => {
     connectLearnSocket(
       (data: any) => handleWebSocketMessage(data),
@@ -373,18 +354,20 @@ export default function ConversationScreen() {
       timestamp: new Date(),
     };
   
-    // Stop processing animation and set current message text
+    // Keep processing animation active until audio data arrives
+    // Only stop processing for specific steps that don't involve AI speaking
     setState(prev => ({
       ...prev,
-      isProcessingAudio: false,
       isListening: false,
       isVoiceDetected: false,
-      isAISpeaking: false,
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      isPlayingFeedback: false,
       currentMessageText: data.response || 'AI response',
       isNoSpeechDetected: false,
+      // Keep isProcessingAudio true for now - it will be set to false in handleAudioData
+      // Keep isAISpeaking false for now - it will be set to true in handleAudioData
     }));
   
     // 🟡 Step 1: Handle `no_speech` step
@@ -394,22 +377,28 @@ export default function ConversationScreen() {
         ...prev,
         messages: [...prev.messages, newMessage],
         currentStep: 'waiting',
+        isProcessingAudio: false, // Stop processing animation for no_speech
         lastStopWasSilence: true, // ✅ Triggers "No speech detected" UI
       }));
       return; // 🛑 Don't proceed further
     }
   
-    // 🟢 Step 2: Default message update
+    // 🟢 Step 2: Default message update (for regular AI responses that will have audio)
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, newMessage],
       currentStep: data.step === 'retry' ? 'waiting' : 'waiting',
       lastStopWasSilence: false, // ✅ Reset silence flag for other steps
+      // Keep isProcessingAudio true for regular AI responses that will have audio
     }));
   
     // 🔁 Step 3: Handle retry playback
     if (data.step === 'retry') {
       console.log('🔁 Received retry step, playing retry audio...');
+      setState(prev => ({
+        ...prev,
+        isProcessingAudio: false, // Stop processing animation for retry
+      }));
       setTimeout(() => {
         playRetryAudio();
       }, 500);
@@ -417,13 +406,27 @@ export default function ConversationScreen() {
   
     // 🔁 Step 4: Handle await_next playback
     if (data.step === 'await_next') {
-      console.log('✅ Received await_next step, playing next audio...');
+      console.log('✅ Received await_next step, waiting for audio data...');
+      setState(prev => ({
+        ...prev,
+        currentStep: 'playing_await_next',
+        isProcessingAudio: false, // Stop processing animation for await_next
+        isAwaitNextPlaying: true,
+        isContinuingConversation: true,
+        currentMessageText: data.response || 'Feedback text', // Use the actual feedback text from backend
+      }));
+    }
+
+    // 🔁 Step 5: Handle feedback_step playback
+    if (data.step === 'feedback_step') {
+      console.log('📝 Received feedback_step, playing feedback audio...');
+      // Keep processing animation active - it will be managed in playFeedbackAudio and handleAudioData
       setTimeout(() => {
-        playAwaitNextAudio();
+        playFeedbackAudio();
       }, 500);
     }
   
-    // 📜 Step 5: Auto-scroll UI
+    // 📜 Step 6: Auto-scroll UI
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -439,12 +442,34 @@ export default function ConversationScreen() {
         encoding: FileSystem.EncodingType.Base64,
       });
   
-      setState(prev => ({
-        ...prev,
-        currentAudioUri: audioUri,
-        currentStep: 'speaking',
-        isAISpeaking: true,
-      }));
+      // Check if we're currently in feedback mode or await_next mode
+      if (state.currentStep === 'playing_feedback') {
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation when feedback audio starts
+          isAISpeaking: true,
+          isPlayingFeedback: true, // Keep feedback flag for audio completion logic
+        }));
+      } else if (state.currentStep === 'playing_await_next') {
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true,
+          isAwaitNextPlaying: true, // Keep await_next flag for audio completion logic
+        }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true,
+        }));
+      }
   
       await playAudio(audioUri);
     } catch (error) {
@@ -465,6 +490,8 @@ export default function ConversationScreen() {
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      isPlayingFeedback: false,
+      isAwaitNextPlaying: false,
       currentMessageText: '',
       isNoSpeechDetected: false,
     }));
@@ -493,12 +520,69 @@ export default function ConversationScreen() {
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
-          setState(prev => ({ 
-            ...prev, 
-            currentStep: 'waiting',
-            isAISpeaking: false,
-            currentMessageText: '', // Clear the message when AI speaking ends
-          }));
+          // Use setState callback to access current state
+          setState(prev => {
+            // Check what type of audio just finished to determine next action
+            if (prev.isPlayingFeedback) {
+              // Feedback audio finished - stay on same sentence and restart listening
+              console.log('📝 Feedback audio finished, staying on same sentence...');
+              console.log('🔄 Starting recording again for the same sentence...');
+              
+              // Start listening again for the same sentence after a delay
+              setTimeout(() => {
+                startRecording();
+              }, 1000);
+              
+              return {
+                ...prev, 
+                currentStep: 'waiting',
+                isAISpeaking: false,
+                isPlayingFeedback: false,
+                currentMessageText: '', // Clear the message when feedback ends
+              };
+            } else if (prev.isAwaitNextPlaying) {
+              // Await next audio finished - restart conversation from beginning
+              console.log('✅ Await next audio finished, restarting conversation...');
+              console.log('🔄 Starting fresh conversation...');
+              
+              // Clear all messages and restart from beginning
+              setTimeout(() => {
+                console.log('🔄 Clearing messages and restarting conversation...');
+                setState(prev => ({
+                  ...prev,
+                  messages: [], // Clear all messages
+                  currentStep: 'waiting',
+                  isAISpeaking: false,
+                  isAwaitNextPlaying: false,
+                  isContinuingConversation: false,
+                  currentMessageText: '', // Clear the message when await next ends
+                }));
+                
+                // Start fresh conversation by sending initial audio
+                setTimeout(() => {
+                  console.log('🎤 Starting fresh recording...');
+                  startRecording();
+                }, 500);
+              }, 1000);
+              
+              return {
+                ...prev, 
+                currentStep: 'waiting',
+                isAISpeaking: false,
+                isAwaitNextPlaying: false,
+                isContinuingConversation: false,
+                currentMessageText: '', // Clear the message when await next ends
+              };
+            } else {
+              // Regular AI speaking finished
+              return {
+                ...prev, 
+                currentStep: 'waiting',
+                isAISpeaking: false,
+                currentMessageText: '', // Clear the message when AI speaking ends
+              };
+            }
+          });
         }
       });
 
@@ -533,6 +617,9 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        isPlayingFeedback: false,
+        isAwaitNextPlaying: false,
+        isProcessingAudio: false, // Stop processing animation when starting new recording
         currentMessageText: '',
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
@@ -617,6 +704,9 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        isPlayingFeedback: false,
+        isAwaitNextPlaying: false,
+        isProcessingAudio: false, // Stop processing animation when stopping recording
         currentMessageText: '',
         isNoSpeechDetected: false,
       }));
@@ -690,6 +780,8 @@ export default function ConversationScreen() {
         isPlayingIntro: false,
         isContinuingConversation: false,
         isPlayingRetry: false,
+        isPlayingFeedback: false,
+        isAwaitNextPlaying: false,
         currentMessageText: '',
         isNoSpeechDetected: false,
       }));
@@ -730,11 +822,11 @@ export default function ConversationScreen() {
     if (introSoundRef.current) {
       introSoundRef.current.unloadAsync();
     }
-    if (awaitNextSoundRef.current) {
-      awaitNextSoundRef.current.unloadAsync();
-    }
     if (retrySoundRef.current) {
       retrySoundRef.current.unloadAsync();
+    }
+    if (feedbackSoundRef.current) {
+      feedbackSoundRef.current.unloadAsync();
     }
     closeLearnSocket();
     
@@ -748,6 +840,8 @@ export default function ConversationScreen() {
       isPlayingIntro: false,
       isContinuingConversation: false,
       isPlayingRetry: false,
+      isPlayingFeedback: false,
+      isAwaitNextPlaying: false,
       currentMessageText: '',
       isNoSpeechDetected: false,
     }));
@@ -1005,6 +1099,31 @@ export default function ConversationScreen() {
           />
           <Text style={styles.processingText}>AI Speaking</Text>
         </View>
+      ) : state.isPlayingFeedback && state.isProcessingAudio ? (
+        <View style={styles.processingOverlay}>
+          <LottieView
+            source={require('../../../assets/animations/sent_audio_for_processing.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>Audio is processing...</Text>
+        </View>
+      ) : state.isPlayingFeedback ? (
+        <View style={styles.processingOverlay}>
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>AI Speaking</Text>
+        </View>
       ) : state.isNoSpeechDetected ? (
         <View style={styles.processingOverlay}>
           {state.currentMessageText ? (
@@ -1043,7 +1162,7 @@ export default function ConversationScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           position: 'absolute',
-          left: 0, right: 0, bottom: 60,
+          left: 0, right: 0, bottom: 40,
           transform: [{ scale: micAnim }],
         }}>
           <TouchableOpacity
@@ -1059,7 +1178,9 @@ export default function ConversationScreen() {
                       ? styles.centerMicButtonAwaitNext
                       : state.currentStep === 'playing_retry'
                         ? styles.centerMicButtonRetry
-                        : styles.centerMicButtonIdle
+                        : state.currentStep === 'playing_feedback'
+                          ? styles.centerMicButtonFeedback
+                          : styles.centerMicButtonIdle
             ]}
             onPress={() => {
               if (state.currentStep === 'listening') {
@@ -1069,7 +1190,7 @@ export default function ConversationScreen() {
                 startRecording();
               }
             }}
-            disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry'}
+            disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry' || state.currentStep === 'playing_feedback'}
             activeOpacity={0.7}
           >
             <LinearGradient
@@ -1084,7 +1205,9 @@ export default function ConversationScreen() {
                         ? ['#58D68D', '#45B7A8']
                         : state.currentStep === 'playing_retry'
                           ? ['#58D68D', '#45B7A8']
-                          : ['#58D68D', '#45B7A8']
+                          : state.currentStep === 'playing_feedback'
+                            ? ['#58D68D', '#45B7A8']
+                            : ['#58D68D', '#45B7A8']
               }
               style={[
                 styles.micButtonGradient,
@@ -1101,7 +1224,9 @@ export default function ConversationScreen() {
                         ? 'volume-high'
                         : state.currentStep === 'playing_retry'
                           ? 'volume-high'
-                          : 'mic'
+                          : state.currentStep === 'playing_feedback'
+                            ? 'volume-high'
+                            : 'mic'
                 }
                 size={state.currentStep === 'playing_intro' ? 52 : 48}
                 color="white"
@@ -1124,6 +1249,12 @@ export default function ConversationScreen() {
           )}
           {state.currentStep === 'playing_retry' && (
             <Text style={styles.retryLabel}>AI Speaking...</Text>
+          )}
+          {state.currentStep === 'playing_feedback' && state.isProcessingAudio && (
+            <Text style={styles.processingLabel}>Processing...</Text>
+          )}
+          {state.currentStep === 'playing_feedback' && !state.isProcessingAudio && (
+            <Text style={styles.feedbackLabel}>AI Speaking...</Text>
           )}
         </Animated.View>
       </View>
@@ -1336,6 +1467,9 @@ const styles = StyleSheet.create({
   centerMicButtonRetry: {
     backgroundColor: 'transparent',
   },
+  centerMicButtonFeedback: {
+    backgroundColor: 'transparent',
+  },
   wrongButton: {
     position: 'absolute',
     left: 32,
@@ -1384,6 +1518,20 @@ const styles = StyleSheet.create({
     color: '#58D68D',
     textAlign: 'center',
     fontWeight: '600',
+  },
+  feedbackLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#58D68D',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  processingLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6C757D',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   processingOverlay: {
     flex: 1,
