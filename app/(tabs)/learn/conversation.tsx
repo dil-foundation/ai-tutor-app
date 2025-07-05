@@ -4,6 +4,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
+import * as Speech from 'expo-speech';
 import {
     ActivityIndicator,
     Alert,
@@ -32,7 +33,7 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
@@ -50,6 +51,15 @@ interface ConversationState {
   isPlayingFeedback: boolean; // New state for tracking feedback playing animation
   currentMessageText: string; // New state for tracking current message to display above animation
   isNoSpeechDetected: boolean; // New state for tracking no speech detected animation
+  // New states for word-by-word speaking
+  isWordByWordSpeaking: boolean; // New state for tracking word-by-word speaking animation
+  currentSentence: {
+    english: string;
+    urdu: string;
+    words: string[];
+  } | null;
+  currentWordIndex: number;
+  isDisplayingSentence: boolean;
 }
 
 export default function ConversationScreen() {
@@ -74,6 +84,10 @@ export default function ConversationScreen() {
     isPlayingFeedback: false,
     currentMessageText: '',
     isNoSpeechDetected: false,
+    isWordByWordSpeaking: false,
+    currentSentence: null,
+    currentWordIndex: 0,
+    isDisplayingSentence: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -121,6 +135,7 @@ export default function ConversationScreen() {
       !state.isAwaitNextPlaying &&
       !state.isRetryPlaying &&
       !state.isPlayingFeedback &&
+      !state.isWordByWordSpeaking &&
       previousStepRef.current === 'speaking' 
     ) {
       if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
@@ -131,7 +146,7 @@ export default function ConversationScreen() {
     }
     // Update previousStepRef after every state change
     previousStepRef.current = state.currentStep;
-  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying, state.isPlayingFeedback]);
+  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying, state.isPlayingFeedback, state.isWordByWordSpeaking]);
 
   const initializeAudio = async () => {
     try {
@@ -327,6 +342,64 @@ export default function ConversationScreen() {
     }
   };
 
+
+
+  // Function to play word-by-word audio
+  const playWordByWord = async (words: string[]) => {
+    try {
+      console.log('🎤 Starting word-by-word speaking...');
+      setState(prev => ({
+        ...prev,
+        currentStep: 'word_by_word',
+        isWordByWordSpeaking: true,
+        isProcessingAudio: false,
+        currentWordIndex: 0,
+      }));
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        console.log(`🗣️ Speaking word ${i + 1}/${words.length}: "${word}"`);
+        setState(prev => ({
+          ...prev,
+          currentWordIndex: i,
+          currentMessageText: `Speaking: "${word}"`,
+        }));
+        // Speak the word using Expo Speech
+        Speech.speak(word, {
+          language: 'en-US',
+          rate: 0.5,
+          pitch: 1.0,
+        });
+        // Wait for the word to finish (approximate, since expo-speech doesn't have a finish event)
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+
+      console.log('✅ Word-by-word speaking completed');
+      setState(prev => ({
+        ...prev,
+        isWordByWordSpeaking: false,
+        currentMessageText: '',
+        currentStep: 'waiting', // Reset to waiting state
+      }));
+
+      // Send completion signal to backend after 2 seconds
+      setTimeout(() => {
+        console.log('🔄 Sending word-by-word completion signal to backend...');
+        sendLearnMessage(JSON.stringify({
+          type: 'word_by_word_complete',
+          sentence: state.currentSentence?.english || ''
+        }));
+      }, 2000); // Wait 2 seconds before sending signal
+    } catch (error) {
+      console.error('Failed to play word-by-word:', error);
+      setState(prev => ({
+        ...prev,
+        isWordByWordSpeaking: false,
+        currentMessageText: '',
+      }));
+    }
+  };
+
   const connectToWebSocket = () => {
     connectLearnSocket(
       (data: any) => handleWebSocketMessage(data),
@@ -425,8 +498,44 @@ export default function ConversationScreen() {
         playFeedbackAudio();
       }, 500);
     }
+
+    // 🎤 Step 6: Handle repeat_prompt step (word-by-word speaking)
+    if (data.step === 'repeat_prompt') {
+      console.log('🎤 Received repeat_prompt step, starting word-by-word speaking...');
+      
+      // Store the sentence information
+      const sentenceInfo = {
+        english: data.english_sentence || '',
+        urdu: data.urdu_sentence || '',
+        words: data.words || [],
+      };
+
+      setState(prev => ({
+        ...prev,
+        currentSentence: sentenceInfo,
+        isDisplayingSentence: true,
+        isProcessingAudio: false, // Stop processing animation
+        currentMessageText: 'Repeat after me:',
+      }));
+
+      // Start word-by-word speaking after a short delay
+      setTimeout(() => {
+        playWordByWord(sentenceInfo.words);
+      }, 1000);
+    }
+
+    // 🎤 Step 6.5: Handle full sentence audio after word-by-word
+    if (data.step === 'full_sentence_audio') {
+      console.log('🎤 Received full sentence audio after word-by-word...');
+      // This will be handled by the existing audio flow
+      setState(prev => ({
+        ...prev,
+        isDisplayingSentence: false, // Hide sentence display
+        currentSentence: null,
+      }));
+    }
   
-    // 📜 Step 6: Auto-scroll UI
+    // 📜 Step 7: Auto-scroll UI
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -460,6 +569,17 @@ export default function ConversationScreen() {
           isProcessingAudio: false, // Stop processing animation
           isAISpeaking: true,
           isAwaitNextPlaying: true, // Keep await_next flag for audio completion logic
+        }));
+      } else if (state.currentStep === 'waiting' && state.isDisplayingSentence) {
+        // Full sentence audio after word-by-word
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true,
+          isDisplayingSentence: false, // Hide sentence display
+          currentSentence: null,
         }));
       } else {
         setState(prev => ({
@@ -828,8 +948,9 @@ export default function ConversationScreen() {
     if (feedbackSoundRef.current) {
       feedbackSoundRef.current.unloadAsync();
     }
+    // Stop Speech
+    Speech.stop();
     closeLearnSocket();
-    
     // Reset animation states
     setState(prev => ({
       ...prev,
@@ -842,8 +963,12 @@ export default function ConversationScreen() {
       isPlayingRetry: false,
       isPlayingFeedback: false,
       isAwaitNextPlaying: false,
+      isWordByWordSpeaking: false,
       currentMessageText: '',
       isNoSpeechDetected: false,
+      currentSentence: null,
+      currentWordIndex: 0,
+      isDisplayingSentence: false,
     }));
   };
 
@@ -1139,6 +1264,51 @@ export default function ConversationScreen() {
           />
           <Text style={styles.processingText}>No Speech Detected</Text>
         </View>
+      ) : state.isDisplayingSentence ? (
+        <View style={styles.sentenceOverlay}>
+          {/* Sentence Display */}
+          <View style={styles.sentenceDisplayContainer}>
+            <Text style={styles.sentenceTitle}>Repeat after me:</Text>
+            
+            {/* English Sentence */}
+            <View style={styles.sentenceBox}>
+              <Text style={styles.sentenceLabel}>English:</Text>
+              <Text style={styles.sentenceText}>{state.currentSentence?.english}</Text>
+            </View>
+            
+            {/* Urdu Sentence */}
+            <View style={styles.sentenceBox}>
+              <Text style={styles.sentenceLabel}>Urdu:</Text>
+              <Text style={styles.sentenceText}>{state.currentSentence?.urdu}</Text>
+            </View>
+            
+            {/* Word-by-word progress */}
+            {state.isWordByWordSpeaking && state.currentSentence && (
+              <View style={styles.wordProgressContainer}>
+                <Text style={styles.wordProgressText}>
+                  Word {state.currentWordIndex + 1} of {state.currentSentence.words.length}
+                </Text>
+                <Text style={styles.currentWordText}>
+                  "{state.currentSentence.words[state.currentWordIndex]}"
+                </Text>
+              </View>
+            )}
+          </View>
+          
+          {/* Animation based on state - Hide during word-by-word speaking */}
+          {!state.isWordByWordSpeaking && (
+            <LottieView
+              source={require('../../../assets/animations/listening.json')}
+              autoPlay
+              loop
+              style={styles.processingAnimation}
+            />
+          )}
+          
+          <Text style={styles.processingText}>
+            {state.isWordByWordSpeaking ? 'Speaking word by word...' : 'Ready to repeat'}
+          </Text>
+        </View>
       ) : null}
 
       {/* Center round button and wrong button */}
@@ -1157,42 +1327,43 @@ export default function ConversationScreen() {
             <View style={styles.wrongButtonShadow} />
           </View>
         </TouchableOpacity>
-        {/* Center mic/stop button */}
-        <Animated.View style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'absolute',
-          left: 0, right: 0, bottom: 40,
-          transform: [{ scale: micAnim }],
-        }}>
-          <TouchableOpacity
-            style={[
-              styles.centerMicButton,
-              state.currentStep === 'listening' && isTalking
-                ? styles.centerMicButtonTalking
-                : state.currentStep === 'listening'
-                  ? styles.centerMicButtonActive
-                  : state.currentStep === 'playing_intro'
-                    ? styles.centerMicButtonIntro
-                    : state.currentStep === 'playing_await_next'
-                      ? styles.centerMicButtonAwaitNext
-                      : state.currentStep === 'playing_retry'
-                        ? styles.centerMicButtonRetry
-                        : state.currentStep === 'playing_feedback'
-                          ? styles.centerMicButtonFeedback
-                          : styles.centerMicButtonIdle
-            ]}
-            onPress={() => {
-              if (state.currentStep === 'listening') {
-                stopRecording();
-              } else {
-                setState(prev => ({ ...prev, lastStopWasSilence: false }));
-                startRecording();
-              }
-            }}
-            disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry' || state.currentStep === 'playing_feedback'}
-            activeOpacity={0.7}
-          >
+        {/* Center mic/stop button - Hide during word-by-word and sentence display */}
+        {!state.isWordByWordSpeaking && !state.isDisplayingSentence && (
+          <Animated.View style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            left: 0, right: 0, bottom: 40,
+            transform: [{ scale: micAnim }],
+          }}>
+            <TouchableOpacity
+              style={[
+                styles.centerMicButton,
+                state.currentStep === 'listening' && isTalking
+                  ? styles.centerMicButtonTalking
+                  : state.currentStep === 'listening'
+                    ? styles.centerMicButtonActive
+                    : state.currentStep === 'playing_intro'
+                      ? styles.centerMicButtonIntro
+                      : state.currentStep === 'playing_await_next'
+                        ? styles.centerMicButtonAwaitNext
+                        : state.currentStep === 'playing_retry'
+                          ? styles.centerMicButtonRetry
+                          : state.currentStep === 'playing_feedback'
+                            ? styles.centerMicButtonFeedback
+                            : styles.centerMicButtonIdle
+              ]}
+              onPress={() => {
+                if (state.currentStep === 'listening') {
+                  stopRecording();
+                } else {
+                  setState(prev => ({ ...prev, lastStopWasSilence: false }));
+                  startRecording();
+                }
+              }}
+              disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry' || state.currentStep === 'playing_feedback' || state.currentStep === 'word_by_word'}
+              activeOpacity={0.7}
+            >
             <LinearGradient
               colors={
                 state.currentStep === 'listening' && isTalking
@@ -1207,7 +1378,9 @@ export default function ConversationScreen() {
                           ? ['#58D68D', '#45B7A8']
                           : state.currentStep === 'playing_feedback'
                             ? ['#58D68D', '#45B7A8']
-                            : ['#58D68D', '#45B7A8']
+                            : state.currentStep === 'word_by_word'
+                              ? ['#58D68D', '#45B7A8']
+                              : ['#58D68D', '#45B7A8']
               }
               style={[
                 styles.micButtonGradient,
@@ -1226,7 +1399,9 @@ export default function ConversationScreen() {
                           ? 'volume-high'
                           : state.currentStep === 'playing_feedback'
                             ? 'volume-high'
-                            : 'mic'
+                            : state.currentStep === 'word_by_word'
+                              ? 'volume-high'
+                              : 'mic'
                 }
                 size={state.currentStep === 'playing_intro' ? 52 : 48}
                 color="white"
@@ -1256,7 +1431,11 @@ export default function ConversationScreen() {
           {state.currentStep === 'playing_feedback' && !state.isProcessingAudio && (
             <Text style={styles.feedbackLabel}>AI Speaking...</Text>
           )}
+          {state.currentStep === 'word_by_word' && (
+            <Text style={styles.wordByWordLabel}>Speaking word by word...</Text>
+          )}
         </Animated.View>
+        )}
       </View>
 
       {/* Decorative Elements */}
@@ -1539,6 +1718,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -160, // Move everything up by 140 pixels
   },
+  // Special overlay for sentence display - move content down
+  sentenceOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -80, // Move sentence content down by reducing the negative margin
+  },
   processingAnimation: {
     width: 200,
     height: 200,
@@ -1671,5 +1857,68 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#CED4DA',
     opacity: 0.25,
+  },
+  // Sentence display styles
+  sentenceDisplayContainer: {
+    backgroundColor: '#F8F9FA',
+    padding: 24,
+    borderRadius: 20,
+    marginBottom: 20,
+    marginTop: 40, // Add top margin to move card down
+    maxWidth: '90%',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sentenceTitle: {
+    fontSize: 18,
+    color: '#58D68D',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  sentenceBox: {
+    marginBottom: 12,
+  },
+  sentenceLabel: {
+    fontSize: 14,
+    color: '#6C757D',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  sentenceText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
+    lineHeight: 22,
+  },
+  wordProgressContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  wordProgressText: {
+    fontSize: 14,
+    color: '#58D68D',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  currentWordText: {
+    fontSize: 18,
+    color: '#000000',
+    fontWeight: 'bold',
+  },
+  wordByWordLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#58D68D',
+    textAlign: 'center',
+    fontWeight: '600',
   },
 }); 
