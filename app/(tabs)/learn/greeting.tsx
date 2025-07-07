@@ -11,6 +11,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { getAuthData } from '../../utils/authStorage';
 import audioManager from '../../utils/audioManager';
@@ -210,11 +212,11 @@ export default function GreetingScreen() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -224,169 +226,176 @@ export default function GreetingScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Welcome Header */}
-      <View style={styles.header}>
-        <Animated.View
-          style={[
-            styles.headerContent,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.iconContainer}>
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8']}
-              style={styles.iconGradient}
-            >
-              <Text style={styles.iconText}>🎯</Text>
-            </LinearGradient>
-          </View>
-          <Text style={styles.welcomeText}>Welcome to Your Learning Journey</Text>
-          <Text style={styles.subtitleText}>Let's begin your English speaking adventure</Text>
-        </Animated.View>
-      </View>
-
-      {/* Main Content Area */}
-      <View style={styles.contentContainer}>
-        {/* Animated Lines with Modern Cards */}
-        <View style={styles.linesContainer}>
-          {visibleLines.map((line, index) => (
-            <View key={index} style={styles.lineWrapperContainer}>
-              <Animated.View
-                style={[
-                  styles.lineWrapper,
-                  {
-                    opacity: lineAnimations[index] || 0,
-                    transform: [{ 
-                      translateY: lineAnimations[index] ? 
-                        lineAnimations[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [20, 0]
-                        }) : 20
-                    }],
-                  },
-                ]}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        {/* Welcome Header */}
+        <View style={styles.header}>
+          <Animated.View
+            style={[
+              styles.headerContent,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.iconContainer}>
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.iconGradient}
               >
-                <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                  style={styles.lineGradient}
-                >
-                  <Text style={styles.text}>{line}</Text>
-                </LinearGradient>
-              </Animated.View>
-              
-              {/* Spark Animation Overlay on Text */}
-              {isAudioFinished && index === visibleLines.length - 1 && (
-                <View style={styles.animationOverlay}>
-                  <LottieView
-                    source={require('../../../assets/animations/sparkle.json')}
-                    autoPlay
-                    loop={false}
-                    style={styles.sparkleAnimation}
-                  />
-                </View>
-              )}
+                <Text style={styles.iconText}>🎯</Text>
+              </LinearGradient>
             </View>
-          ))}
+            <Text style={styles.welcomeText}>Welcome to Your Learning Journey</Text>
+            <Text style={styles.subtitleText}>Let's begin your English speaking adventure</Text>
+          </Animated.View>
         </View>
 
-        {/* Chat-like Container after animation */}
-        {isAudioFinished && (
-          <Animated.View
-            style={[
-              styles.chatContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.chatBubble}>
-              <LinearGradient
-                colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
-                style={styles.chatGradient}
-              >
-                <Text style={styles.chatText}>
-                  "Ready to practice? Let's make your English speaking dreams come true! 🚀"
-                </Text>
-              </LinearGradient>
-            </View>
-            <View style={styles.chatBubble}>
-              <LinearGradient
-                colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
-                style={styles.chatGradient}
-              >
-                <Text style={styles.chatText}>
-                  "I'll be your personal AI tutor, guiding you through every step of your learning journey."
-                </Text>
-              </LinearGradient>
-            </View>
-          </Animated.View>
-        )}
+        {/* Main Content Area */}
+        <View style={styles.contentContainer}>
+          {/* Animated Lines with Modern Cards */}
+          <View style={styles.linesContainer}>
+            {visibleLines.map((line, index) => (
+              <View key={index} style={styles.lineWrapperContainer}>
+                <Animated.View
+                  style={[
+                    styles.lineWrapper,
+                    {
+                      opacity: lineAnimations[index] || 0,
+                      transform: [{ 
+                        translateY: lineAnimations[index] ? 
+                          lineAnimations[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [20, 0]
+                          }) : 20
+                      }],
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                    style={styles.lineGradient}
+                  >
+                    <Text style={styles.text}>{line}</Text>
+                  </LinearGradient>
+                </Animated.View>
+                
+                {/* Spark Animation Overlay on Text */}
+                {isAudioFinished && index === visibleLines.length - 1 && (
+                  <View style={styles.animationOverlay}>
+                    <LottieView
+                      source={require('../../../assets/animations/sparkle.json')}
+                      autoPlay
+                      loop={false}
+                      style={styles.sparkleAnimation}
+                    />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
 
-        {/* Continue Button - Only one at the end */}
-        {showContinue && isAudioFinished && (
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.buttonGradient}
-              >
-                <View style={styles.buttonContent}>
-                  <View style={styles.buttonIconContainer}>
-                    <Text style={styles.buttonIcon}>🎯</Text>
-                  </View>
-                  <View style={styles.buttonTextContainer}>
-                    <Text style={styles.buttonText}>Continue to Learning</Text>
-                    <Text style={styles.buttonSubtext}>Start your journey →</Text>
-                  </View>
-                  <View style={styles.arrowContainer}>
-                    <Text style={styles.arrowIcon}>→</Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-      </View>
+          {/* Chat-like Container after animation */}
+          {isAudioFinished && (
+            <Animated.View
+              style={[
+                styles.chatContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <View style={styles.chatBubble}>
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
+                  style={styles.chatGradient}
+                >
+                  <Text style={styles.chatText}>
+                    "Ready to practice? Let's make your English speaking dreams come true! 🚀"
+                  </Text>
+                </LinearGradient>
+              </View>
+              <View style={styles.chatBubble}>
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
+                  style={styles.chatGradient}
+                >
+                  <Text style={styles.chatText}>
+                    "I'll be your personal AI tutor, guiding you through every step of your learning journey."
+                  </Text>
+                </LinearGradient>
+              </View>
+            </Animated.View>
+          )}
 
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
-    </View>
+          {/* Continue Button - Only one at the end */}
+          {showContinue && isAudioFinished && (
+            <Animated.View
+              style={[
+                styles.buttonContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue}>
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8', '#58D68D']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.buttonGradient}
+                >
+                  <View style={styles.buttonContent}>
+                    <View style={styles.buttonIconContainer}>
+                      <Text style={styles.buttonIcon}>🎯</Text>
+                    </View>
+                    <View style={styles.buttonTextContainer}>
+                      <Text style={styles.buttonText}>Continue to Learning</Text>
+                      <Text style={styles.buttonSubtext}>Start your journey →</Text>
+                    </View>
+                    <View style={styles.arrowContainer}>
+                      <Text style={styles.arrowIcon}>→</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </View>
+
+        {/* Decorative Elements */}
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
+        <View style={styles.decorativeCircle3} />
+        <View style={styles.decorativeCircle4} />
+        
+        {/* Floating Particles */}
+        <View style={styles.particle1} />
+        <View style={styles.particle2} />
+        <View style={styles.particle3} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
     backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
     paddingHorizontal: 24,
     marginBottom: -20,
+    paddingTop: 20,
   },
   headerContent: {
     alignItems: 'center',
@@ -426,11 +435,11 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   contentContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 20,
+    width: '100%',
   },
   linesContainer: {
     alignItems: 'center',
@@ -507,9 +516,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   buttonContainer: {
-    marginTop: -10,
+    marginTop: 20,
     width: '100%',
-    marginBottom: 70,
+    marginBottom: 30,
   },
   buttonWrapper: {
     borderRadius: 30,
@@ -643,6 +652,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000000',
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 50, // Add some padding at the bottom for the button
   },
 });
   
