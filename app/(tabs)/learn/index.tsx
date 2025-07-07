@@ -11,7 +11,9 @@ import {
   StyleSheet, 
   Text, 
   TouchableOpacity, 
-  View 
+  View,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -83,145 +85,161 @@ export default function LearnScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Animated.View
-          style={[
-            styles.headerContent,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.iconContainer}>
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8']}
-              style={styles.iconGradient}
-            >
-              <Ionicons name="mic" size={32} color="#000000" />
-            </LinearGradient>
-          </View>
-          <Text style={styles.headerTitle}>Speak to Translate</Text>
-          <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
-        </Animated.View>
-      </View>
-
-      {/* Main Content */}
-      <View style={styles.contentContainer}>
-        <Animated.View
-          style={[
-            styles.mainCard,
-            {
-              opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: scaleAnim }
-              ],
-            },
-          ]}
-        >
-          <LinearGradient
-            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-            style={styles.cardGradient}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Animated.View
+            style={[
+              styles.headerContent,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
           >
-
-
-            {/* Main Text */}
-            <View style={styles.textSection}>
-              <Text style={styles.mainText}>
-                Press the button and speak in urdu to get started
-              </Text>
+            <View style={styles.iconContainer}>
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.iconGradient}
+              >
+                <Ionicons name="mic" size={32} color="#000000" />
+              </LinearGradient>
             </View>
-          </LinearGradient>
-        </Animated.View>
+            <Text style={styles.headerTitle}>Speak to Translate</Text>
+            <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
+          </Animated.View>
+        </View>
 
-        {/* Action Button */}
-        <Animated.View
-          style={[
-            styles.buttonContainer,
-            {
-              opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: pulseAnim }
-              ],
-            },
-          ]}
-        >
-          <TouchableOpacity 
-            onPress={handleConversationPress}
-            style={styles.buttonWrapper}
-            activeOpacity={0.8}
+        {/* Main Content */}
+        <View style={styles.contentContainer}>
+          <Animated.View
+            style={[
+              styles.mainCard,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: scaleAnim }
+                ],
+              },
+            ]}
           >
             <LinearGradient
-              colors={['#58D68D', '#45B7A8', '#58D68D']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonGradient}
+              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+              style={styles.cardGradient}
             >
-              <View style={styles.buttonContent}>
-                <View style={styles.buttonIconContainer}>
-                  <Ionicons name="chatbubbles" size={24} color="#000000" />
-                </View>
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.buttonText}>Start Real-time Conversation</Text>
-                  <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
-                </View>
-                <View style={styles.arrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color="#000000" />
-                </View>
+              {/* Main Text */}
+              <View style={styles.textSection}>
+                <Text style={styles.mainText}>
+                  Press the button and speak in urdu to get started
+                </Text>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Additional Info Cards */}
-        <Animated.View
-          style={[
-            styles.infoContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.infoCard}>
-            <Ionicons name="bulb" size={24} color="#58D68D" />
-            <Text style={styles.infoText}>Perfect for daily conversations</Text>
-          </View>
-          <View style={styles.infoCard}>
-            <Ionicons name="time" size={24} color="#58D68D" />
-            <Text style={styles.infoText}>Learn at your own pace</Text>
-          </View>
-        </Animated.View>
-      </View>
+          {/* Action Button */}
+          <Animated.View
+            style={[
+              styles.buttonContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: pulseAnim }
+                ],
+              },
+            ]}
+          >
+            <TouchableOpacity 
+              onPress={handleConversationPress}
+              style={styles.buttonWrapper}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.buttonGradient}
+              >
+                <View style={styles.buttonContent}>
+                  <View style={styles.buttonIconContainer}>
+                    <Ionicons name="chatbubbles" size={24} color="#000000" />
+                  </View>
+                  <View style={styles.buttonTextContainer}>
+                    <Text style={styles.buttonText}>Start Real-time Conversation</Text>
+                    <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
+                  </View>
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="arrow-forward" size={20} color="#000000" />
+                  </View>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
-    </View>
+          {/* Additional Info Cards */}
+          <Animated.View
+            style={[
+              styles.infoContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.infoCard}>
+              <Ionicons name="bulb" size={24} color="#58D68D" />
+              <Text style={styles.infoText}>Perfect for daily conversations</Text>
+            </View>
+            <View style={styles.infoCard}>
+              <Ionicons name="time" size={24} color="#58D68D" />
+              <Text style={styles.infoText}>Learn at your own pace</Text>
+            </View>
+          </Animated.View>
+        </View>
+
+        {/* Decorative Elements */}
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
+        <View style={styles.decorativeCircle3} />
+        <View style={styles.decorativeCircle4} />
+        
+        {/* Floating Particles */}
+        <View style={styles.particle1} />
+        <View style={styles.particle2} />
+        <View style={styles.particle3} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 50,
+  },
   container: {
     flex: 1,
-    paddingTop: 80,
     backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
     paddingHorizontal: 24,
     marginBottom: 40,
+    paddingTop: 20,
   },
   headerContent: {
     alignItems: 'center',
@@ -258,11 +276,10 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   contentContainer: {
-    flex: 1,
     paddingHorizontal: 24,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 20,
+    width: '100%',
   },
   mainCard: {
     width: '100%',
