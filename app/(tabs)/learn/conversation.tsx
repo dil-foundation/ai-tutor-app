@@ -49,7 +49,7 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word' | 'playing_you_said';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
@@ -76,6 +76,12 @@ interface ConversationState {
   } | null;
   currentWordIndex: number;
   isDisplayingSentence: boolean;
+  // New state for "you said" audio
+  isPlayingYouSaid: boolean; // New state for tracking "you said" audio playing
+  // New state to prevent auto-recording after "you said" audio
+  isWaitingForRepeatPrompt: boolean; // New state to prevent auto-recording after "you said" audio
+  // New state for full sentence text to display during listening
+  fullSentenceText: string; // New state for full sentence text to display during listening
 }
 
 export default function ConversationScreen() {
@@ -104,6 +110,9 @@ export default function ConversationScreen() {
     currentSentence: null,
     currentWordIndex: 0,
     isDisplayingSentence: false,
+    isPlayingYouSaid: false,
+    isWaitingForRepeatPrompt: false,
+    fullSentenceText: '',
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -176,6 +185,7 @@ export default function ConversationScreen() {
       !state.isRetryPlaying &&
       !state.isPlayingFeedback &&
       !state.isWordByWordSpeaking &&
+      !state.isWaitingForRepeatPrompt && // Prevent auto-recording when waiting for repeat prompt
       previousStepRef.current === 'speaking' &&
       isScreenFocusedRef.current // Only auto-listen if screen is focused
     ) {
@@ -189,7 +199,7 @@ export default function ConversationScreen() {
     }
     // Update previousStepRef after every state change
     previousStepRef.current = state.currentStep;
-  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying, state.isPlayingFeedback, state.isWordByWordSpeaking]);
+  }, [state.currentStep, state.messages, state.isConnected, autoStart, state.lastStopWasSilence, state.isIntroAudioPlaying, state.isAwaitNextPlaying, state.isRetryPlaying, state.isPlayingFeedback, state.isWordByWordSpeaking, state.isWaitingForRepeatPrompt]);
 
   const initializeAudio = async () => {
     try {
@@ -596,7 +606,19 @@ export default function ConversationScreen() {
       }, 500);
     }
 
-    // 🎤 Step 6: Handle repeat_prompt step (word-by-word speaking)
+    // 🎤 Step 6: Handle you_said_audio step
+    if (data.step === 'you_said_audio') {
+      console.log('🎤 Received you_said_audio step, waiting for audio data...');
+      setState(prev => ({
+        ...prev,
+        currentStep: 'playing_you_said',
+        isProcessingAudio: false, // Stop processing animation
+        isPlayingYouSaid: true,
+        currentMessageText: data.response || 'You said...',
+      }));
+    }
+
+    // 🎤 Step 7: Handle repeat_prompt step (word-by-word speaking)
     if (data.step === 'repeat_prompt') {
       console.log('🎤 Received repeat_prompt step, starting word-by-word speaking...');
       
@@ -612,7 +634,9 @@ export default function ConversationScreen() {
         currentSentence: sentenceInfo,
         isDisplayingSentence: true,
         isProcessingAudio: false, // Stop processing animation
-        currentMessageText: 'Repeat after me:',
+        isWaitingForRepeatPrompt: false, // Clear the waiting flag
+        // currentMessageText: 'Repeat after me:',
+        currentMessageText: 'میرے بعد دہرائیں۔',
       }));
 
       // Start word-by-word speaking after a short delay
@@ -621,18 +645,19 @@ export default function ConversationScreen() {
       }, 1000);
     }
 
-    // 🎤 Step 6.5: Handle full sentence audio after word-by-word
+    // 🎤 Step 8: Handle full sentence audio after word-by-word
     if (data.step === 'full_sentence_audio') {
       console.log('🎤 Received full sentence audio after word-by-word...');
-      // This will be handled by the existing audio flow
+      // Store the full sentence text to display during listening
       setState(prev => ({
         ...prev,
         isDisplayingSentence: false, // Hide sentence display
         currentSentence: null,
+        fullSentenceText: data.response || 'Now repeat the full sentence', // Store the text to display during listening
       }));
     }
   
-    // 📜 Step 7: Auto-scroll UI
+    // 📜 Step 9: Auto-scroll UI
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -672,6 +697,16 @@ export default function ConversationScreen() {
           isProcessingAudio: false, // Stop processing animation
           isAISpeaking: true,
           isAwaitNextPlaying: true, // Keep await_next flag for audio completion logic
+        }));
+      } else if (state.currentStep === 'playing_you_said') {
+        // "You said" audio
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true,
+          isPlayingYouSaid: true, // Keep you_said flag for audio completion logic
         }));
       } else if (state.currentStep === 'waiting' && state.isDisplayingSentence) {
         // Full sentence audio after word-by-word
@@ -715,6 +750,9 @@ export default function ConversationScreen() {
       isPlayingRetry: false,
       isPlayingFeedback: false,
       isAwaitNextPlaying: false,
+      isPlayingYouSaid: false,
+      isWaitingForRepeatPrompt: false,
+      fullSentenceText: '',
       currentMessageText: '',
       isNoSpeechDetected: false,
     }));
@@ -768,6 +806,28 @@ export default function ConversationScreen() {
                 isAISpeaking: false,
                 isPlayingFeedback: false,
                 currentMessageText: '', // Clear the message when feedback ends
+              };
+            } else if (prev.isPlayingYouSaid) {
+              // "You said" audio finished - send completion signal to backend
+              console.log('🎤 "You said" audio finished, sending completion signal...');
+              
+              // Send completion signal to backend
+              setTimeout(() => {
+                if (isScreenFocusedRef.current) {
+                  console.log('🔄 Sending "you said" completion signal to backend...');
+                  sendLearnMessage(JSON.stringify({
+                    type: 'you_said_complete'
+                  }));
+                }
+              }, 500);
+              
+              return {
+                ...prev, 
+                currentStep: 'waiting',
+                isAISpeaking: false,
+                isPlayingYouSaid: false,
+                isWaitingForRepeatPrompt: true, // Set flag to prevent auto-recording
+                currentMessageText: '', // Clear the message when "you said" ends
               };
             } else if (prev.isAwaitNextPlaying) {
               // Await next audio finished - restart conversation from beginning
@@ -855,7 +915,7 @@ export default function ConversationScreen() {
         isPlayingFeedback: false,
         isAwaitNextPlaying: false,
         isProcessingAudio: false, // Stop processing animation when starting new recording
-        currentMessageText: '',
+        currentMessageText: prev.fullSentenceText || '', // Display full sentence text if available
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
       }));
@@ -941,6 +1001,9 @@ export default function ConversationScreen() {
         isPlayingRetry: false,
         isPlayingFeedback: false,
         isAwaitNextPlaying: false,
+        isPlayingYouSaid: false,
+        isWaitingForRepeatPrompt: false,
+        fullSentenceText: '',
         isProcessingAudio: false, // Stop processing animation when stopping recording
         currentMessageText: '',
         isNoSpeechDetected: false,
@@ -1001,6 +1064,7 @@ export default function ConversationScreen() {
         ...prev,
         isProcessingAudio: true,
         currentStep: 'processing',
+        fullSentenceText: '', // Clear the full sentence text when processing starts
       }));
   
     } catch (error) {
@@ -1017,6 +1081,9 @@ export default function ConversationScreen() {
         isPlayingRetry: false,
         isPlayingFeedback: false,
         isAwaitNextPlaying: false,
+        isPlayingYouSaid: false,
+        isWaitingForRepeatPrompt: false,
+        fullSentenceText: '',
         currentMessageText: '',
         isNoSpeechDetected: false,
       }));
@@ -1107,6 +1174,9 @@ export default function ConversationScreen() {
       isPlayingFeedback: false,
       isAwaitNextPlaying: false,
       isWordByWordSpeaking: false,
+      isPlayingYouSaid: false,
+      isWaitingForRepeatPrompt: false,
+      fullSentenceText: '',
       currentMessageText: '',
       isNoSpeechDetected: false,
       currentSentence: null,
@@ -1201,6 +1271,9 @@ export default function ConversationScreen() {
       isPlayingFeedback: false,
       isAwaitNextPlaying: false,
       isWordByWordSpeaking: false,
+      isPlayingYouSaid: false,
+      isWaitingForRepeatPrompt: false,
+      fullSentenceText: '',
       currentMessageText: '',
       isNoSpeechDetected: false,
       currentSentence: null,
@@ -1515,6 +1588,21 @@ export default function ConversationScreen() {
           />
           <Text style={styles.processingText}>AI Speaking</Text>
         </View>
+      ) : state.isPlayingYouSaid ? (
+        <View style={styles.processingOverlay} pointerEvents="box-none">
+          {state.currentMessageText ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            </View>
+          ) : null}
+          <LottieView
+            source={require('../../../assets/animations/ai_speaking.json')}
+            autoPlay
+            loop
+            style={styles.processingAnimation}
+          />
+          <Text style={styles.processingText}>You Said...</Text>
+        </View>
       ) : state.isNoSpeechDetected ? (
         <View style={styles.processingOverlay} pointerEvents="box-none">
           {state.currentMessageText ? (
@@ -1534,7 +1622,8 @@ export default function ConversationScreen() {
         <View style={styles.sentenceOverlay} pointerEvents="box-none">
           {/* Sentence Display */}
           <View style={styles.sentenceDisplayContainer}>
-            <Text style={styles.sentenceTitle}>Repeat after me:</Text>
+            {/* Repeat after me */}
+            <Text style={styles.sentenceTitle}>میرے بعد دہرائیں۔</Text>
             
             {/* English Sentence */}
             <View style={styles.sentenceBox}>
@@ -1572,7 +1661,7 @@ export default function ConversationScreen() {
           )}
           
           <Text style={styles.processingText}>
-            {state.isWordByWordSpeaking ? 'Speaking word by word... (Tap X to stop)' : 'Ready to repeat'}
+            {state.isWordByWordSpeaking ? 'Speaking word by word...' : 'Ready to repeat'}
           </Text>
         </View>
       ) : null}
@@ -1635,7 +1724,7 @@ export default function ConversationScreen() {
                   startRecording();
                 }
               }}
-              disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry' || state.currentStep === 'playing_feedback' || state.currentStep === 'word_by_word'}
+              disabled={state.currentStep === 'processing' || state.currentStep === 'speaking' || state.currentStep === 'playing_intro' || state.currentStep === 'playing_await_next' || state.currentStep === 'playing_retry' || state.currentStep === 'playing_feedback' || state.currentStep === 'word_by_word' || state.currentStep === 'playing_you_said' || state.isWaitingForRepeatPrompt}
               activeOpacity={0.7}
             >
             <LinearGradient
@@ -1707,6 +1796,12 @@ export default function ConversationScreen() {
           )}
           {state.currentStep === 'word_by_word' && (
             <Text style={styles.wordByWordLabel}>Speaking word by word...</Text>
+          )}
+          {state.currentStep === 'playing_you_said' && (
+            <Text style={styles.youSaidLabel}>You Said...</Text>
+          )}
+          {state.isWaitingForRepeatPrompt && (
+            <Text style={styles.waitingLabel}>Waiting for next step...</Text>
           )}
         </Animated.View>
         )}
@@ -2200,6 +2295,20 @@ const styles = StyleSheet.create({
   exitLabel: {
     marginTop: 8,
     fontSize: 12,
+    color: '#6C757D',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  youSaidLabel: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#58D68D',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  waitingLabel: {
+    marginTop: 12,
+    fontSize: 16,
     color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
