@@ -101,7 +101,7 @@ export default function GreetingScreen() {
         // Use the audio manager to play the audio
         const success = await audioManager.playAudio(
           GREETING_AUDIO_ID,
-          'https://docs.google.com/uc?export=download&id=1xmM93cgS7LjYlvt-0Na8uoIqFqqgkLus'
+          'https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3'
         );
         
         if (success) {

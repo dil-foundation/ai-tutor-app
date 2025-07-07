@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Buffer } from 'buffer';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as Speech from 'expo-speech';
 import {
     ActivityIndicator,
@@ -101,6 +101,7 @@ export default function ConversationScreen() {
   const silenceTimerRef = useRef<any>(null);
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
+  const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
 
   // Voice Activity Detection threshold (in dB)
   const VAD_THRESHOLD = -45; // dB, adjust as needed
@@ -108,16 +109,38 @@ export default function ConversationScreen() {
   const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
 
 
+  // Handle screen focus and blur events
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Conversation screen focused - initializing...');
+      isScreenFocusedRef.current = true;
+      
+      // Initialize when screen comes into focus
+      initializeAudio();
+      connectToWebSocket();
+      
+      // Auto-start with intro audio if param is set
+      if (autoStart === 'true') {
+        setTimeout(() => {
+          if (isScreenFocusedRef.current) {
+            playIntroAudio();
+          }
+        }, 500);
+      }
+
+      // Cleanup function when screen loses focus
+      return () => {
+        console.log('Conversation screen losing focus - cleaning up...');
+        isScreenFocusedRef.current = false;
+        cleanup();
+      };
+    }, [autoStart])
+  );
+
+  // Additional cleanup on component unmount (fallback)
   useEffect(() => {
-    initializeAudio();
-    connectToWebSocket();
-    // Auto-start with intro audio if param is set
-    if (autoStart === 'true') {
-      setTimeout(() => {
-        playIntroAudio();
-      }, 500);
-    }
     return () => {
+      console.log('Conversation component unmounting - final cleanup...');
       cleanup();
     };
   }, []);
@@ -136,11 +159,14 @@ export default function ConversationScreen() {
       !state.isRetryPlaying &&
       !state.isPlayingFeedback &&
       !state.isWordByWordSpeaking &&
-      previousStepRef.current === 'speaking' 
+      previousStepRef.current === 'speaking' &&
+      isScreenFocusedRef.current // Only auto-listen if screen is focused
     ) {
       if (state.messages.length > 0 && state.messages[state.messages.length - 1].isAI) {
         setTimeout(() => {
-          startRecording();
+          if (isScreenFocusedRef.current) { // Double-check focus before starting
+            startRecording();
+          }
         }, 600);
       }
     }
@@ -164,6 +190,12 @@ export default function ConversationScreen() {
   };
 
   const playIntroAudio = async () => {
+    // Check if screen is focused before playing audio
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping intro audio');
+      return;
+    }
+
     try {
       console.log('Playing intro audio...');
       setState(prev => ({ 
@@ -189,7 +221,7 @@ export default function ConversationScreen() {
 
       // Create sound from the Google Drive URL
       const { sound } = await Audio.Sound.createAsync(
-        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/welcome_message.mp3' },
+        { uri: 'https://dil-lms.s3.us-east-1.amazonaws.com/welcome_message_final_british.mp3' },
         { shouldPlay: true }
       );
       introSoundRef.current = sound;
@@ -233,6 +265,12 @@ export default function ConversationScreen() {
 
 
   const playRetryAudio = async () => {
+    // Check if screen is focused before playing audio
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping retry audio');
+      return;
+    }
+
     try {
       console.log('Playing retry audio...');
       setState(prev => ({ 
@@ -300,6 +338,12 @@ export default function ConversationScreen() {
   };
 
   const playFeedbackAudio = async () => {
+    // Check if screen is focused before playing audio
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping feedback audio');
+      return;
+    }
+
     try {
       console.log('Playing feedback audio...');
       // Set up feedback state but keep processing animation until audio arrives
@@ -346,6 +390,12 @@ export default function ConversationScreen() {
 
   // Function to play word-by-word audio
   const playWordByWord = async (words: string[]) => {
+    // Check if screen is focused before starting word-by-word
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping word-by-word speaking');
+      return;
+    }
+
     try {
       console.log('🎤 Starting word-by-word speaking...');
       setState(prev => ({
@@ -418,6 +468,12 @@ export default function ConversationScreen() {
   };
 
   const handleWebSocketMessage = (data: any) => {
+    // Check if screen is focused before processing WebSocket messages
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, ignoring WebSocket message');
+      return;
+    }
+
     console.log('Received WebSocket message:', data);
   
     const newMessage: Message = {
@@ -543,6 +599,12 @@ export default function ConversationScreen() {
   
 
   const handleAudioData = async (audioBuffer: ArrayBuffer) => {
+    // Check if screen is focused before processing audio data
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, ignoring audio data');
+      return;
+    }
+
     try {
       const base64 = Buffer.from(audioBuffer).toString('base64'); // Convert buffer to base64
       const audioUri = `${FileSystem.cacheDirectory}ai_audio_${Date.now()}.mp3`;
@@ -630,6 +692,12 @@ export default function ConversationScreen() {
   };
 
   const playAudio = async (audioUri: string) => {
+    // Check if screen is focused before playing audio
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping audio playback');
+      return;
+    }
+
     try {
       if (soundRef.current) {
         await soundRef.current.unloadAsync();
@@ -714,6 +782,12 @@ export default function ConversationScreen() {
   };
 
   const startRecording = async () => {
+    // Check if screen is focused before starting recording
+    if (!isScreenFocusedRef.current) {
+      console.log('Screen not focused, skipping recording start');
+      return;
+    }
+
     // Stop and unload any previous recording before starting a new one
     if (recordingRef.current) {
       try {
@@ -933,27 +1007,55 @@ export default function ConversationScreen() {
   };
 
   const cleanup = () => {
+    console.log('🧹 Starting comprehensive cleanup...');
+    
+    // Clear all timers
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    
+    // Stop recording if active
     if (recordingRef.current) {
-      recordingRef.current.stopAndUnloadAsync();
+      console.log('🛑 Stopping recording...');
+      recordingRef.current.stopAndUnloadAsync().catch(error => {
+        console.warn('Error stopping recording during cleanup:', error);
+      });
+      recordingRef.current = null;
     }
-    if (soundRef.current) {
-      soundRef.current.unloadAsync();
-    }
-    if (introSoundRef.current) {
-      introSoundRef.current.unloadAsync();
-    }
-    if (retrySoundRef.current) {
-      retrySoundRef.current.unloadAsync();
-    }
-    if (feedbackSoundRef.current) {
-      feedbackSoundRef.current.unloadAsync();
-    }
-    // Stop Speech
+    
+    // Unload all audio sounds
+    const unloadSound = async (soundRef: React.MutableRefObject<Audio.Sound | null>, name: string) => {
+      if (soundRef.current) {
+        console.log(`🔇 Unloading ${name}...`);
+        try {
+          await soundRef.current.unloadAsync();
+        } catch (error) {
+          console.warn(`Error unloading ${name}:`, error);
+        }
+        soundRef.current = null;
+      }
+    };
+    
+    unloadSound(soundRef, 'main sound');
+    unloadSound(introSoundRef, 'intro sound');
+    unloadSound(retrySoundRef, 'retry sound');
+    unloadSound(feedbackSoundRef, 'feedback sound');
+    
+    // Stop Speech synthesis
+    console.log('🔇 Stopping speech synthesis...');
     Speech.stop();
+    
+    // Close WebSocket connection
+    console.log('🔌 Closing WebSocket connection...');
     closeLearnSocket();
-    // Reset animation states
+    
+    // Reset all state
+    console.log('🔄 Resetting state...');
     setState(prev => ({
       ...prev,
+      currentStep: 'waiting',
+      isConnected: false,
       isProcessingAudio: false,
       isListening: false,
       isVoiceDetected: false,
@@ -969,7 +1071,30 @@ export default function ConversationScreen() {
       currentSentence: null,
       currentWordIndex: 0,
       isDisplayingSentence: false,
+      lastStopWasSilence: false,
     }));
+    
+    // Reset refs
+    speechStartTimeRef.current = null;
+    setIsTalking(false);
+    
+    console.log('✅ Cleanup completed');
+  };
+
+  // Enhanced cleanup function specifically for manual exit
+  const performManualCleanup = () => {
+    console.log('🚪 Performing manual cleanup for user exit...');
+    
+    // Set screen as not focused immediately
+    isScreenFocusedRef.current = false;
+    
+    // Perform the same comprehensive cleanup
+    cleanup();
+    
+    // Additional safety: ensure all async operations are cancelled
+    setTimeout(() => {
+      console.log('🔒 Final cleanup check completed');
+    }, 100);
   };
 
   const renderMessage = (message: Message) => {
@@ -1061,8 +1186,32 @@ export default function ConversationScreen() {
 
   // Function to end conversation and go back
   const endConversation = () => {
-    cleanup();
-    router.back();
+    console.log('🎯 User manually ending conversation via wrong button...');
+    
+    // Show confirmation dialog
+    Alert.alert(
+      'End Conversation',
+      'Are you sure you want to end this conversation? All progress will be lost.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'End',
+          style: 'destructive',
+          onPress: () => {
+            console.log('🎯 User confirmed ending conversation...');
+            
+            // Perform enhanced manual cleanup
+            performManualCleanup();
+            
+            // Navigate back
+            router.back();
+          },
+        },
+      ]
+    );
   };
 
   // Animate mic button when listening or talking
@@ -1314,7 +1463,11 @@ export default function ConversationScreen() {
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
         {/* Wrong (X) button */}
-        <TouchableOpacity style={styles.wrongButton} onPress={endConversation}>
+        <TouchableOpacity 
+          style={styles.wrongButton} 
+          onPress={endConversation}
+          activeOpacity={0.7}
+        >
           <View style={styles.wrongButtonContainer}>
             <LinearGradient
               colors={['#FFFFFF', '#F8F9FA']}
@@ -1326,6 +1479,8 @@ export default function ConversationScreen() {
             </LinearGradient>
             <View style={styles.wrongButtonShadow} />
           </View>
+          {/* Exit label */}
+          <Text style={styles.exitLabel}>Exit</Text>
         </TouchableOpacity>
         {/* Center mic/stop button - Hide during word-by-word and sentence display */}
         {!state.isWordByWordSpeaking && !state.isDisplayingSentence && (
@@ -1920,5 +2075,12 @@ const styles = StyleSheet.create({
     color: '#58D68D',
     textAlign: 'center',
     fontWeight: '600',
+  },
+  exitLabel: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6C757D',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 }); 
