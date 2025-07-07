@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { router } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
     SafeAreaView,
@@ -11,11 +11,13 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { fetchAudioFromText } from '../../../../config/api';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => {
   try {
@@ -38,130 +40,303 @@ const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => 
   }
 };
 
-const numbersData = [
-  { number: "1", english: "One", urdu: "ایک", pron: "wun" },
-  { number: "2", english: "Two", urdu: "دو", pron: "too" },
-  { number: "3", english: "Three", urdu: "تین", pron: "three" },
-  { number: "4", english: "Four", urdu: "چار", pron: "for" },
-  { number: "5", english: "Five", urdu: "پانچ", pron: "faiv" },
-  { number: "6", english: "Six", urdu: "چھ", pron: "siks" },
-  { number: "7", english: "Seven", urdu: "سات", pron: "se-ven" },
-  { number: "8", english: "Eight", urdu: "آٹھ", pron: "eit" },
-  { number: "9", english: "Nine", urdu: "نو", pron: "nain" },
-  { number: "10", english: "Ten", urdu: "دس", pron: "ten" },
+const vocabularyData = [
+  {
+    category: 'Numbers',
+    icon: '🔢',
+    color: ['#58D68D', '#45B7A8'],
+    items: [
+      { number: "1", english: "One", urdu: "ایک", pron: "wun" },
+      { number: "2", english: "Two", urdu: "دو", pron: "too" },
+      { number: "3", english: "Three", urdu: "تین", pron: "three" },
+      { number: "4", english: "Four", urdu: "چار", pron: "for" },
+      { number: "5", english: "Five", urdu: "پانچ", pron: "faiv" },
+      { number: "6", english: "Six", urdu: "چھ", pron: "siks" },
+      { number: "7", english: "Seven", urdu: "سات", pron: "se-ven" },
+      { number: "8", english: "Eight", urdu: "آٹھ", pron: "eit" },
+      { number: "9", english: "Nine", urdu: "نو", pron: "nain" },
+      { number: "10", english: "Ten", urdu: "دس", pron: "ten" },
+    ]
+  },
+  {
+    category: 'Days of the Week',
+    icon: '🗓️',
+    color: ['#FF6B6B', '#4ECDC4'],
+    items: [
+      { english: "Monday", urdu: "پیر", pron: "mun-day" },
+      { english: "Tuesday", urdu: "منگل", pron: "tuz-day" },
+      { english: "Wednesday", urdu: "بدھ", pron: "wenz-day" },
+      { english: "Thursday", urdu: "جمعرات", pron: "thurz-day" },
+      { english: "Friday", urdu: "جمعہ", pron: "frai-day" },
+      { english: "Saturday", urdu: "ہفتہ", pron: "sa-tur-day" },
+      { english: "Sunday", urdu: "اتوار", pron: "sun-day" },
+    ]
+  },
+  {
+    category: 'Colors',
+    icon: '🎨',
+    color: ['#45B7D1', '#96CEB4'],
+    items: [
+      { english: "Red", urdu: "سرخ", pron: "red" },
+      { english: "Blue", urdu: "نیلا", pron: "bloo" },
+      { english: "Green", urdu: "سبز", pron: "green" },
+      { english: "Yellow", urdu: "پیلا", pron: "ye-lo" },
+      { english: "Black", urdu: "کالا", pron: "blak" },
+      { english: "White", urdu: "سفید", pron: "wait" },
+    ]
+  },
+  {
+    category: 'Classroom Items',
+    icon: '🎒',
+    color: ['#FFA07A', '#98D8C8'],
+    items: [
+      { english: "Book", urdu: "کتاب", pron: "buk" },
+      { english: "Pen", urdu: "قلم", pron: "pen" },
+      { english: "Chair", urdu: "کرسی", pron: "chair" },
+      { english: "Table", urdu: "میز", pron: "tei-bl" },
+      { english: "Bag", urdu: "بستہ", pron: "bag" },
+    ]
+  }
 ];
 
-const daysData = [
-  { english: "Monday", urdu: "پیر", pron: "mun-day" },
-  { english: "Tuesday", urdu: "منگل", pron: "tuz-day" },
-  { english: "Wednesday", urdu: "بدھ", pron: "wenz-day" },
-  { english: "Thursday", urdu: "جمعرات", pron: "thurz-day" },
-  { english: "Friday", urdu: "جمعہ", pron: "frai-day" },
-  { english: "Saturday", urdu: "ہفتہ", pron: "sa-tur-day" },
-  { english: "Sunday", urdu: "اتوار", pron: "sun-day" },
-];
-
-const colorsData = [
-  { english: "Red", urdu: "سرخ", pron: "red" },
-  { english: "Blue", urdu: "نیلا", pron: "bloo" },
-  { english: "Green", urdu: "سبز", pron: "green" },
-  { english: "Yellow", urdu: "پیلا", pron: "ye-lo" },
-  { english: "Black", urdu: "کالا", pron: "blak" },
-  { english: "White", urdu: "سفید", pron: "wait" },
-];
-
-const classroomItemsData = [
-  { english: "Book", urdu: "کتاب", pron: "buk" },
-  { english: "Pen", urdu: "قلم", pron: "pen" },
-  { english: "Chair", urdu: "کرسی", pron: "chair" },
-  { english: "Table", urdu: "میز", pron: "tei-bl" },
-  { english: "Bag", urdu: "بستہ", pron: "bag" },
-];
-
-const chunkArray = (arr: any[], chunkSize: number) => {
+const chunkArray = (arr: any[], chunkSize: number): any[][] => {
   return Array.from({ length: Math.ceil(arr.length / chunkSize) }, (_, i) =>
     arr.slice(i * chunkSize, i * chunkSize + chunkSize)
   );
 };
 
-const numbersPages = chunkArray(numbersData, 10);
-const daysPages = chunkArray(daysData, 7);
-const colorsPages = chunkArray(colorsData, 6);
-const classroomItemsPages = chunkArray(classroomItemsData, 5);
+const vocabularyPages = chunkArray(vocabularyData, 1); // 1 category per page
 
 const Lesson3Screen: React.FC = () => {
     const [currentPageIndex, setCurrentPageIndex] = useState(0);
     const [playingItem, setPlayingItem] = useState<string | null>(null);
     const [showFinishAnimation, setShowFinishAnimation] = useState(false);
-    const totalPages = 5; // Numbers, Days, Colors, Classroom Items, Summary
 
-    const renderCards = (data: any[], pageData: any[], title: string, isNumber: boolean = false) => {
-        return pageData.map((item, index) => (
-            <View key={index} style={styles.card}>
-                <View style={styles.cardTextContainer}>
-                    {isNumber ? (
-                        <Text style={styles.numberText}>{item.number} <Text style={styles.pronText}>({item.pron})</Text></Text>
-                    ) : (
-                        <Text style={styles.englishWord}>{item.english} <Text style={styles.pronText}>({item.pron})</Text></Text>
-                    )}
-                    {isNumber && <Text style={styles.englishWord}>{item.english}</Text>}
-                    <Text style={styles.arabicWord}>{item.urdu}</Text>
+    // Animation values
+    const [fadeAnim] = useState(new Animated.Value(0));
+    const [slideAnim] = useState(new Animated.Value(30));
+    const [scaleAnim] = useState(new Animated.Value(0.9));
+    const [pulseAnim] = useState(new Animated.Value(1));
+    const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+
+    useEffect(() => {
+        // Initialize card animations
+        const currentCategory = vocabularyPages[currentPageIndex]?.[0];
+        const animations = currentCategory?.items.map(() => new Animated.Value(0)) || [];
+        setCardAnimations(animations);
+
+        // Animate header and content
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 800,
+                useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        // Animate cards with stagger
+        if (animations.length > 0) {
+            const cardAnimations = animations.map((anim: Animated.Value, index: number) =>
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: 600,
+                    delay: index * 100,
+                    useNativeDriver: true,
+                })
+            );
+            Animated.stagger(100, cardAnimations).start();
+        }
+
+        // Pulse animation for play buttons
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, {
+                    toValue: 1.1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(pulseAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [currentPageIndex]);
+
+    const renderVocabularyCard = (item: any, index: number, isNumber: boolean = false) => {
+        const currentCategory = vocabularyPages[currentPageIndex]?.[0];
+        const cardAnim = cardAnimations[index] || new Animated.Value(0);
+
+        return (
+            <Animated.View
+                key={index}
+                style={[
+                    styles.cardWrapper,
+                    {
+                        opacity: cardAnim,
+                        transform: [
+                            { translateY: cardAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [50, 0]
+                            })},
+                            { scale: cardAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0.8, 1]
+                            })}
+                        ]
+                    }
+                ]}
+            >
+                <View style={styles.cardContainer}>
+                    <View style={styles.cardContent}>
+                        <View style={styles.cardHeader}>
+                            <View style={styles.cardTextContainer}>
+                                {isNumber ? (
+                                    <Text style={styles.numberText}>
+                                        {item.number} <Text style={styles.pronText}>({item.pron})</Text>
+                                    </Text>
+                                ) : (
+                                    <Text style={styles.englishWord}>
+                                        {item.english} <Text style={styles.pronText}>({item.pron})</Text>
+                                    </Text>
+                                )}
+                                {isNumber && <Text style={styles.englishWord}>{item.english}</Text>}
+                                <Text style={styles.urduWord}>{item.urdu}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.playButtonContainer}
+                                disabled={playingItem !== null}
+                                onPress={async () => {
+                                    const audioText = isNumber ? `${item.number} for ${item.english}` : item.english;
+                                    setPlayingItem(audioText);
+                                    await playAudioFromText(audioText, () => setPlayingItem(null));
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Animated.View
+                                    style={[
+                                        styles.playButtonCircle,
+                                        {
+                                            transform: [{ scale: pulseAnim }]
+                                        }
+                                    ]}
+                                >
+                                    <LinearGradient
+                                        colors={currentCategory?.color || ['#58D68D', '#45B7A8']}
+                                        style={styles.playButtonGradient}
+                                    >
+                                        {playingItem === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
+                                            <Ionicons name="pause" size={20} color="#FFFFFF" />
+                                        ) : (
+                                            <Ionicons name="play" size={20} color="#FFFFFF" />
+                                        )}
+                                    </LinearGradient>
+                                </Animated.View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
-                <TouchableOpacity
-                    style={styles.playButtonCircle}
-                    disabled={playingItem !== null}
-                    onPress={async () => {
-                        const audioText = isNumber ? `${item.number} for ${item.english}` : item.english;
-                        setPlayingItem(audioText);
-                        await playAudioFromText(audioText, () => setPlayingItem(null));
-                    }}
-                >
-                    {playingItem === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
-                        <Ionicons name="pause" size={24} color="#fff" />
-                    ) : (
-                        <Ionicons name="play" size={24} color="#fff" />
-                    )}
-                </TouchableOpacity>
-            </View>
-        ));
+            </Animated.View>
+        );
     };
 
-    const vocabularyPages = [
-        // Page 1: Learn Numbers 1-10
-        <View key="page1_numbers" style={styles.pageContent}>
-            <Text style={styles.stepTitle}>📚 Learn Numbers 1 - 10</Text>
-            {numbersPages[0] && renderCards(numbersData, numbersPages[0], "Numbers", true)}
-        </View>,
-        // Page 2: Learn Days of the Week
-        <View key="page2_days" style={styles.pageContent}>
-            <Text style={styles.stepTitle}>🗓️ Learn Days of the Week</Text>
-            {daysPages[0] && renderCards(daysData, daysPages[0], "Days")}
-        </View>,
-        // Page 3: Learn Basic Colors
-        <View key="page3_colors" style={styles.pageContent}>
-            <Text style={styles.stepTitle}>🎨 Learn Basic Colors</Text>
-            {colorsPages[0] && renderCards(colorsData, colorsPages[0], "Colors")}
-        </View>,
-        // Page 4: Common Classroom Items
-        <View key="page4_items" style={styles.pageContent}>
-            <Text style={styles.stepTitle}>🎒 Common Classroom Items</Text>
-            {classroomItemsPages[0] && renderCards(classroomItemsData, classroomItemsPages[0], "Classroom Items")}
-        </View>,
-        // Page 5: Summary
-        <View key="page5_summary" style={[styles.pageContent, styles.summaryPage]}>
-            <Text style={styles.stepTitle}>✅ Great Job! Here's What You've Learned:</Text>
-            <View style={styles.summaryList}>
-                <Text style={styles.summaryItem}>🔢 Numbers: One - Ten</Text>
-                <Text style={styles.summaryItem}>📅 Days: Monday - Sunday</Text>
-                <Text style={styles.summaryItem}>🎨 Colors: Red, Blue, Green, Yellow, Black, White</Text>
-                <Text style={styles.summaryItem}>📚 Objects: Book, Pen, Chair, Table, Bag</Text>
+    const renderVocabularyPage = (category: any) => {
+        const isNumber = category.category === 'Numbers';
+        
+        return (
+            <View style={styles.pageContent}>
+                <View style={styles.categoryHeader}>
+                    <LinearGradient
+                        colors={category.color}
+                        style={styles.categoryIconGradient}
+                    >
+                        <Text style={styles.categoryIcon}>{category.icon}</Text>
+                    </LinearGradient>
+                    <View style={styles.categoryTextContainer}>
+                        <Text style={styles.categoryTitle}>{category.category}</Text>
+                        <Text style={styles.categorySubtitle}>
+                            {category.items.length} words to learn
+                        </Text>
+                    </View>
+                </View>
+                
+                <View style={styles.vocabularyGrid}>
+                    {category.items.map((item: any, index: number) => 
+                        renderVocabularyCard(item, index, isNumber)
+                    )}
+                </View>
             </View>
+        );
+    };
+
+    const renderSummaryPage = () => (
+        <View style={styles.summaryPage}>
+            <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.summaryIconGradient}
+            >
+                <Text style={styles.summaryIcon}>🎉</Text>
+            </LinearGradient>
+            
+            <Text style={styles.summaryTitle}>Amazing Progress!</Text>
+            <Text style={styles.summarySubtitle}>You've learned essential vocabulary</Text>
+            
+            <View style={styles.summaryStats}>
+                <View style={styles.statItem}>
+                    <Text style={styles.statNumber}>28</Text>
+                    <Text style={styles.statLabel}>Words Learned</Text>
+                </View>
+                <View style={styles.statItem}>
+                    <Text style={styles.statNumber}>4</Text>
+                    <Text style={styles.statLabel}>Categories</Text>
+                </View>
+                <View style={styles.statItem}>
+                    <Text style={styles.statNumber}>100%</Text>
+                    <Text style={styles.statLabel}>Completion</Text>
+                </View>
+            </View>
+            
+            <View style={styles.achievementList}>
+                <Text style={styles.achievementTitle}>What You've Mastered:</Text>
+                <View style={styles.achievementItem}>
+                    <Text style={styles.achievementIcon}>🔢</Text>
+                    <Text style={styles.achievementText}>Numbers 1-10</Text>
+                </View>
+                <View style={styles.achievementItem}>
+                    <Text style={styles.achievementIcon}>🗓️</Text>
+                    <Text style={styles.achievementText}>Days of the Week</Text>
+                </View>
+                <View style={styles.achievementItem}>
+                    <Text style={styles.achievementIcon}>🎨</Text>
+                    <Text style={styles.achievementText}>Basic Colors</Text>
+                </View>
+                <View style={styles.achievementItem}>
+                    <Text style={styles.achievementIcon}>🎒</Text>
+                    <Text style={styles.achievementText}>Classroom Items</Text>
+                </View>
+            </View>
+            
             <Text style={styles.summaryEncouragement}>
-                🌟 You're doing amazing! You now know many English words.
-                You are ready to move to the next lesson in Stage 0.
-                Keep going—you're one step closer to speaking English with confidence!
+                🌟 You're doing fantastic! You now have a solid foundation of essential English vocabulary. 
+                Keep practicing and you'll be speaking with confidence in no time!
             </Text>
-        </View>,
+        </View>
+    );
+
+    const lessonPages = [
+        ...vocabularyPages.map((page, index) => renderVocabularyPage(page[0])),
+        renderSummaryPage()
     ];
 
     const handleGoBack = () => {
@@ -173,63 +348,148 @@ const Lesson3Screen: React.FC = () => {
     };
 
     const handleNextOrFinish = () => {
-        if (currentPageIndex < totalPages - 1) {
+        if (currentPageIndex < lessonPages.length - 1) {
             setCurrentPageIndex(currentPageIndex + 1);
         } else {
-            // Handle lesson completion
             console.log('Lesson 3 Finished!');
             setShowFinishAnimation(true);
-            // Wait for animation to complete before navigating
             setTimeout(() => {
-                router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
-            }, 3000); // 3 seconds to allow animation to play
+                router.replace('/(tabs)/practice/stage0');
+            }, 3000);
         }
     };
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#111629" />
+            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
             <View style={styles.container}>
                 {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={24} color="#D2D5E1" /></TouchableOpacity>
-                    <Text style={styles.headerTitle}>Lesson 3: Vocabulary Basics</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+                <Animated.View 
+                    style={[
+                        styles.header,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+                        <LinearGradient
+                            colors={['#58D68D', '#45B7A8']}
+                            style={styles.backButtonGradient}
+                        >
+                            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                    
+                    <View style={styles.headerContent}>
+                        <View style={styles.iconContainer}>
+                            <LinearGradient
+                                colors={['#58D68D', '#45B7A8']}
+                                style={styles.headerIconGradient}
+                            >
+                                <Text style={styles.headerIcon}>📚</Text>
+                            </LinearGradient>
+                        </View>
+                        <Text style={styles.headerTitle}>Vocabulary Basics</Text>
+                        <Text style={styles.headerSubtitle}>Essential words for everyday use</Text>
+                    </View>
+                    
+                    <View style={{ width: 50 }} />
+                </Animated.View>
 
-                {/* Pagination Dots */}
-                <View style={styles.paginationContainer}>
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                        <View
-                            key={index}
+                {/* Progress Indicator */}
+                <Animated.View 
+                    style={[
+                        styles.progressContainer,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    <View style={styles.progressBar}>
+                        <LinearGradient
+                            colors={['#58D68D', '#45B7A8']}
                             style={[
-                                styles.paginationDot,
-                                index === currentPageIndex ? styles.activeDot : styles.inactiveDot,
+                                styles.progressFill,
+                                { width: `${((currentPageIndex + 1) / lessonPages.length) * 100}%` }
                             ]}
                         />
-                    ))}
-                </View>
+                    </View>
+                    <Text style={styles.progressText}>
+                        {currentPageIndex + 1} of {lessonPages.length}
+                    </Text>
+                </Animated.View>
 
-                {/* Scrollable Content Area */}
-                <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollViewContentContainer}
-                    showsVerticalScrollIndicator={false}
+                {/* Main Content */}
+                <Animated.View 
+                    style={[
+                        styles.contentContainer,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ scale: scaleAnim }],
+                        },
+                    ]}
                 >
-                    {vocabularyPages[currentPageIndex] || <View><Text>Loading page...</Text></View>}
-                </ScrollView>
+                    <ScrollView
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollViewContentContainer}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {lessonPages[currentPageIndex]}
+                    </ScrollView>
+                </Animated.View>
 
                 {/* Navigation Button */}
-                <TouchableOpacity
-                    style={styles.nextButton}
-                    onPress={handleNextOrFinish}
+                <Animated.View 
+                    style={[
+                        styles.buttonContainer,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
                 >
-                    <Text style={styles.nextButtonText}>
-                        {currentPageIndex === totalPages - 1 ? 'Finish' : 'Next'}
-                    </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.buttonWrapper}
+                        onPress={handleNextOrFinish}
+                        activeOpacity={0.8}
+                    >
+                        <LinearGradient
+                            colors={['#58D68D', '#45B7A8', '#58D68D']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.buttonGradient}
+                        >
+                            <View style={styles.buttonContent}>
+                                <View style={styles.buttonIconContainer}>
+                                    <Text style={styles.buttonIcon}>
+                                        {currentPageIndex === lessonPages.length - 1 ? '🎉' : '→'}
+                                    </Text>
+                                </View>
+                                <View style={styles.buttonTextContainer}>
+                                    <Text style={styles.buttonText}>
+                                        {currentPageIndex === lessonPages.length - 1 ? 'Complete Lesson' : 'Continue'}
+                                    </Text>
+                                    <Text style={styles.buttonSubtext}>
+                                        {currentPageIndex === lessonPages.length - 1 ? 'Great job! You did it!' : 'Next vocabulary set →'}
+                                    </Text>
+                                </View>
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </Animated.View>
 
-                {/* 🎇 Full Screen Spark Animation when finishing lesson */}
+                {/* Decorative Elements */}
+                <View style={styles.decorativeCircle1} />
+                <View style={styles.decorativeCircle2} />
+                <View style={styles.decorativeCircle3} />
+                <View style={styles.particle1} />
+                <View style={styles.particle2} />
+                <View style={styles.particle3} />
+
+                {/* Finish Animation */}
                 {showFinishAnimation && (
                     <View style={styles.animationOverlay}>
                         <LottieView
@@ -248,157 +508,426 @@ const Lesson3Screen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#111629',
+        backgroundColor: '#FFFFFF',
     },
     container: {
         flex: 1,
-        backgroundColor: '#111629',
+        backgroundColor: '#FFFFFF',
+        paddingTop: 20,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#111629',
-        marginTop: 35,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        marginBottom: 20,
     },
     backButton: {
-        padding: 8,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    backButtonGradient: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    headerContent: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    iconContainer: {
+        marginBottom: 8,
+    },
+    headerIconGradient: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 12,
+    },
+    headerIcon: {
+        fontSize: 28,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#93E893',
-        flex: 1,
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#000000',
         textAlign: 'center',
-        marginRight: 32,
+        marginBottom: 4,
+        textShadowColor: 'rgba(88, 214, 141, 0.2)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
-    paginationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1E293B',
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#6C757D',
+        textAlign: 'center',
     },
-    paginationDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginHorizontal: 4,
+    progressContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 20,
     },
-    activeDot: {
-        backgroundColor: '#93E893',
+    progressBar: {
+        height: 6,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        borderRadius: 3,
+        marginBottom: 8,
+        overflow: 'hidden',
     },
-    inactiveDot: {
-        backgroundColor: '#D2D5E1',
+    progressFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    progressText: {
+        fontSize: 12,
+        color: '#6C757D',
+        textAlign: 'center',
+        fontWeight: '600',
+    },
+    contentContainer: {
+        flex: 1,
     },
     scrollView: {
         flex: 1,
     },
     scrollViewContentContainer: {
         padding: 20,
+        paddingTop: 10,
+        paddingBottom: 40,
     },
     pageContent: {
+        alignItems: 'center',
+    },
+    categoryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F9FA',
+        borderRadius: 20,
         padding: 20,
-        backgroundColor: '#1E293B',
-        borderRadius: 15,
-        marginBottom: 20,
+        marginBottom: 24,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    stepTitle: {
-        fontSize: 22,
+    categoryIconGradient: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    categoryIcon: {
+        fontSize: 28,
+    },
+    categoryTextContainer: {
+        flex: 1,
+    },
+    categoryTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#93E893',
-        textAlign: 'center',
-        marginBottom: 20,
+        color: '#000000',
+        marginBottom: 4,
     },
-    card: {
+    categorySubtitle: {
+        fontSize: 14,
+        color: '#6C757D',
+    },
+    vocabularyGrid: {
+        width: '100%',
+    },
+    cardWrapper: {
+        width: '100%',
+        marginBottom: 16,
+    },
+    cardContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    cardContent: {
+        flexDirection: 'column',
+    },
+    cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     cardTextContainer: {
         flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'center',
     },
     numberText: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#111629',
-        marginBottom: 2,
+        color: '#000000',
+        marginBottom: 4,
     },
     pronText: {
         fontSize: 16,
         fontWeight: '400',
-        color: '#6B7280',
+        color: '#6C757D',
     },
     englishWord: {
-        fontSize: 18,
-        color: '#111629',
+        fontSize: 20,
+        color: '#000000',
         fontWeight: '600',
-        marginBottom: 2,
+        marginBottom: 4,
     },
-    arabicWord: {
-        fontSize: 16,
-        color: '#6B7280',
-        marginBottom: 0,
+    urduWord: {
+        fontSize: 18,
+        color: '#6C757D',
+        fontWeight: '500',
+    },
+    playButtonContainer: {
+        marginLeft: 16,
     },
     playButtonCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#93E893',
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        overflow: 'hidden',
+        shadowColor: '#58D68D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    playButtonGradient: {
+        width: '100%',
+        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        marginLeft: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
     },
     summaryPage: {
         alignItems: 'center',
+        padding: 20,
     },
-    summaryList: {
-        alignSelf: 'flex-start',
-        marginBottom: 20,
-    },
-    summaryItem: {
-        fontSize: 18,
-        color: '#D2D5E1',
-        marginBottom: 10,
-    },
-    summaryEncouragement: {
-        fontSize: 16,
-        color: '#D2D5E1',
-        textAlign: 'center',
-        lineHeight: 24,
-    },
-    nextButton: {
-        backgroundColor: '#93E893',
-        paddingVertical: 16,
-        marginHorizontal: 20,
-        borderRadius: 30,
+    summaryIconGradient: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 12,
     },
-    nextButtonText: {
-        color: '#111629',
+    summaryIcon: {
+        fontSize: 40,
+    },
+    summaryTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#000000',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    summarySubtitle: {
+        fontSize: 16,
+        color: '#6C757D',
+        textAlign: 'center',
+        marginBottom: 30,
+    },
+    summaryStats: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+        marginBottom: 30,
+    },
+    statItem: {
+        alignItems: 'center',
+    },
+    statNumber: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#58D68D',
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#6C757D',
+        textAlign: 'center',
+    },
+    achievementList: {
+        width: '100%',
+        marginBottom: 30,
+    },
+    achievementTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#000000',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    achievementItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    achievementIcon: {
+        fontSize: 20,
+        marginRight: 12,
+    },
+    achievementText: {
+        fontSize: 16,
+        color: '#000000',
+        fontWeight: '500',
+    },
+    summaryEncouragement: {
+        fontSize: 16,
+        color: '#6C757D',
+        textAlign: 'center',
+        lineHeight: 24,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    buttonContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+        marginBottom: -10,
+    },
+    buttonWrapper: {
+        borderRadius: 30,
+        overflow: 'hidden',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 12,
+    },
+    buttonGradient: {
+        paddingHorizontal: 32,
+        paddingVertical: 20,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    buttonIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    buttonIcon: {
+        fontSize: 20,
+        marginTop: -10,
+    },
+    buttonTextContainer: {
+        flex: 1,
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    buttonSubtext: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        opacity: 0.9,
+        marginTop: -3,
+    },
+    decorativeCircle1: {
+        position: 'absolute',
+        top: height * 0.1,
+        right: -60,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    },
+    decorativeCircle2: {
+        position: 'absolute',
+        bottom: height * 0.2,
+        left: -40,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    },
+    decorativeCircle3: {
+        position: 'absolute',
+        top: height * 0.6,
+        right: -30,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(0, 0, 0, 0.015)',
+    },
+    particle1: {
+        position: 'absolute',
+        top: height * 0.3,
+        left: width * 0.1,
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#6C757D',
+        opacity: 0.3,
+    },
+    particle2: {
+        position: 'absolute',
+        top: height * 0.7,
+        right: width * 0.15,
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: '#ADB5BD',
+        opacity: 0.2,
+    },
+    particle3: {
+        position: 'absolute',
+        bottom: height * 0.4,
+        left: width * 0.2,
+        width: 2,
+        height: 2,
+        borderRadius: 1,
+        backgroundColor: '#CED4DA',
+        opacity: 0.25,
     },
     animationOverlay: {
         position: 'absolute',

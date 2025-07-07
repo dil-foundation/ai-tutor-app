@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Animated,
   Dimensions,
@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { getAuthData } from '../../utils/authStorage';
+import audioManager from '../../utils/audioManager';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,6 +22,8 @@ const LINES = [
   'آئیں، بولنے کی مشق شروع کرتے ہیں۔',
   'آپ جو کہیں گے، ہم اسے انگریزی میں سنیں گے۔',
 ];
+
+const GREETING_AUDIO_ID = 'greeting_audio';
 
 export default function GreetingScreen() {
   const router = useRouter();
@@ -32,18 +35,38 @@ export default function GreetingScreen() {
   const [lineAnimations, setLineAnimations] = useState<Animated.Value[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasStartedGreeting, setHasStartedGreeting] = useState(false);
   
   // Add sound reference to properly manage audio
   const soundRef = useRef<Audio.Sound | null>(null);
   const isPlayingRef = useRef(false);
+  const hasVisitedRef = useRef(false);
+
+  // Handle screen focus to prevent duplicate audio
+  useFocusEffect(
+    useCallback(() => {
+      // If audio is already playing when screen comes into focus, don't start it again
+      if (audioManager.isAudioPlaying(GREETING_AUDIO_ID)) {
+        console.log('Greeting audio already playing on focus, skipping...');
+        setHasStartedGreeting(true);
+      }
+      
+      return () => {
+        // Cleanup when screen loses focus
+        console.log('Greeting screen losing focus');
+      };
+    }, [])
+  );
 
   useEffect(() => {
     let lineTimeouts: number[] = [];
-    let hasVisited = false;
+    let isComponentMounted = true;
 
     const revealLines = () => {
       LINES.forEach((line, index) => {
         const timeout = setTimeout(() => {
+          if (!isComponentMounted) return;
+          
           setVisibleLines((prev) => [...prev, line]);
           
           // Create and animate the new line immediately
@@ -65,70 +88,60 @@ export default function GreetingScreen() {
     };
 
     const playGreeting = async () => {
-      // Prevent multiple audio instances
-      if (isPlayingRef.current || hasVisited) {
+      // Use audio manager to prevent multiple instances
+      if (audioManager.isAudioPlaying(GREETING_AUDIO_ID) || hasStartedGreeting) {
+        console.log('Greeting audio already playing or started, skipping...');
         return;
       }
       
       try {
-        isPlayingRef.current = true;
-        hasVisited = true;
+        console.log('Starting greeting audio...');
+        setHasStartedGreeting(true);
         
-        // Clean up any existing sound first
-        if (soundRef.current) {
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
-        }
-
-        const { sound } = await Audio.Sound.createAsync(
-          {
-            uri: 'https://docs.google.com/uc?export=download&id=1xmM93cgS7LjYlvt-0Na8uoIqFqqgkLus',
-          },
-          { shouldPlay: true }
+        // Use the audio manager to play the audio
+        const success = await audioManager.playAudio(
+          GREETING_AUDIO_ID,
+          'https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3'
         );
         
-        // Store sound reference
-        soundRef.current = sound;
-        
-        // Start revealing lines immediately when audio starts
-        revealLines();
-        
-        await sound.playAsync();
-        sound.setOnPlaybackStatusUpdate(async (status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            await AsyncStorage.setItem('hasVisitedLearn', 'true');
-            setIsAudioFinished(true);
-            
-            // Clean up sound after it finishes
-            if (soundRef.current) {
-              await soundRef.current.unloadAsync();
-              soundRef.current = null;
+        if (success) {
+          // Start revealing lines immediately when audio starts
+          revealLines();
+          
+          // Set up a timer to check when audio finishes (since audio manager handles the audio)
+          const checkAudioStatus = setInterval(() => {
+            if (!audioManager.isAudioPlaying(GREETING_AUDIO_ID)) {
+              clearInterval(checkAudioStatus);
+              if (isComponentMounted) {
+                console.log('Audio finished, updating UI...');
+                AsyncStorage.setItem('hasVisitedLearn', 'true');
+                setIsAudioFinished(true);
+                
+                // Animate the chat container after animation ends
+                Animated.parallel([
+                  Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 800,
+                    useNativeDriver: true,
+                  }),
+                ]).start();
+              }
             }
-            isPlayingRef.current = false;
-            
-            // Animate the chat container after animation ends
-            Animated.parallel([
-              Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 800,
-                useNativeDriver: true,
-              }),
-              Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 800,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          } else if (!status.isLoaded && 'error' in status) {
-            console.error('Audio playback error:', status.error);
-            isPlayingRef.current = false;
-            // If audio fails, still show lines
-            revealLines();
-          }
-        });
+          }, 500); // Check every 500ms
+          
+          // Clean up interval if component unmounts
+          return () => clearInterval(checkAudioStatus);
+        } else {
+          console.log('Failed to start greeting audio, showing lines anyway...');
+          revealLines();
+        }
       } catch (error) {
         console.log('Audio error:', error);
-        isPlayingRef.current = false;
         // If audio fails, still show lines
         revealLines();
       }
@@ -155,7 +168,12 @@ export default function GreetingScreen() {
         }
 
         // User is authenticated and hasn't visited, start the greeting
-        playGreeting();
+        // Add a small delay to ensure component is fully mounted
+        setTimeout(() => {
+          if (isComponentMounted) {
+            playGreeting();
+          }
+        }, 100);
       } catch (error) {
         console.log('Error checking authentication or AsyncStorage:', error);
         // If there's an error, redirect to login for safety
@@ -169,19 +187,23 @@ export default function GreetingScreen() {
     initializeGreeting();
 
     return () => {
+      isComponentMounted = false;
+      
       // Clean up timeouts
       lineTimeouts.forEach(clearTimeout);
       
-      // Clean up audio
-      if (soundRef.current) {
-        soundRef.current.unloadAsync().catch(console.error);
-        soundRef.current = null;
+      // Stop the greeting audio if component unmounts
+      if (audioManager.isAudioPlaying(GREETING_AUDIO_ID)) {
+        audioManager.stopCurrentAudio();
       }
-      isPlayingRef.current = false;
     };
   }, []);
 
   const handleContinue = () => {
+    // Stop any playing audio before navigating
+    if (audioManager.isAudioPlaying(GREETING_AUDIO_ID)) {
+      audioManager.stopCurrentAudio();
+    }
     router.replace('/(tabs)/learn');
   };
 

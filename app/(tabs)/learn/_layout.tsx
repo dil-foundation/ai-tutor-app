@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { getAuthData } from '../../utils/authStorage';
+import audioManager from '../../utils/audioManager';
 
 export default function LearnLayout() {
   const router = useRouter();
@@ -30,6 +31,13 @@ export default function LearnLayout() {
     };
 
     checkFirstTime();
+
+    // Cleanup function to stop any playing audio when leaving the learn section
+    return () => {
+      if (audioManager.isAudioPlaying()) {
+        audioManager.stopCurrentAudio();
+      }
+    };
   }, []);
 
   return (
