@@ -131,33 +131,8 @@ export default function LearnScreen() {
             {/* Main Text */}
             <View style={styles.textSection}>
               <Text style={styles.mainText}>
-                Press the button and speak in Urdu to get started
+                Press the button and speak in urdu to get started
               </Text>
-              <Text style={styles.descriptionText}>
-                Experience the magic of real-time translation and conversation
-              </Text>
-            </View>
-
-            {/* Feature Highlights */}
-            <View style={styles.featuresContainer}>
-              <View style={styles.featureItem}>
-                <View style={styles.featureIcon}>
-                  <Ionicons name="flash" size={20} color="#58D68D" />
-                </View>
-                <Text style={styles.featureText}>Instant Translation</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <View style={styles.featureIcon}>
-                  <Ionicons name="chatbubbles" size={20} color="#58D68D" />
-                </View>
-                <Text style={styles.featureText}>Real-time Conversation</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <View style={styles.featureIcon}>
-                  <Ionicons name="school" size={20} color="#58D68D" />
-                </View>
-                <Text style={styles.featureText}>AI-Powered Learning</Text>
-              </View>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -240,13 +215,13 @@ export default function LearnScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 80,
     backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 30,
+    marginBottom: 40,
   },
   headerContent: {
     alignItems: 'center',
@@ -286,14 +261,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   mainCard: {
     width: '100%',
-    marginBottom: 30,
+    marginBottom: 40,
   },
   cardGradient: {
     borderRadius: 24,
-    padding: 32,
+    padding: 40,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     backgroundColor: '#F8F9FA',
@@ -308,50 +285,19 @@ const styles = StyleSheet.create({
 
   textSection: {
     alignItems: 'center',
-    marginBottom: 24,
     zIndex: 2,
   },
   mainText: {
-    fontSize: 20,
+    fontSize: 22,
     color: '#000000',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 30,
     fontWeight: '600',
-    marginBottom: 12,
   },
-  descriptionText: {
-    fontSize: 14,
-    color: '#6C757D',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  featuresContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-  },
-  featureItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  featureText: {
-    fontSize: 12,
-    color: '#58D68D',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
+
   buttonContainer: {
     width: '100%',
-    marginBottom: 30,
+    marginBottom: 40,
   },
   buttonWrapper: {
     borderRadius: 30,
@@ -406,6 +352,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: 20,
   },
   infoCard: {
     flex: 1,

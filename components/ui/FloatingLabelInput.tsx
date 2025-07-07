@@ -44,10 +44,10 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
 
   const labelStyle = {
     position: 'absolute' as 'absolute',
-    left: 12,
+    left: 16,
     top: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [18, -10],
+      outputRange: [20, -8],
     }),
     fontSize: animatedValue.interpolate({
       inputRange: [0, 1],
@@ -55,16 +55,16 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
     }),
     color: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['#D2D5E1', error ? 'red' : '#93E893'],
+      outputRange: ['#6C757D', error ? '#FF6B6B' : '#58D68D'],
     }),
     backgroundColor: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['transparent', '#111629']
+      outputRange: ['transparent', '#FFFFFF']
     }),
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     opacity: placeholder ? animatedValue : 1,
+    fontFamily: 'Lexend-Medium',
   };
-
 
   const inputBoxStyles = [
     styles.inputBox,
@@ -88,12 +88,12 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           placeholder={placeholder}
-          placeholderTextColor="#A9A9A9"
+          placeholderTextColor="#ADB5BD"
           {...props}
         />
         {onToggleVisibility && (
           <TouchableOpacity onPress={onToggleVisibility} style={styles.icon}>
-            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#D2D5E1" />
+            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={20} color="#58D68D" />
           </TouchableOpacity>
         )}
       </View>
@@ -104,46 +104,67 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 20,
     width: '100%',
   },
   inputBox: {
-    backgroundColor: '#1E293B',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#D2D5E1',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E9ECEF',
     height: 60,
     justifyContent: 'center',
     position: 'relative',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   multilineInputBox: {
     height: 120,
     justifyContent: 'flex-start',
-    paddingTop: 15,
+    paddingTop: 20,
   },
   inputBoxFocused: {
-    borderColor: '#93E893',
+    borderColor: '#58D68D',
+    shadowColor: '#58D68D',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inputBoxError: {
-    borderColor: 'red',
+    borderColor: '#FF6B6B',
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   input: {
     fontSize: 16,
-    color: '#D2D5E1',
+    color: '#000000',
     paddingHorizontal: 16,
-    paddingTop: 18,
+    paddingTop: 20,
     height: '100%',
+    fontFamily: 'Lexend-Regular',
   },
   icon: {
     position: 'absolute',
-    right: 15,
-    top: 18,
+    right: 16,
+    top: 20,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorText: {
-    color: 'red',
+    color: '#FF6B6B',
     fontSize: 12,
-    marginTop: 4,
-    marginLeft: 5,
+    marginTop: 6,
+    marginLeft: 16,
+    fontFamily: 'Lexend-Regular',
   },
 });
 
