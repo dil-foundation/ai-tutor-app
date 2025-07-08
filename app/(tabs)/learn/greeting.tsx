@@ -2,10 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
-import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  Animated,
   Dimensions,
   StyleSheet,
   Text,
@@ -32,9 +30,6 @@ export default function GreetingScreen() {
   const [isAudioFinished, setIsAudioFinished] = useState(false);
   const [visibleLines, setVisibleLines] = useState<string[]>([]);
   const [showContinue, setShowContinue] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
-  const [lineAnimations, setLineAnimations] = useState<Animated.Value[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedGreeting, setHasStartedGreeting] = useState(false);
@@ -70,16 +65,6 @@ export default function GreetingScreen() {
           if (!isComponentMounted) return;
           
           setVisibleLines((prev) => [...prev, line]);
-          
-          // Create and animate the new line immediately
-          const newLineAnim = new Animated.Value(0);
-          setLineAnimations(prev => [...prev, newLineAnim]);
-          
-          Animated.timing(newLineAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }).start();
           
           if (index === LINES.length - 1) {
             setShowContinue(true);
@@ -118,20 +103,6 @@ export default function GreetingScreen() {
                 console.log('Audio finished, updating UI...');
                 AsyncStorage.setItem('hasVisitedLearn', 'true');
                 setIsAudioFinished(true);
-                
-                // Animate the chat container after animation ends
-                Animated.parallel([
-                  Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                  }),
-                  Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 800,
-                    useNativeDriver: true,
-                  }),
-                ]).start();
               }
             }
           }, 500); // Check every 500ms
@@ -227,23 +198,10 @@ export default function GreetingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-      >
+      <View style={styles.mainContainer}>
         {/* Welcome Header */}
         <View style={styles.header}>
-          <Animated.View
-            style={[
-              styles.headerContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
+          <View style={styles.headerContent}>
             <View style={styles.iconContainer}>
               <LinearGradient
                 colors={['#58D68D', '#45B7A8']}
@@ -254,98 +212,30 @@ export default function GreetingScreen() {
             </View>
             <Text style={styles.welcomeText}>Welcome to Your Learning Journey</Text>
             <Text style={styles.subtitleText}>Let's begin your English speaking adventure</Text>
-          </Animated.View>
+          </View>
         </View>
 
         {/* Main Content Area */}
         <View style={styles.contentContainer}>
-          {/* Animated Lines with Modern Cards */}
+          {/* Lines with Modern Cards */}
           <View style={styles.linesContainer}>
             {visibleLines.map((line, index) => (
               <View key={index} style={styles.lineWrapperContainer}>
-                <Animated.View
-                  style={[
-                    styles.lineWrapper,
-                    {
-                      opacity: lineAnimations[index] || 0,
-                      transform: [{ 
-                        translateY: lineAnimations[index] ? 
-                          lineAnimations[index].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [20, 0]
-                          }) : 20
-                      }],
-                    },
-                  ]}
-                >
+                <View style={styles.lineWrapper}>
                   <LinearGradient
                     colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
                     style={styles.lineGradient}
                   >
                     <Text style={styles.text}>{line}</Text>
                   </LinearGradient>
-                </Animated.View>
-                
-                {/* Spark Animation Overlay on Text */}
-                {isAudioFinished && index === visibleLines.length - 1 && (
-                  <View style={styles.animationOverlay}>
-                    <LottieView
-                      source={require('../../../assets/animations/sparkle.json')}
-                      autoPlay
-                      loop={false}
-                      style={styles.sparkleAnimation}
-                    />
-                  </View>
-                )}
+                </View>
               </View>
             ))}
           </View>
 
-          {/* Chat-like Container after animation */}
-          {isAudioFinished && (
-            <Animated.View
-              style={[
-                styles.chatContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
-              <View style={styles.chatBubble}>
-                <LinearGradient
-                  colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
-                  style={styles.chatGradient}
-                >
-                  <Text style={styles.chatText}>
-                    "Ready to practice? Let's make your English speaking dreams come true! 🚀"
-                  </Text>
-                </LinearGradient>
-              </View>
-              <View style={styles.chatBubble}>
-                <LinearGradient
-                  colors={['rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.01)']}
-                  style={styles.chatGradient}
-                >
-                  <Text style={styles.chatText}>
-                    "I'll be your personal AI tutor, guiding you through every step of your learning journey."
-                  </Text>
-                </LinearGradient>
-              </View>
-            </Animated.View>
-          )}
-
-          {/* Continue Button - Only one at the end */}
+          {/* Continue Button */}
           {showContinue && isAudioFinished && (
-            <Animated.View
-              style={[
-                styles.buttonContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
+            <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue}>
                 <LinearGradient
                   colors={['#58D68D', '#45B7A8', '#58D68D']}
@@ -367,7 +257,7 @@ export default function GreetingScreen() {
                   </View>
                 </LinearGradient>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           )}
         </View>
 
@@ -381,7 +271,7 @@ export default function GreetingScreen() {
         <View style={styles.particle1} />
         <View style={styles.particle2} />
         <View style={styles.particle3} />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -394,8 +284,8 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: -20,
-    paddingTop: 20,
+    marginBottom: 20,
+    paddingTop: 60,
   },
   headerContent: {
     alignItems: 'center',
@@ -436,15 +326,14 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 20,
+    flex: 1,
     width: '100%',
   },
   linesContainer: {
     alignItems: 'center',
     marginBottom: 30,
-    marginTop: 15,
   },
   lineWrapperContainer: {
     position: 'relative',
@@ -474,47 +363,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  animationOverlay: {
-    position: 'absolute',
-    top: -50,
-    left: -50,
-    right: -50,
-    bottom: -50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  sparkleAnimation: {
-    width: 200,
-    height: 200,
-  },
-  chatContainer: {
-    width: '100%',
-    marginVertical: 20,
-    marginTop: -20,
-  },
-  chatBubble: {
-    borderRadius: 20,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  chatGradient: {
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  chatText: {
-    fontSize: 16,
-    color: '#000000',
-    lineHeight: 24,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
+
+
   buttonContainer: {
     marginTop: 20,
     width: '100%',
@@ -657,12 +507,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scrollView: {
+
+  mainContainer: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 50, // Add some padding at the bottom for the button
+    backgroundColor: '#FFFFFF',
   },
 });
   
