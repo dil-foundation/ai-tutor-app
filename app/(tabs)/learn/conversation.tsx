@@ -614,6 +614,7 @@ export default function ConversationScreen() {
     if (data.step === 'feedback_step') {
       console.log('📝 Received feedback_step, playing feedback audio...');
       // Keep processing animation active - it will be managed in playFeedbackAudio and handleAudioData
+
       setTimeout(() => {
         playFeedbackAudio();
       }, 500);
@@ -657,6 +658,30 @@ export default function ConversationScreen() {
         playWordByWord(sentenceInfo.words);
       }, 1000);
     }
+
+
+    if (data.step === 'word_by_word') {
+      console.log('🎤 Received word_by_word step (re-practice)...');
+    
+      const sentenceInfo = {
+        english: data.english_sentence || '',
+        urdu: data.urdu_sentence || '',
+        words: data.words || [],
+      };
+    
+      setState(prev => ({
+        ...prev,
+        currentStep: 'word_by_word',
+        currentSentence: sentenceInfo,
+        isDisplayingSentence: true,
+        isProcessingAudio: false,
+        currentMessageText: 'میرے بعد دہرائیں۔',
+      }));
+    
+      setTimeout(() => {
+        playWordByWord(sentenceInfo.words);
+      }, 1000);
+    }    
 
     // 🎤 Step 8: Handle full sentence audio after word-by-word
     if (data.step === 'full_sentence_audio') {
@@ -811,8 +836,12 @@ export default function ConversationScreen() {
               
               // Start listening again for the same sentence after a delay
               setTimeout(() => {
-                startRecording();
-              }, 1000);
+                if (isScreenFocusedRef.current) {
+                  sendLearnMessage(JSON.stringify({
+                    type: 'feedback_complete'
+                  }));
+                }
+              }, 500);
               
               return {
                 ...prev, 
@@ -892,6 +921,7 @@ export default function ConversationScreen() {
       });
 
       await sound.playAsync();
+
     } catch (error) {
       console.error('Failed to play audio:', error);
       setState(prev => ({ ...prev, currentStep: 'waiting' }));
@@ -1334,7 +1364,7 @@ export default function ConversationScreen() {
       return {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
         text: 'Audio is processing...',
-        showMessage: !!state.currentMessageText
+        showMessage: false  // ✅ Hide feedback text during audio processing
       };
     }
     
@@ -1442,7 +1472,16 @@ export default function ConversationScreen() {
       };
     }
     
-    // Fallback for any other state - show listening animation
+    // ✅ NEW: Show loading animation when in waiting state and there's a message to display
+    if (state.currentStep === 'waiting') {
+      return {
+        animation: require('../../../assets/animations/loading.json'),
+        text: 'Loading...',
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    // Fallback for any other state - show loading animation
     return {
       animation: require('../../../assets/animations/loading.json'),
       text: 'Loading',
