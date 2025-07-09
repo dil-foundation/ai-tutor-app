@@ -49,7 +49,7 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word' | 'playing_you_said';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word' | 'playing_you_said' | 'english_input_edge_case';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
@@ -84,6 +84,8 @@ interface ConversationState {
   fullSentenceText: string; // New state for full sentence text to display during listening
   // New state for loading animation after word-by-word completion
   isLoadingAfterWordByWord: boolean; // New state for loading animation after word-by-word
+  // New state for English input edge case
+  isEnglishInputEdgeCase: boolean; // New state for tracking English input edge case
 }
 
 export default function ConversationScreen() {
@@ -116,6 +118,7 @@ export default function ConversationScreen() {
     isWaitingForRepeatPrompt: false,
     fullSentenceText: '',
     isLoadingAfterWordByWord: false,
+    isEnglishInputEdgeCase: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -695,6 +698,18 @@ export default function ConversationScreen() {
         fullSentenceText: data.response || 'Now repeat the full sentence', // Store the text to display during listening
       }));
     }
+
+    // 🎤 Step 9: Handle English input edge case
+    if (data.step === 'english_input_edge_case') {
+      console.log('🎤 Received English input edge case...');
+      setState(prev => ({
+        ...prev,
+        currentStep: 'english_input_edge_case',
+        isProcessingAudio: false, // Stop processing animation
+        isEnglishInputEdgeCase: true,
+        currentMessageText: data.response || 'Great job speaking English! However, the task is to translate from Urdu to English. Please say the Urdu sentence to proceed.',
+      }));
+    }
   
     // 📜 Step 9: Auto-scroll UI
     setTimeout(() => {
@@ -758,6 +773,16 @@ export default function ConversationScreen() {
           isDisplayingSentence: false, // Hide sentence display
           currentSentence: null,
         }));
+      } else if (state.currentStep === 'english_input_edge_case') {
+        // English input edge case audio
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true, // Start AI speaking animation
+          isEnglishInputEdgeCase: true, // Keep English input edge case flag
+        }));
       } else {
         setState(prev => ({
           ...prev,
@@ -794,6 +819,7 @@ export default function ConversationScreen() {
       fullSentenceText: '',
       currentMessageText: '',
       isNoSpeechDetected: false,
+      isEnglishInputEdgeCase: false,
     }));
   };
 
@@ -906,6 +932,26 @@ export default function ConversationScreen() {
                 isAwaitNextPlaying: false,
                 isContinuingConversation: false,
                 currentMessageText: '', // Clear the message when await next ends
+              };
+            } else if (prev.isEnglishInputEdgeCase) {
+              // English input edge case audio finished - restart listening for Urdu input
+              console.log('🎤 English input edge case audio finished, restarting listening...');
+              
+              // Start listening again after a delay
+              setTimeout(() => {
+                if (isScreenFocusedRef.current) {
+                  console.log('🔄 Starting recording for Urdu input...');
+                  startRecording();
+                }
+              }, 500);
+              
+              return {
+                ...prev, 
+                currentStep: 'listening',
+                isAISpeaking: false,
+                isEnglishInputEdgeCase: false,
+                isListening: true, // Show listening animation immediately
+                currentMessageText: '', // Clear the message when English input edge case ends
               };
             } else {
               // Regular AI speaking finished
@@ -1472,6 +1518,15 @@ export default function ConversationScreen() {
       };
     }
     
+    // English input edge case animation
+    if (state.isEnglishInputEdgeCase) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: 'English Input Detected',
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
     // ✅ NEW: Show loading animation when in waiting state and there's a message to display
     if (state.currentStep === 'waiting') {
       return {
@@ -1569,6 +1624,13 @@ export default function ConversationScreen() {
           <View style={styles.statusContainer}>
             <Ionicons name="warning" size={20} color="#FF3B30" />
             <Text style={styles.statusText}>Connection Error</Text>
+          </View>
+        );
+      case 'english_input_edge_case':
+        return (
+          <View style={styles.statusContainer}>
+            <Ionicons name="volume-high" size={20} color="#007AFF" />
+            <Text style={styles.statusText}>English Input Detected...</Text>
           </View>
         );
       default:
