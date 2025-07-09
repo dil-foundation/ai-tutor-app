@@ -18,9 +18,10 @@ import audioManager from '../../utils/audioManager';
 const { width, height } = Dimensions.get('window');
 
 const LINES = [
-  'خوش آمدید!',
-  'آئیں، بولنے کی مشق شروع کرتے ہیں۔',
-  'آپ جو کہیں گے، ہم اسے انگریزی میں سنیں گے۔',
+  {
+    urdu: 'سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟',
+    english: 'Welcome to the learning platform, shall we learn English?'
+  }
 ];
 
 const GREETING_AUDIO_ID = 'greeting_audio';
@@ -28,7 +29,7 @@ const GREETING_AUDIO_ID = 'greeting_audio';
 export default function GreetingScreen() {
   const router = useRouter();
   const [isAudioFinished, setIsAudioFinished] = useState(false);
-  const [visibleLines, setVisibleLines] = useState<string[]>([]);
+  const [visibleLines, setVisibleLines] = useState<Array<{urdu: string, english: string}>>([]);
   const [showContinue, setShowContinue] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -218,27 +219,31 @@ export default function GreetingScreen() {
         {/* Main Content Area */}
         <View style={styles.contentContainer}>
           {/* Lines with Modern Cards */}
-          <View style={styles.linesContainer}>
-            {visibleLines.map((line, index) => (
-              <View key={index} style={styles.lineWrapperContainer}>
-                <View style={styles.lineWrapper}>
-                  <LinearGradient
-                    colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                    style={styles.lineGradient}
-                  >
-                    <Text style={styles.text}>{line}</Text>
-                  </LinearGradient>
+          <View style={styles.linesCardOuter}>
+            <LinearGradient
+              colors={["#e0f7ef", "#f8fffc"]}
+              style={styles.linesCardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {visibleLines.map((line, index) => (
+                <View key={index} style={styles.linesCardInner}>
+                  <Text style={styles.urduText}>{line.urdu}</Text>
+                  <Text style={styles.englishText}>{line.english}</Text>
                 </View>
-              </View>
-            ))}
+              ))}
+            </LinearGradient>
           </View>
+
+          {/* Spacer to push button to bottom */}
+          <View style={{ flex: 1 }} />
 
           {/* Continue Button */}
           {showContinue && isAudioFinished && (
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue}>
+            <View style={styles.fixedButtonContainer}>
+              <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue} activeOpacity={0.85}>
                 <LinearGradient
-                  colors={['#58D68D', '#45B7A8', '#58D68D']}
+                  colors={["#58D68D", "#45B7A8", "#58D68D"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.buttonGradient}
@@ -325,43 +330,56 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   contentContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
     flex: 1,
     width: '100%',
-  },
-  linesContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 0,
+    paddingBottom: 0,
     alignItems: 'center',
-    marginBottom: 30,
   },
-  lineWrapperContainer: {
-    position: 'relative',
-    marginBottom: 8,
+  linesCardOuter: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 16,
+    zIndex: 2,
   },
-  lineWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000000',
+  linesCardGradient: {
+    width: '100%',
+    borderRadius: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    elevation: 16,
+    borderWidth: 0.5,
+    borderColor: 'rgba(88, 214, 141, 0.13)',
   },
-  lineGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
+  linesCardInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  text: {
+  urduText: {
     fontSize: 22,
     color: '#000000',
     textAlign: 'center',
     lineHeight: 32,
     fontWeight: '600',
     letterSpacing: 0.5,
+    marginBottom: 8,
+    fontFamily: 'System',
+    marginTop: 0,
+  },
+  englishText: {
+    fontSize: 18,
+    color: '#6C757D',
+    textAlign: 'center',
+    lineHeight: 26,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+    fontFamily: 'System',
   },
 
 
@@ -369,6 +387,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     width: '100%',
     marginBottom: 30,
+  },
+  fixedButtonContainer: {
+    width: '100%',
+    marginBottom: 18,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    zIndex: 2,
   },
   buttonWrapper: {
     borderRadius: 30,
@@ -378,10 +403,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: 420,
   },
   buttonGradient: {
     paddingHorizontal: 32,
-    paddingVertical: 20,
+    paddingVertical: 22,
   },
   buttonContent: {
     flexDirection: 'row',
