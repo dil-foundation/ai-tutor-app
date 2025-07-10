@@ -137,7 +137,7 @@ export default function ConversationScreen() {
 
   // Voice Activity Detection threshold (in dB)
   const VAD_THRESHOLD = -45; // dB, adjust as needed
-  const SILENCE_DURATION = 3000; // 3 seconds of silence
+  const SILENCE_DURATION = 1500; // 1.5 seconds of silence (reduced from 3s for faster response)
   const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
 
 
