@@ -123,14 +123,18 @@ export default function GreetingScreen() {
 
     const initializeGreeting = async () => {
       try {
-        // First check if user is authenticated
-        const { token } = await getAuthData();
-        if (!token) {
-          // User is not authenticated, redirect to login
-          router.replace('/(auth)/login');
-          return;
-        }
+        // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
+        // TODO: Uncomment the authentication flow when ready to re-enable
         
+        // // First check if user is authenticated
+        // const { token } = await getAuthData();
+        // if (!token) {
+        //   // User is not authenticated, redirect to login
+        //   router.replace('/(auth)/login');
+        //   return;
+        // }
+        
+        // Temporarily set user as authenticated
         setIsAuthenticated(true);
         
         // Check if user has already visited this screen
@@ -149,9 +153,19 @@ export default function GreetingScreen() {
           }
         }, 100);
       } catch (error) {
-        console.log('Error checking authentication or AsyncStorage:', error);
-        // If there's an error, redirect to login for safety
-        router.replace('/(auth)/login');
+        console.log('Error checking AsyncStorage:', error);
+        // Temporarily bypass login redirect for testing
+        // router.replace('/(auth)/login');
+        
+        // Set as authenticated even if there's an error
+        setIsAuthenticated(true);
+        
+        // Start greeting even if there's an error
+        setTimeout(() => {
+          if (isComponentMounted) {
+            playGreeting();
+          }
+        }, 100);
       } finally {
         setIsLoading(false);
       }

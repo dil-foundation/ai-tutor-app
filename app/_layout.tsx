@@ -17,8 +17,14 @@ function RootLayoutNav() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { token } = await getAuthData();
-        setAuthenticated(!!token);
+        // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
+        // TODO: Uncomment the authentication flow when ready to re-enable
+        
+        // const { token } = await getAuthData();
+        // setAuthenticated(!!token);
+        
+        // Temporarily set as authenticated
+        setAuthenticated(true);
       } finally {
         SplashScreen.hideAsync();
       }
@@ -33,14 +39,20 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    // If the user is authenticated and in the auth group, redirect them to the main app.
-    if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)/learn');
-    } 
-    // If the user is not authenticated and not in the auth group, redirect them to the login page.
-    else if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    }
+    // TEMPORARILY BYPASSING AUTHENTICATION REDIRECTS FOR TESTING
+    // TODO: Uncomment the authentication redirects when ready to re-enable
+    
+    // // If the user is authenticated and in the auth group, redirect them to the main app.
+    // if (isAuthenticated && inAuthGroup) {
+    //   router.replace('/(tabs)/learn');
+    // } 
+    // // If the user is not authenticated and not in the auth group, redirect them to the login page.
+    // else if (!isAuthenticated && !inAuthGroup) {
+    //   router.replace('/(auth)/login');
+    // }
+    
+    // Temporarily allow access to all areas
+    console.log('Authentication temporarily bypassed for testing');
   }, [isAuthenticated, segments, router]);
 
   if (isAuthenticated === null) {

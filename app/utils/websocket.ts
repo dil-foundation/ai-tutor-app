@@ -14,9 +14,18 @@ export const connectLearnSocket = (
   
     socket = new WebSocket(fullUrl);
     socket.binaryType = "arraybuffer";
+    
+    // Add connection timeout for faster failure detection
+    const connectionTimeout = setTimeout(() => {
+      if (socket.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket connection timeout");
+        onClose?.();
+      }
+    }, 5000); // 5 second timeout
   
     socket.onopen = () => {
       console.log("Learn WebSocket Connected");
+      clearTimeout(connectionTimeout); // Clear timeout on successful connection
     };
   
     socket.onmessage = (event) => {

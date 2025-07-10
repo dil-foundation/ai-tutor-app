@@ -49,7 +49,7 @@ interface Message {
 
 interface ConversationState {
   messages: Message[];
-  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word' | 'playing_you_said';
+  currentStep: 'waiting' | 'listening' | 'processing' | 'speaking' | 'error' | 'playing_intro' | 'playing_await_next' | 'playing_retry' | 'playing_feedback' | 'word_by_word' | 'playing_you_said' | 'english_input_edge_case';
   isConnected: boolean;
   inputText: string;
   currentAudioUri?: string;
@@ -84,6 +84,8 @@ interface ConversationState {
   fullSentenceText: string; // New state for full sentence text to display during listening
   // New state for loading animation after word-by-word completion
   isLoadingAfterWordByWord: boolean; // New state for loading animation after word-by-word
+  // New state for English input edge case
+  isEnglishInputEdgeCase: boolean; // New state for tracking English input edge case
 }
 
 export default function ConversationScreen() {
@@ -116,6 +118,7 @@ export default function ConversationScreen() {
     isWaitingForRepeatPrompt: false,
     fullSentenceText: '',
     isLoadingAfterWordByWord: false,
+    isEnglishInputEdgeCase: false,
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -134,7 +137,7 @@ export default function ConversationScreen() {
 
   // Voice Activity Detection threshold (in dB)
   const VAD_THRESHOLD = -45; // dB, adjust as needed
-  const SILENCE_DURATION = 3000; // 3 seconds of silence
+  const SILENCE_DURATION = 1500; // 1.5 seconds of silence (reduced from 3s for faster response)
   const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
 
 
@@ -486,10 +489,10 @@ export default function ConversationScreen() {
             currentMessageText: '',
             currentStep: 'waiting', // Set to waiting state
             isListening: false, // Don't show listening animation yet
-            isLoadingAfterWordByWord: true, // Show loading animation
+            isLoadingAfterWordByWord: false, // Don't show loading animation - wait for full sentence audio step
           }));
 
-        // Send completion signal to backend after 2 seconds
+        // Send completion signal to backend immediately for faster response
         setTimeout(() => {
           if (isScreenFocusedRef.current) {
             console.log('🔄 Sending word-by-word completion signal to backend...');
@@ -498,7 +501,7 @@ export default function ConversationScreen() {
               sentence: state.currentSentence?.english || ''
             }));
           }
-        }, 2000); // Wait 2 seconds before sending signal
+        }, 500); // Reduced from 2 seconds to 500ms for faster response
       }
     } catch (error) {
       console.error('Failed to play word-by-word:', error);
@@ -518,14 +521,14 @@ export default function ConversationScreen() {
       () => handleWebSocketClose()
     );
   
-    // Wait for actual connection
+    // Wait for actual connection - reduced from 500ms to 100ms for faster response
     const interval = setInterval(() => {
       if (isSocketConnected()) {
         console.log("✅ Socket verified connected");
         setState(prev => ({ ...prev, isConnected: true }));
         clearInterval(interval);
       }
-    }, 500);
+    }, 100);
   };
 
   const handleWebSocketMessage = (data: any) => {
@@ -535,6 +538,7 @@ export default function ConversationScreen() {
       return;
     }
 
+    const startTime = Date.now();
     console.log('Received WebSocket message:', data);
   
     const newMessage: Message = {
@@ -594,7 +598,7 @@ export default function ConversationScreen() {
       }));
       setTimeout(() => {
         playRetryAudio();
-      }, 500);
+      }, 200);
     }
   
     // 🔁 Step 4: Handle await_next playback
@@ -617,7 +621,7 @@ export default function ConversationScreen() {
 
       setTimeout(() => {
         playFeedbackAudio();
-      }, 500);
+      }, 200);
     }
 
     // 🎤 Step 6: Handle you_said_audio step
@@ -653,10 +657,10 @@ export default function ConversationScreen() {
         currentMessageText: 'میرے بعد دہرائیں۔',
       }));
 
-      // Start word-by-word speaking after a short delay
+      // Start word-by-word speaking immediately for faster response
       setTimeout(() => {
         playWordByWord(sentenceInfo.words);
-      }, 1000);
+      }, 300);
     }
 
 
@@ -680,7 +684,7 @@ export default function ConversationScreen() {
     
       setTimeout(() => {
         playWordByWord(sentenceInfo.words);
-      }, 1000);
+      }, 300);
     }    
 
     // 🎤 Step 8: Handle full sentence audio after word-by-word
@@ -691,8 +695,21 @@ export default function ConversationScreen() {
         ...prev,
         isDisplayingSentence: false, // Hide sentence display
         currentSentence: null,
-        isLoadingAfterWordByWord: false, // Clear loading state
         fullSentenceText: data.response || 'Now repeat the full sentence', // Store the text to display during listening
+        currentStep: 'waiting', // Set to waiting state to show loading animation
+        isProcessingAudio: false, // Don't show processing animation - we're waiting for audio to arrive
+      }));
+    }
+
+    // 🎤 Step 9: Handle English input edge case
+    if (data.step === 'english_input_edge_case') {
+      console.log('🎤 Received English input edge case...');
+      setState(prev => ({
+        ...prev,
+        currentStep: 'english_input_edge_case',
+        isProcessingAudio: false, // Stop processing animation
+        isEnglishInputEdgeCase: true,
+        currentMessageText: data.response || 'Great job speaking English! However, the task is to translate from Urdu to English. Please say the Urdu sentence to proceed.',
       }));
     }
   
@@ -700,6 +717,10 @@ export default function ConversationScreen() {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+    
+    // Performance tracking
+    const endTime = Date.now();
+    console.log(`⚡ WebSocket message processed in ${endTime - startTime}ms`);
   };
   
 
@@ -747,16 +768,27 @@ export default function ConversationScreen() {
           isAISpeaking: true, // Start AI speaking animation
           isPlayingYouSaid: true, // Keep you_said flag for audio completion logic
         }));
-      } else if (state.currentStep === 'waiting' && state.isDisplayingSentence) {
-        // Full sentence audio after word-by-word
+      } else if (state.currentStep === 'waiting' && state.fullSentenceText) {
+        // Full sentence audio after word-by-word - this is the feedback audio
+        console.log('🎤 Received full sentence audio (feedback audio) after word-by-word...');
         setState(prev => ({
           ...prev,
           currentAudioUri: audioUri,
           currentStep: 'speaking',
           isProcessingAudio: false, // Stop processing animation
           isAISpeaking: true, // Start AI speaking animation
-          isDisplayingSentence: false, // Hide sentence display
-          currentSentence: null,
+          isPlayingFeedback: true, // Mark as feedback audio for completion logic
+          currentMessageText: prev.fullSentenceText, // Show the sentence text during AI speaking
+        }));
+      } else if (state.currentStep === 'english_input_edge_case') {
+        // English input edge case audio
+        setState(prev => ({
+          ...prev,
+          currentAudioUri: audioUri,
+          currentStep: 'speaking',
+          isProcessingAudio: false, // Stop processing animation
+          isAISpeaking: true, // Start AI speaking animation
+          isEnglishInputEdgeCase: true, // Keep English input edge case flag
         }));
       } else {
         setState(prev => ({
@@ -794,6 +826,7 @@ export default function ConversationScreen() {
       fullSentenceText: '',
       currentMessageText: '',
       isNoSpeechDetected: false,
+      isEnglishInputEdgeCase: false,
     }));
   };
 
@@ -850,6 +883,7 @@ export default function ConversationScreen() {
                 isPlayingFeedback: false,
                 isListening: true, // Show listening animation immediately
                 currentMessageText: '', // Clear the message when feedback ends
+                fullSentenceText: '', // Clear the full sentence text
               };
             } else if (prev.isPlayingYouSaid) {
               // "You said" audio finished - send completion signal to backend
@@ -907,6 +941,26 @@ export default function ConversationScreen() {
                 isContinuingConversation: false,
                 currentMessageText: '', // Clear the message when await next ends
               };
+            } else if (prev.isEnglishInputEdgeCase) {
+              // English input edge case audio finished - restart listening for Urdu input
+              console.log('🎤 English input edge case audio finished, restarting listening...');
+              
+              // Start listening again after a delay
+              setTimeout(() => {
+                if (isScreenFocusedRef.current) {
+                  console.log('🔄 Starting recording for Urdu input...');
+                  startRecording();
+                }
+              }, 500);
+              
+              return {
+                ...prev, 
+                currentStep: 'listening',
+                isAISpeaking: false,
+                isEnglishInputEdgeCase: false,
+                isListening: true, // Show listening animation immediately
+                currentMessageText: '', // Clear the message when English input edge case ends
+              };
             } else {
               // Regular AI speaking finished
               return {
@@ -963,6 +1017,7 @@ export default function ConversationScreen() {
         isAwaitNextPlaying: false,
         isProcessingAudio: false, // Stop processing animation when starting new recording
         currentMessageText: prev.fullSentenceText || '', // Display full sentence text if available
+        fullSentenceText: prev.fullSentenceText || '', // Keep the full sentence text for display
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
       }));
@@ -1463,21 +1518,34 @@ export default function ConversationScreen() {
       };
     }
     
-    // Loading animation after word-by-word completion
-    if (state.isLoadingAfterWordByWord) {
+    // Loading animation after word-by-word completion (removed - now handled by waiting state with fullSentenceText)
+    
+    // ✅ NEW: Show loading animation when in waiting state with fullSentenceText (higher priority)
+    if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
         animation: require('../../../assets/animations/loading.json'),
         text: 'Loading...',
-        showMessage: false
+        showMessage: true // Always show message when we have fullSentenceText
       };
     }
     
-    // ✅ NEW: Show loading animation when in waiting state and there's a message to display
+    // English input edge case animation
+    if (state.isEnglishInputEdgeCase) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: 'English Input Detected',
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    // ✅ Show loading animation when in waiting state and there's a message to display
     if (state.currentStep === 'waiting') {
+      // If we have fullSentenceText, show it as the message during loading
+      const messageToShow = state.fullSentenceText || state.currentMessageText;
       return {
         animation: require('../../../assets/animations/loading.json'),
         text: 'Loading...',
-        showMessage: !!state.currentMessageText
+        showMessage: !!messageToShow
       };
     }
     
@@ -1571,6 +1639,13 @@ export default function ConversationScreen() {
             <Text style={styles.statusText}>Connection Error</Text>
           </View>
         );
+      case 'english_input_edge_case':
+        return (
+          <View style={styles.statusContainer}>
+            <Ionicons name="volume-high" size={20} color="#007AFF" />
+            <Text style={styles.statusText}>English Input Detected...</Text>
+          </View>
+        );
       default:
         return null;
     }
@@ -1660,9 +1735,9 @@ export default function ConversationScreen() {
       {/* Unified Animation Overlay - Always show something */}
       <View style={currentAnimation.isSentenceDisplay ? styles.sentenceOverlay : styles.processingOverlay} pointerEvents="box-none">
         {/* Show message box if there's a message to display */}
-        {currentAnimation.showMessage && state.currentMessageText ? (
+        {currentAnimation.showMessage && (state.fullSentenceText || state.currentMessageText) ? (
           <View style={styles.messageBox}>
-            <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            <Text style={styles.currentMessageText}>{state.fullSentenceText || state.currentMessageText}</Text>
           </View>
         ) : null}
         
