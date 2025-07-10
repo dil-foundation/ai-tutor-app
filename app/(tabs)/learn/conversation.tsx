@@ -492,7 +492,7 @@ export default function ConversationScreen() {
             isLoadingAfterWordByWord: true, // Show loading animation
           }));
 
-        // Send completion signal to backend after 2 seconds
+        // Send completion signal to backend immediately for faster response
         setTimeout(() => {
           if (isScreenFocusedRef.current) {
             console.log('🔄 Sending word-by-word completion signal to backend...');
@@ -501,7 +501,7 @@ export default function ConversationScreen() {
               sentence: state.currentSentence?.english || ''
             }));
           }
-        }, 2000); // Wait 2 seconds before sending signal
+        }, 500); // Reduced from 2 seconds to 500ms for faster response
       }
     } catch (error) {
       console.error('Failed to play word-by-word:', error);
@@ -521,14 +521,14 @@ export default function ConversationScreen() {
       () => handleWebSocketClose()
     );
   
-    // Wait for actual connection
+    // Wait for actual connection - reduced from 500ms to 100ms for faster response
     const interval = setInterval(() => {
       if (isSocketConnected()) {
         console.log("✅ Socket verified connected");
         setState(prev => ({ ...prev, isConnected: true }));
         clearInterval(interval);
       }
-    }, 500);
+    }, 100);
   };
 
   const handleWebSocketMessage = (data: any) => {
@@ -538,6 +538,7 @@ export default function ConversationScreen() {
       return;
     }
 
+    const startTime = Date.now();
     console.log('Received WebSocket message:', data);
   
     const newMessage: Message = {
@@ -597,7 +598,7 @@ export default function ConversationScreen() {
       }));
       setTimeout(() => {
         playRetryAudio();
-      }, 500);
+      }, 200);
     }
   
     // 🔁 Step 4: Handle await_next playback
@@ -620,7 +621,7 @@ export default function ConversationScreen() {
 
       setTimeout(() => {
         playFeedbackAudio();
-      }, 500);
+      }, 200);
     }
 
     // 🎤 Step 6: Handle you_said_audio step
@@ -656,10 +657,10 @@ export default function ConversationScreen() {
         currentMessageText: 'میرے بعد دہرائیں۔',
       }));
 
-      // Start word-by-word speaking after a short delay
+      // Start word-by-word speaking immediately for faster response
       setTimeout(() => {
         playWordByWord(sentenceInfo.words);
-      }, 1000);
+      }, 300);
     }
 
 
@@ -683,7 +684,7 @@ export default function ConversationScreen() {
     
       setTimeout(() => {
         playWordByWord(sentenceInfo.words);
-      }, 1000);
+      }, 300);
     }    
 
     // 🎤 Step 8: Handle full sentence audio after word-by-word
@@ -715,6 +716,10 @@ export default function ConversationScreen() {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+    
+    // Performance tracking
+    const endTime = Date.now();
+    console.log(`⚡ WebSocket message processed in ${endTime - startTime}ms`);
   };
   
 
