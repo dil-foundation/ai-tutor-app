@@ -10,13 +10,16 @@ export default function LearnLayout() {
   useEffect(() => {
     const checkFirstTime = async () => {
       try {
-        // First check if user is authenticated
-        const { token } = await getAuthData();
-        if (!token) {
-          // User is not authenticated, redirect to login
-          router.replace('/(auth)/login');
-          return;
-        }
+        // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
+        // TODO: Uncomment the authentication flow when ready to re-enable
+        
+        // // First check if user is authenticated
+        // const { token } = await getAuthData();
+        // if (!token) {
+        //   // User is not authenticated, redirect to login
+        //   router.replace('/(auth)/login');
+        //   return;
+        // }
 
         const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
         console.log('hasVisited', hasVisited);
@@ -24,9 +27,21 @@ export default function LearnLayout() {
           router.replace('/(tabs)/learn/greeting'); // Navigate to greeting screen
         }
       } catch (error) {
-        console.log('Error checking authentication or AsyncStorage:', error);
-        // If there's an error, redirect to login for safety
-        router.replace('/(auth)/login');
+        console.log('Error checking AsyncStorage:', error);
+        // Temporarily bypass login redirect for testing
+        // router.replace('/(auth)/login');
+        
+        // Check if user has visited even if there's an error
+        try {
+          const hasVisited = await AsyncStorage.getItem('hasVisitedLearn');
+          console.log('hasVisited (fallback)', hasVisited);
+          if (!hasVisited) {
+            router.replace('/(tabs)/learn/greeting');
+          }
+        } catch (fallbackError) {
+          console.log('Fallback error:', fallbackError);
+          // If all else fails, just stay on the current screen
+        }
       }
     };
 
