@@ -489,7 +489,7 @@ export default function ConversationScreen() {
             currentMessageText: '',
             currentStep: 'waiting', // Set to waiting state
             isListening: false, // Don't show listening animation yet
-            isLoadingAfterWordByWord: true, // Show loading animation
+            isLoadingAfterWordByWord: false, // Don't show loading animation - wait for full sentence audio step
           }));
 
         // Send completion signal to backend immediately for faster response
@@ -695,8 +695,9 @@ export default function ConversationScreen() {
         ...prev,
         isDisplayingSentence: false, // Hide sentence display
         currentSentence: null,
-        isLoadingAfterWordByWord: false, // Clear loading state
         fullSentenceText: data.response || 'Now repeat the full sentence', // Store the text to display during listening
+        currentStep: 'waiting', // Set to waiting state to show loading animation
+        isProcessingAudio: false, // Don't show processing animation - we're waiting for audio to arrive
       }));
     }
 
@@ -767,16 +768,17 @@ export default function ConversationScreen() {
           isAISpeaking: true, // Start AI speaking animation
           isPlayingYouSaid: true, // Keep you_said flag for audio completion logic
         }));
-      } else if (state.currentStep === 'waiting' && state.isDisplayingSentence) {
-        // Full sentence audio after word-by-word
+      } else if (state.currentStep === 'waiting' && state.fullSentenceText) {
+        // Full sentence audio after word-by-word - this is the feedback audio
+        console.log('🎤 Received full sentence audio (feedback audio) after word-by-word...');
         setState(prev => ({
           ...prev,
           currentAudioUri: audioUri,
           currentStep: 'speaking',
           isProcessingAudio: false, // Stop processing animation
           isAISpeaking: true, // Start AI speaking animation
-          isDisplayingSentence: false, // Hide sentence display
-          currentSentence: null,
+          isPlayingFeedback: true, // Mark as feedback audio for completion logic
+          currentMessageText: prev.fullSentenceText, // Show the sentence text during AI speaking
         }));
       } else if (state.currentStep === 'english_input_edge_case') {
         // English input edge case audio
@@ -881,6 +883,7 @@ export default function ConversationScreen() {
                 isPlayingFeedback: false,
                 isListening: true, // Show listening animation immediately
                 currentMessageText: '', // Clear the message when feedback ends
+                fullSentenceText: '', // Clear the full sentence text
               };
             } else if (prev.isPlayingYouSaid) {
               // "You said" audio finished - send completion signal to backend
@@ -1014,6 +1017,7 @@ export default function ConversationScreen() {
         isAwaitNextPlaying: false,
         isProcessingAudio: false, // Stop processing animation when starting new recording
         currentMessageText: prev.fullSentenceText || '', // Display full sentence text if available
+        fullSentenceText: prev.fullSentenceText || '', // Keep the full sentence text for display
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
       }));
@@ -1514,12 +1518,14 @@ export default function ConversationScreen() {
       };
     }
     
-    // Loading animation after word-by-word completion
-    if (state.isLoadingAfterWordByWord) {
+    // Loading animation after word-by-word completion (removed - now handled by waiting state with fullSentenceText)
+    
+    // ✅ NEW: Show loading animation when in waiting state with fullSentenceText (higher priority)
+    if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
         animation: require('../../../assets/animations/loading.json'),
         text: 'Loading...',
-        showMessage: false
+        showMessage: true // Always show message when we have fullSentenceText
       };
     }
     
@@ -1532,12 +1538,14 @@ export default function ConversationScreen() {
       };
     }
     
-    // ✅ NEW: Show loading animation when in waiting state and there's a message to display
+    // ✅ Show loading animation when in waiting state and there's a message to display
     if (state.currentStep === 'waiting') {
+      // If we have fullSentenceText, show it as the message during loading
+      const messageToShow = state.fullSentenceText || state.currentMessageText;
       return {
         animation: require('../../../assets/animations/loading.json'),
         text: 'Loading...',
-        showMessage: !!state.currentMessageText
+        showMessage: !!messageToShow
       };
     }
     
@@ -1727,9 +1735,9 @@ export default function ConversationScreen() {
       {/* Unified Animation Overlay - Always show something */}
       <View style={currentAnimation.isSentenceDisplay ? styles.sentenceOverlay : styles.processingOverlay} pointerEvents="box-none">
         {/* Show message box if there's a message to display */}
-        {currentAnimation.showMessage && state.currentMessageText ? (
+        {currentAnimation.showMessage && (state.fullSentenceText || state.currentMessageText) ? (
           <View style={styles.messageBox}>
-            <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
+            <Text style={styles.currentMessageText}>{state.fullSentenceText || state.currentMessageText}</Text>
           </View>
         ) : null}
         
