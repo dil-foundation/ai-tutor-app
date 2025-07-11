@@ -47,8 +47,13 @@ export default function useContinuousListening({
   const [error, setError] = useState<string | null>(null);
   
   const recordingRef = useRef<Audio.Recording | null>(null);
-  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioChunksRef = useRef<string[]>([]);
+  const isListeningRef = useRef(isListening);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   const requestAudioPermissions = useCallback(async () => {
     try {
@@ -152,6 +157,9 @@ export default function useContinuousListening({
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
       console.log('Starting continuous recording...');
@@ -165,65 +173,72 @@ export default function useContinuousListening({
 
       // Start processing chunks if autoProcess is enabled
       if (autoProcess) {
-        const processChunks = async () => {
-          if (!recordingRef.current || !isListening) return;
+        const processAndContinue = async () => {
+          if (!recordingRef.current || !isListeningRef.current) return;
 
           try {
+            // Stop current recording to get the URI
+            await recordingRef.current.stopAndUnloadAsync();
+
+            // Get URI and create a new recording instance to continue listening
             const uri = recordingRef.current.getURI();
+            
+            // Re-create recording to continue listening seamlessly
+            const { recording: newRecording } = await Audio.Recording.createAsync(
+              Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+            recordingRef.current = newRecording;
+
             if (uri) {
               await processAudioChunk(uri);
             }
           } catch (err) {
-            console.error('Error processing chunk:', err);
+            console.error('Error during chunk processing and continuation:', err);
           }
 
-          // Schedule next chunk processing
-          if (isListening) {
-            processingTimeoutRef.current = setTimeout(processChunks, chunkDuration);
+          // Schedule next chunk processing only if still listening
+          if (isListeningRef.current) {
+            processingTimeoutRef.current = setTimeout(processAndContinue, chunkDuration);
           }
         };
 
-        processingTimeoutRef.current = setTimeout(processChunks, chunkDuration);
+        processingTimeoutRef.current = setTimeout(processAndContinue, chunkDuration);
       }
-
     } catch (err: any) {
       const errorMsg = err.message || 'Could not start recording.';
       setError(errorMsg);
       onError?.(errorMsg);
       console.error('Failed to start recording', err);
     }
-  }, [requestAudioPermissions, autoProcess, chunkDuration, isListening, processAudioChunk]);
+  }, [requestAudioPermissions, autoProcess, chunkDuration, processAudioChunk, onError]);
 
   const stopListening = useCallback(async () => {
     if (!recordingRef.current) return;
+    
+    // Set isListening to false immediately to stop processing loop
+    setIsListening(false);
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
+      processingTimeoutRef.current = null;
+    }
 
     try {
       console.log('Stopping continuous recording...');
       await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
       recordingRef.current = null;
-      setIsListening(false);
 
-      // Clear any pending processing
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-        processingTimeoutRef.current = null;
+      // Process the final audio chunk
+      if (uri) {
+        await processAudioChunk(uri);
       }
-
-      // Process final chunk if autoProcess is enabled
-      if (autoProcess) {
-        const uri = recordingRef.current?.getURI();
-        if (uri) {
-          await processAudioChunk(uri);
-        }
-      }
-
     } catch (error: any) {
       const errorMsg = error.message || 'Failed to stop recording.';
       setError(errorMsg);
       onError?.(errorMsg);
       console.error('Error stopping recording:', error);
     }
-  }, [autoProcess, processAudioChunk, onError]);
+  }, [processAudioChunk, onError]);
 
   const reset = useCallback(() => {
     setCurrentTranscription('');

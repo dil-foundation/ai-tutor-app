@@ -16,7 +16,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { Buffer } from 'buffer';
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,9 +33,11 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Platform
 } from 'react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -88,6 +90,9 @@ interface ConversationState {
   isEnglishInputEdgeCase: boolean; // New state for tracking English input edge case
 }
 
+// A tiny, silent audio file as a base64 string to prime the audio session on iOS
+const SILENT_AUDIO_CLIP = 'data:audio/mp4;base64,AAAAHGZ0eXBNNEEgAAACAE00QSAgAAAAH212aGQAAAAA4v//AAAAAAAAAAAAAAABAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABDVycmIAAAAB3BtZGF0';
+
 export default function ConversationScreen() {
   const { autoStart } = useLocalSearchParams();
   const router = useRouter();
@@ -122,6 +127,12 @@ export default function ConversationScreen() {
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
+  const currentStepRef = useRef<ConversationState["currentStep"]>('waiting');
+  useEffect(() => {
+    currentStepRef.current = state.currentStep;
+    console.log('Current step:', state.currentStep);
+  }, [state.currentStep]);
+
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const introSoundRef = useRef<Audio.Sound | null>(null);
@@ -129,17 +140,32 @@ export default function ConversationScreen() {
   const feedbackSoundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const [isTalking, setIsTalking] = useState(false); // True voice activity detection
-  const silenceTimerRef = useRef<any>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
+  const isStoppingRef = useRef(false);
 
   // Voice Activity Detection threshold (in dB)
-  const VAD_THRESHOLD = -45; // dB, adjust as needed
-  const SILENCE_DURATION = 1500; // 1.5 seconds of silence (reduced from 3s for faster response)
-  const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
+  const VAD_THRESHOLD = Platform.OS === 'ios' ? -70 : -45; // More sensitive for iOS
+  const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500; // iOS needs more time for silence detection
+  const MIN_SPEECH_DURATION = 200; // Minimum 500ms of speech to be valid
 
+  // --- iOS Silence Detection Calibration ---
+  // This will store the highest metering value detected during the first second of recording
+  const IOS_VAD_OFFSET_DB = 20; // dB below max for threshold (more aggressive)
+  const IOS_VAD_MIN_THRESHOLD = -90; // Allow lower threshold
+  const iOSMeteringCalibration = useRef({
+    calibrated: false,
+    maxMetering: -160,
+    calibrationStart: 0,
+    calibrationDuration: 1000, // ms
+  });
+
+  // ... existing code ...
+  const [vadThreshold, setVadThreshold] = useState(Platform.OS === 'ios' ? -70 : -45); // Default, will auto-calibrate on iOS
+  // ... existing code ...
 
   // Handle screen focus and blur events
   useFocusEffect(
@@ -440,6 +466,23 @@ export default function ConversationScreen() {
         currentWordIndex: 0,
       }));
 
+      // --- NEW, MORE RELIABLE iOS Volume Fix ---
+      // Explicitly set the audio mode to playback to ensure iOS uses the correct volume channel.
+      if (Platform.OS === 'ios') {
+        try {
+          console.log('iOS: Setting audio mode for high-quality speech playback.');
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false, // We are only playing audio
+            playsInSilentModeIOS: true, // We want to hear speech even if the ringer is off
+            interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+            shouldDuckAndroid: true, // (Doesn't apply to iOS but good practice)
+          });
+        } catch (e) {
+          console.error("iOS: Failed to set audio mode for speech playback:", e);
+        }
+      }
+      // --- End of Fix ---
+
       for (let i = 0; i < words.length; i++) {
         // Check if screen is still focused and not manually cleaned up
         if (!isScreenFocusedRef.current) {
@@ -731,6 +774,22 @@ export default function ConversationScreen() {
       return;
     }
 
+    // --- NEW: Centralized iOS Volume Fix ---
+    if (Platform.OS === 'ios') {
+      try {
+        console.log('iOS: Setting audio mode for playback.');
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+          shouldDuckAndroid: true,
+        });
+      } catch (e) {
+        console.error("iOS: Failed to set audio mode for playback:", e);
+      }
+    }
+    // --- End of Fix ---
+
     try {
       const base64 = Buffer.from(audioBuffer).toString('base64'); // Convert buffer to base64
       const audioUri = `${FileSystem.cacheDirectory}ai_audio_${Date.now()}.mp3`;
@@ -760,6 +819,7 @@ export default function ConversationScreen() {
         }));
       } else if (state.currentStep === 'playing_you_said') {
         // "You said" audio
+        // The specific audio mode fix that was here is now removed and handled by the centralized block above.
         setState(prev => ({
           ...prev,
           currentAudioUri: audioUri,
@@ -805,7 +865,6 @@ export default function ConversationScreen() {
       console.error('Failed to handle audio data:', error);
     }
   };
-  
 
   const handleWebSocketClose = () => {
     setState(prev => ({
@@ -983,7 +1042,37 @@ export default function ConversationScreen() {
   };
 
   const startRecording = async () => {
-    // Check if screen is focused before starting recording
+    // Set audio mode to allow recording before anything else
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+      });
+    } catch (error) {
+      console.error('Failed to set audio mode for recording:', error);
+      Alert.alert('Error', 'Could not configure audio for recording.');
+      setState(prev => ({ ...prev, currentStep: 'error' }));
+      return;
+    }
+
+    isStoppingRef.current = false; // Reset the stopping flag
+
+    // Check for permissions before starting
+    const permission = await Audio.getPermissionsAsync();
+    if (!permission.granted) {
+      console.log('Requesting audio permissions again...');
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Permission Required', 'Microphone access is needed to speak with the tutor.');
+        setState(prev => ({ ...prev, currentStep: 'error' }));
+        return;
+      }
+    }
+
+    // Check if screen is still focused
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping recording start');
       return;
@@ -1000,6 +1089,16 @@ export default function ConversationScreen() {
     if (!isSocketConnected()) {
       Alert.alert('Error', 'WebSocket connection is not available');
       return;
+    }
+
+    // --- iOS Metering Calibration Reset ---
+    if (Platform.OS === 'ios') {
+      iOSMeteringCalibration.current = {
+        calibrated: false,
+        maxMetering: -160,
+        calibrationStart: Date.now(),
+        calibrationDuration: 1000,
+      };
     }
 
     try {
@@ -1022,6 +1121,9 @@ export default function ConversationScreen() {
         lastStopWasSilence: false,
       }));
 
+      console.log('DEBUG: Recording started. Resetting speech start time.');
+      speechStartTimeRef.current = null; // Reset for the new recording session.
+
       // Helper to clear and set silence timer
       const resetSilenceTimer = () => {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
@@ -1030,7 +1132,7 @@ export default function ConversationScreen() {
           setState(prevState => {
             if (prevState.currentStep === 'listening') {
               setIsTalking(false);
-              // Stop listening, do not process audio
+              console.log('SILENCE DETECTED: Timer triggered, stopping recording.');
               stopRecording(true); // pass true to indicate silence
             }
             return prevState;
@@ -1047,14 +1149,41 @@ export default function ConversationScreen() {
       const { recording } = await Audio.Recording.createAsync(
         options,
         (status) => {
-          if (status.metering != null && status.isRecording) {
+          // Only process metering if we are not in the process of stopping
+          if (status.metering != null && status.isRecording && !isStoppingRef.current) {
             const currentTime = Date.now();
-            
-            if (status.metering > VAD_THRESHOLD) {
+
+            // --- iOS Metering Calibration ---
+            if (Platform.OS === 'ios') {
+              // Log metering for debugging
+              console.log(`iOS Metering: ${status.metering} dB`);
+              // During the first second, find the max metering value
+              if (!iOSMeteringCalibration.current.calibrated) {
+                if (status.metering > iOSMeteringCalibration.current.maxMetering) {
+                  iOSMeteringCalibration.current.maxMetering = status.metering;
+                }
+                if (currentTime - iOSMeteringCalibration.current.calibrationStart > iOSMeteringCalibration.current.calibrationDuration) {
+                  // Set threshold to OFFSET dB below max detected, but never below MIN_THRESHOLD
+                  const newThreshold = Math.max(iOSMeteringCalibration.current.maxMetering - IOS_VAD_OFFSET_DB, IOS_VAD_MIN_THRESHOLD);
+                  setVadThreshold(newThreshold);
+                  iOSMeteringCalibration.current.calibrated = true;
+                  console.log(`iOS VAD threshold auto-calibrated to: ${newThreshold}`);
+                }
+              }
+            }
+
+            // Use dynamic threshold
+            const threshold = Platform.OS === 'ios' ? vadThreshold : VAD_THRESHOLD;
+
+            if (status.metering > threshold) {
               // Voice detected
+              if (speechStartTimeRef.current === null) {
+                speechStartTimeRef.current = currentTime; // Set start time ONLY on the first detection
+                console.log(`DEBUG: Speech start time set to: ${speechStartTimeRef.current}`);
+              }
+
               if (!isTalking) {
                 setIsTalking(true);
-                speechStartTimeRef.current = currentTime;
                 setState(prev => ({ 
                   ...prev, 
                   isVoiceDetected: true,
@@ -1066,7 +1195,6 @@ export default function ConversationScreen() {
               // No voice detected
               if (isTalking) {
                 setIsTalking(false);
-                speechStartTimeRef.current = null;
                 setState(prev => ({ 
                   ...prev, 
                   isVoiceDetected: false,
@@ -1074,6 +1202,20 @@ export default function ConversationScreen() {
                 }));
               }
               // Don't reset timer - let it count down
+            }
+          } else if (Platform.OS === 'ios' && status.isRecording && !isStoppingRef.current) {
+            // Fallback: If metering is always -160 (not working), use a timer to stop after 3s
+            if (!iOSMeteringCalibration.current.calibrated && Date.now() - iOSMeteringCalibration.current.calibrationStart > 2000) {
+              // If after 2s, maxMetering is still -160, metering is not working
+              if (iOSMeteringCalibration.current.maxMetering <= -159) {
+                console.warn('iOS metering not working, using fallback silence timer.');
+                if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = setTimeout(() => {
+                  setIsTalking(false);
+                  stopRecording(true);
+                }, 3000); // Stop after 3s if no metering
+                iOSMeteringCalibration.current.calibrated = true;
+              }
             }
           }
         },
@@ -1089,6 +1231,7 @@ export default function ConversationScreen() {
   };
 
   const stopRecording = async (stoppedBySilence = false) => {
+    isStoppingRef.current = true; // Immediately signal that we are stopping
     if (!recordingRef.current) return;
 
     try {
@@ -1116,35 +1259,47 @@ export default function ConversationScreen() {
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
 
-      // Check if we had enough speech to process
-      const hadValidSpeech = speechStartTimeRef.current && 
-        (Date.now() - speechStartTimeRef.current) >= MIN_SPEECH_DURATION;
+      // --- Start of Logic Fix ---
 
-      // Only upload/process if NOT stopped by silence AND had valid speech
+      const speechStartedAt = speechStartTimeRef.current;
+      const speechEndedAt = Date.now();
+      const duration = speechStartedAt ? speechEndedAt - speechStartedAt : 0;
+      const hadValidSpeech = speechStartedAt && duration >= MIN_SPEECH_DURATION;
+
+      console.log(`DEBUG: Stop recording details - Start: ${speechStartedAt}, End: ${speechEndedAt}, Duration: ${duration}ms`);
+      console.log(`Stopping recording. Reason: ${stoppedBySilence ? 'silence' : 'manual'}. Speech duration: ${duration}ms, valid: ${hadValidSpeech}`);
+
+      // Corrected Logic: Upload if speech is valid, otherwise handle UI.
       if (uri && hadValidSpeech) {
+        console.log("Valid speech detected. Uploading audio...");
         await uploadAudioAndSendMessage(uri);
-      } else if (stoppedBySilence) {
-        console.log('Recording stopped due to silence - no audio sent');
-              setState(prev => ({
-        ...prev,
-        lastStopWasSilence: true,
-        currentStep: 'waiting',
-        isListening: false,
-        isVoiceDetected: false,
-        isNoSpeechDetected: true,
-        isProcessingAudio: false, // Stop processing animation
-        isLoadingAfterWordByWord: false, // Clear loading state
-        currentMessageText: 'No speech detected. Tap the mic to try again.',
-      }));
-      } else if (!hadValidSpeech) {
-        console.log('Recording too short - no audio sent');
-        setState(prev => ({ 
-          ...prev, 
-          currentStep: 'waiting',
-          isProcessingAudio: false, // Stop processing animation
-          isLoadingAfterWordByWord: false, // Clear loading state
-        }));
+      } else {
+        // Handle UI for invalid speech (too short or actual silence)
+        if (stoppedBySilence) {
+          console.log('Recording stopped by silence timer, but speech was too short or invalid.');
+          setState(prev => ({
+            ...prev,
+            lastStopWasSilence: true,
+            currentStep: 'waiting',
+            isListening: false,
+            isVoiceDetected: false,
+            isNoSpeechDetected: true,
+            isProcessingAudio: false,
+            isLoadingAfterWordByWord: false,
+            currentMessageText: 'No speech detected. Tap the mic to try again.',
+          }));
+        } else {
+          console.log('Recording stopped manually, but was too short.');
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isProcessingAudio: false,
+            isLoadingAfterWordByWord: false,
+          }));
+        }
       }
+      
+      // --- End of Logic Fix ---
       
       // Reset speech tracking
       speechStartTimeRef.current = null;

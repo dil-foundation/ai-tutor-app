@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.dil.lms",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "This app uses the microphone to allow you to practice your speaking skills."
       }
     },
     "android": {

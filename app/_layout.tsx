@@ -5,7 +5,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { getAuthData } from './utils/authStorage';
+import { getAuthData, autoLoginWithCredentials } from './utils/authStorage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,24 +13,40 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isAuthenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [hasAutoLoggedIn, setHasAutoLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
-        // TODO: Uncomment the authentication flow when ready to re-enable
-        
-        // const { token } = await getAuthData();
-        // setAuthenticated(!!token);
-        
-        // Temporarily set as authenticated
-        setAuthenticated(true);
+        // Only run auto-login once per app session
+        if (!hasAutoLoggedIn) {
+          console.log('Running auto-login on app boot...');
+          const autoLoginSuccess = await autoLoginWithCredentials(
+            'arunyuvraj1998@gmail.com',
+            'Arun@123'
+          );
+          
+          if (autoLoginSuccess) {
+            const { token } = await getAuthData();
+            setAuthenticated(!!token);
+          } else {
+            // If auto login fails, check if user is already logged in
+            const { token } = await getAuthData();
+            setAuthenticated(!!token);
+          }
+          
+          setHasAutoLoggedIn(true);
+        } else {
+          // For subsequent navigation changes, just check current auth state
+          const { token } = await getAuthData();
+          setAuthenticated(!!token);
+        }
       } finally {
         SplashScreen.hideAsync();
       }
     };
     checkAuth();
-  }, [segments]); // Re-check on every navigation
+  }, [segments, hasAutoLoggedIn]); // Re-check on every navigation, but respect auto-login flag
 
   useEffect(() => {
     if (isAuthenticated === null) {
@@ -39,20 +55,14 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    // TEMPORARILY BYPASSING AUTHENTICATION REDIRECTS FOR TESTING
-    // TODO: Uncomment the authentication redirects when ready to re-enable
-    
-    // // If the user is authenticated and in the auth group, redirect them to the main app.
-    // if (isAuthenticated && inAuthGroup) {
-    //   router.replace('/(tabs)/learn');
-    // } 
-    // // If the user is not authenticated and not in the auth group, redirect them to the login page.
-    // else if (!isAuthenticated && !inAuthGroup) {
-    //   router.replace('/(auth)/login');
-    // }
-    
-    // Temporarily allow access to all areas
-    console.log('Authentication temporarily bypassed for testing');
+    // If the user is authenticated and in the auth group, redirect them to the main app.
+    if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)/learn');
+    } 
+    // If the user is not authenticated and not in the auth group, redirect them to the login page.
+    else if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    }
   }, [isAuthenticated, segments, router]);
 
   if (isAuthenticated === null) {
