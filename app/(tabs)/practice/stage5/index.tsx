@@ -1,140 +1,540 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter } from "expo-router";
-import React from "react";
-import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { 
+  Animated, 
+  Dimensions, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const Stage5Home = () => {
+const { width, height } = Dimensions.get('window');
+
+const Stage5Screen = () => {
   const router = useRouter();
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(30));
+  const [scaleAnim] = useState(new Animated.Value(0.8));
+  
+  // Create individual scale animations for each activity
+  const [activityScaleAnims] = useState(() => 
+    [1, 2, 3].map(() => new Animated.Value(1))
+  );
 
-  const practiceOptions = [
+  const activities = [
     {
-      title: "Abstract & Critical Thinking Dialogues",
-      description: "Engage in thought-provoking conversations on complex topics.",
-      icon: "bulb-outline" as const,
-      route: "/(tabs)/practice/stage5/critical-thinking-dialogues" as any,
+      id: 'criticalThinking',
+      title: 'Abstract & Critical Thinking Dialogues',
+      description: 'Engage in thought-provoking conversations on complex topics',
+      icon: 'bulb-outline' as const,
+      screen: '/(tabs)/practice/stage5/critical-thinking-dialogues' as any,
+      gradient: ['#F39C12', '#E67E22'] as const,
+      iconBg: 'rgba(243, 156, 18, 0.2)',
     },
     {
-      title: "Academic Presentations",
-      description: "Practice delivering polished presentations on academic subjects.",
-      icon: "school-outline" as const,
-      route: "/(tabs)/practice/stage5/academic-presentation" as any,
+      id: 'academicPresentation',
+      title: 'Academic Presentations',
+      description: 'Practice delivering polished presentations on academic subjects',
+      icon: 'school-outline' as const,
+      screen: '/(tabs)/practice/stage5/academic-presentation' as any,
+      gradient: ['#E67E22', '#D35400'] as const,
+      iconBg: 'rgba(230, 126, 34, 0.2)',
     },
     {
-      title: "In-Depth Interview Simulation",
-      description: "Simulate challenging interviews to refine your communication skills.",
-      icon: "briefcase-outline" as const,
-      route: "/(tabs)/practice/stage5/in-depth-interview" as any,
+      id: 'inDepthInterview',
+      title: 'In-Depth Interview Simulation',
+      description: 'Simulate challenging interviews to refine your communication skills',
+      icon: 'briefcase-outline' as const,
+      screen: '/(tabs)/practice/stage5/in-depth-interview' as any,
+      gradient: ['#D35400', '#BA4A00'] as const,
+      iconBg: 'rgba(211, 84, 0, 0.2)',
     },
   ];
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stage 5</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.goalContainer}>
-          <Text style={styles.goalTitle}>C1 Advanced</Text>
-          <Text style={styles.goalDescription}>
-            Goal: Understand and produce complex texts, and express ideas fluently and spontaneously.
-          </Text>
-        </View>
+  useEffect(() => {
+    // Animate elements on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
-        {practiceOptions.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.optionContainer}
-            onPress={() => router.push(option.route as any)}
-          >
-            <Ionicons name={option.icon} size={32} color="#93E893" style={styles.optionIcon} />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>{option.title}</Text>
-              <Text style={styles.optionDescription}>{option.description}</Text>
+  const navigateToActivity = (activityScreen: any, activityIndex: number) => {
+    // Add a small scale animation on press for the specific activity
+    Animated.sequence([
+      Animated.timing(activityScaleAnims[activityIndex], {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(activityScaleAnims[activityIndex], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    router.push(activityScreen);
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Main ScrollView containing everything */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <View style={styles.backButtonCircle}>
+                <Ionicons name="arrow-back" size={24} color="#F39C12" />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={styles.titleContainer}>
+              <LinearGradient
+                colors={['#F39C12', '#E67E22']}
+                style={styles.titleGradient}
+              >
+                <Ionicons name="school" size={32} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={styles.headerTitle}>Stage 5</Text>
+              <Text style={styles.headerSubtitle}>C1 Advanced Level</Text>
             </View>
-            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
-          </TouchableOpacity>
-        ))}
+          </View>
+        </Animated.View>
+
+        {/* Goal Section */}
+        <Animated.View
+          style={[
+            styles.goalSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+            style={styles.goalGradient}
+          >
+            <View style={styles.goalContent}>
+              <Ionicons name="flag" size={28} color="#F39C12" />
+              <Text style={styles.goalTitle}>Your Learning Goal</Text>
+              <Text style={styles.goalDescription}>
+                Understand and produce complex texts, and express ideas fluently and spontaneously
+              </Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Activities Section */}
+        <Animated.View
+          style={[
+            styles.activitiesSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <LinearGradient
+              colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+              style={styles.sectionHeaderGradient}
+            >
+              <Ionicons name="play-circle" size={24} color="#F39C12" />
+              <Text style={styles.sectionTitle}>Practice Activities</Text>
+            </LinearGradient>
+          </View>
+
+          {activities.map((activity, index) => (
+            <Animated.View
+              key={activity.id}
+              style={[
+                styles.activityCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [
+                    { translateY: slideAnim },
+                    { scale: activityScaleAnims[index] }
+                  ],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.activityButton}
+                onPress={() => navigateToActivity(activity.screen, index)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={activity.gradient}
+                  style={styles.activityGradient}
+                >
+                  <View style={styles.activityContent}>
+                    <View style={[styles.activityIconContainer, { backgroundColor: activity.iconBg }]}>
+                      <Ionicons name={activity.icon} size={28} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.activityTextContainer}>
+                      <Text style={styles.activityTitle}>{activity.title}</Text>
+                      <Text style={styles.activityDescription}>{activity.description}</Text>
+                    </View>
+                    <View style={styles.arrowContainer}>
+                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </Animated.View>
+
+        {/* Progress Info Card */}
+        <Animated.View
+          style={[
+            styles.progressCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+            style={styles.progressGradient}
+          >
+            <View style={styles.progressContent}>
+              <Ionicons name="trending-up" size={32} color="#F39C12" />
+              <Text style={styles.progressTitle}>Track Your Progress</Text>
+              <Text style={styles.progressDescription}>
+                Complete activities to unlock advanced stages and track your improvement
+              </Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Decorative Elements */}
+      <View style={styles.decorativeCircle1} />
+      <View style={styles.decorativeCircle2} />
+      <View style={styles.decorativeCircle3} />
+      <View style={styles.decorativeCircle4} />
+      
+      {/* Floating Particles */}
+      <View style={styles.particle1} />
+      <View style={styles.particle2} />
+      <View style={styles.particle3} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111629",
+    backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
-  goalContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    alignItems: "flex-start",
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  headerContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 10,
+  },
+  backButtonCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(243, 156, 18, 0.15)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  titleGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000000',
+    textAlign: 'center',
     marginBottom: 8,
+    textShadowColor: 'rgba(243, 156, 18, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#6C757D',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  goalSection: {
+    marginBottom: 30,
+  },
+  goalGradient: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#F8F9FA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  goalContent: {
+    alignItems: 'center',
   },
   goalTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#D2D5E1",
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginTop: 12,
     marginBottom: 8,
   },
   goalDescription: {
-    fontSize: 16,
-    color: "#D2D5E1",
-    lineHeight: 22,
+    fontSize: 14,
+    color: '#6C757D',
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  optionContainer: {
-    flexDirection: "row",
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 20,
+  activitiesSection: {
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    marginBottom: 20,
+  },
+  sectionHeaderGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginLeft: 12,
+  },
+  activityCard: {
     marginBottom: 16,
-    alignItems: "center",
+    height: 120,
   },
-  optionIcon: {
-    marginRight: 20,
+  activityButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 12,
   },
-  optionTextContainer: {
+  activityGradient: {
+    paddingHorizontal: 24,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  activityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activityIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  activityTextContainer: {
     flex: 1,
   },
-  optionTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#93E893",
-    marginBottom: 6,
+  activityTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
-  optionDescription: {
+  activityDescription: {
     fontSize: 14,
-    color: "#D2D5E1",
-    lineHeight: 18,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    lineHeight: 20,
+  },
+  arrowContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressCard: {
+    marginTop: 20,
+  },
+  progressGradient: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#F8F9FA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  progressContent: {
+    alignItems: 'center',
+  },
+  progressTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  progressDescription: {
+    fontSize: 14,
+    color: '#6C757D',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    top: height * 0.15,
+    right: -60,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    bottom: height * 0.25,
+    left: -40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  },
+  decorativeCircle3: {
+    position: 'absolute',
+    top: height * 0.7,
+    right: -30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.015)',
+  },
+  decorativeCircle4: {
+    position: 'absolute',
+    bottom: height * 0.1,
+    right: width * 0.2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.025)',
+  },
+  particle1: {
+    position: 'absolute',
+    top: height * 0.3,
+    left: width * 0.1,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#6C757D',
+    opacity: 0.3,
+  },
+  particle2: {
+    position: 'absolute',
+    top: height * 0.6,
+    right: width * 0.15,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#ADB5BD',
+    opacity: 0.2,
+  },
+  particle3: {
+    position: 'absolute',
+    bottom: height * 0.3,
+    left: width * 0.2,
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#CED4DA',
+    opacity: 0.25,
   },
 });
 
-export default Stage5Home; 
+export default Stage5Screen; 
