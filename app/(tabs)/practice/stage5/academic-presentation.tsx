@@ -1,9 +1,11 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
     SafeAreaView,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -15,43 +17,55 @@ const AcademicPresentationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+          <View style={styles.backButtonCircle}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Academic Presentation</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageTitle}>Presentation Challenge</Text>
+        <View style={styles.titleCard}>
+          <Ionicons name="school-outline" size={32} color={Colors.primary} />
+          <Text style={styles.pageTitle}>Presentation Challenge</Text>
+        </View>
 
         <View style={styles.presentationCard}>
-            <Ionicons name="school-outline" size={60} color="#93E893" />
-            <Text style={styles.presentationText}>
-              Explain the role of climate change in global economics.
-            </Text>
+          <Ionicons name="document-text-outline" size={48} color={Colors.primary} />
+          <Text style={styles.presentationText}>
+            Explain the role of climate change in global economics.
+          </Text>
         </View>
 
         <View style={styles.speechStructureContainer}>
           <Text style={styles.speechStructureTitle}>Speech Structure</Text>
           <View style={styles.structureRow}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
-              <Text style={styles.speechStructureItem}>Introduction</Text>
+            <View style={styles.checkmarkContainer}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primary} />
+            </View>
+            <Text style={styles.speechStructureItem}>Introduction</Text>
           </View>
           <View style={styles.structureRow}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
-              <Text style={styles.speechStructureItem}>Key Points & Evidence</Text>
+            <View style={styles.checkmarkContainer}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primary} />
+            </View>
+            <Text style={styles.speechStructureItem}>Key Points & Evidence</Text>
           </View>
           <View style={styles.structureRow}>
-              <Ionicons name="checkmark-circle-outline" size={24} color="#93E893" style={styles.structureIcon}/>
-              <Text style={styles.speechStructureItem}>Conclusion & Q&A</Text>
+            <View style={styles.checkmarkContainer}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primary} />
+            </View>
+            <Text style={styles.speechStructureItem}>Conclusion & Q&A</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
           <Text style={styles.speakButtonText}>Start Presenting</Text>
         </TouchableOpacity>
       </View>
@@ -62,93 +76,125 @@ const AcademicPresentationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111629",
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  titleCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
   },
   presentationCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 15,
-    padding: 30,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   presentationText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
     textAlign: "center",
     lineHeight: 32,
-    marginTop: 20,
+    marginTop: Spacing.base,
   },
   speechStructureContainer: {
-    width: '100%',
-    backgroundColor: "#1E293B",
-    padding: 20,
-    borderRadius: 15,
+    backgroundColor: Colors.backgroundSecondary,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   speechStructureTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#93E893",
-    marginBottom: 15,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.base,
   },
   structureRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
-  structureIcon: {
-      marginRight: 15,
+  checkmarkContainer: {
+    marginRight: Spacing.base,
   },
   speechStructureItem: {
-    fontSize: 16,
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     lineHeight: 22,
+    flex: 1,
   },
   bottomBar: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: "#93E893",
-    borderRadius: 30,
-    paddingVertical: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.base,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: "#111629",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 12,
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

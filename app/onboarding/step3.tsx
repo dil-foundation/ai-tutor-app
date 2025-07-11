@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import {
     Image,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -11,6 +10,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const EnglishLevelScreen = () => {
     const router = useRouter();
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontFamily: 'Lexend-SemiBold',
-        color: '#93E893',
+        color: '#22C55E',
         flex: 1, // Allows the title to take available space
         textAlign: 'center', // Center the title
         marginRight: 24, // Account for the back button's width
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     levelHeading: {
         fontSize: 28,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 8,
     },
     levelDescription: {
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 10,
     },
     sectionText: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Lexend-Regular',
     },
     learningPlanButton: {
-        backgroundColor: '#93E893', // Blue button color
+        backgroundColor: '#22C55E', // Blue button color
         paddingVertical: 15,
         paddingHorizontal: 20,
         borderRadius: 10,

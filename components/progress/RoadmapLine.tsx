@@ -9,7 +9,7 @@ interface RoadmapLineProps {
 
 const getLineColor = (status: string) => {
   switch (status) {
-    case 'completed': return '#58D68D';
+    case 'completed': return '#22C55E';
     case 'in_progress': return '#3B82F6';
     default: return '#E0E0E0';
   }

@@ -1,140 +1,420 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter } from "expo-router";
-import React from "react";
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-    SafeAreaView,
+    Animated,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View
+} from 'react-native';
 
-const Stage4Home = () => {
+const Stage4Screen = () => {
   const router = useRouter();
-
-  const practiceOptions = [
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(20));
+  
+  const activities = [
     {
-      title: "Abstract Topic Monologue",
-      description: "Practice expressing complex ideas on abstract topics.",
-      icon: "chatbubble-ellipses-outline" as const,
-      route: "/(tabs)/practice/stage4/abstract-topic" as any,
+      id: 'newsDiscussion',
+      title: 'News Summary & Discussion',
+      description: 'Analyze and discuss current events with confidence',
+      icon: 'newspaper-outline' as const,
+      screen: '/(tabs)/practice/stage4/news-summary' as any,
+      lessonCount: 6,
     },
     {
-      title: "Mock Interview Practice",
-      description: "Simulate real-world interviews to improve fluency and confidence.",
-      icon: "briefcase-outline" as const,
-      route: "/(tabs)/practice/stage4/mock-interview" as any,
+      id: 'mockInterview',
+      title: 'Mock Job Interviews',
+      description: 'Practice professional interview scenarios',
+      icon: 'briefcase-outline' as const,
+      screen: '/(tabs)/practice/stage4/mock-interview' as any,
+      lessonCount: 8,
     },
     {
-      title: "News Summary Challenge",
-      description: "Summarize news articles to enhance comprehension and expression.",
-      icon: "newspaper-outline" as const,
-      route: "/(tabs)/practice/stage4/news-summary" as any,
+      id: 'abstractTopics',
+      title: 'Abstract Topic Discussions',
+      description: 'Explore complex ideas and philosophical concepts',
+      icon: 'bulb-outline' as const,
+      screen: '/(tabs)/practice/stage4/abstract-topic' as any,
+      lessonCount: 4,
     },
   ];
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stage 4</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.goalContainer}>
-          <Text style={styles.goalTitle}>B2 Upper Intermediate</Text>
-          <Text style={styles.goalDescription}>
-            Goal: Express complex ideas clearly, use nuanced vocabulary, and fluently manage discussions.
-          </Text>
-        </View>
+  useEffect(() => {
+    // Subtle animations for professional feel
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
-        {practiceOptions.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.optionContainer}
-            onPress={() => router.push(option.route as any)}
-          >
-             <Ionicons name={option.icon} size={32} color="#93E893" style={styles.optionIcon} />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>{option.title}</Text>
-              <Text style={styles.optionDescription}>{option.description}</Text>
+  const navigateToActivity = (activityScreen: any) => {
+    router.push(activityScreen);
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <View style={styles.backButtonCircle}>
+                <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={styles.titleContainer}>
+              <View style={styles.titleCircle}>
+                <Ionicons name="school" size={32} color={Colors.background} />
+              </View>
+              <Text style={styles.headerTitle}>Stage 4</Text>
+              <Text style={styles.headerSubtitle}>B2 Upper Intermediate</Text>
             </View>
-            <Ionicons name="chevron-forward-outline" size={24} color="#D2D5E1" />
-          </TouchableOpacity>
-        ))}
+          </View>
+        </Animated.View>
+
+        {/* Goal Section */}
+        <Animated.View
+          style={[
+            styles.goalSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.goalCard}>
+            <View style={styles.goalContent}>
+              <Ionicons name="flag" size={28} color={Colors.primary} />
+              <Text style={styles.goalTitle}>Your Learning Goal</Text>
+              <Text style={styles.goalDescription}>
+                Discuss complex topics fluently and participate in professional conversations
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Activities Section */}
+        <Animated.View
+          style={[
+            styles.activitiesSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderCard}>
+              <Ionicons name="play-circle" size={24} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Practice Activities</Text>
+            </View>
+          </View>
+
+          {activities.map((activity) => (
+            <Animated.View
+              key={activity.id}
+              style={[
+                styles.activityCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.activityButton}
+                onPress={() => navigateToActivity(activity.screen)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.activityContent}>
+                  <View style={styles.activityIconContainer}>
+                    <Ionicons name={activity.icon} size={28} color={Colors.primary} />
+                  </View>
+                  
+                  <View style={styles.activityTextContainer}>
+                    <Text style={styles.activityTitle}>{activity.title}</Text>
+                    <Text style={styles.activityDescription}>{activity.description}</Text>
+                    <Text style={styles.lessonCount}>{activity.lessonCount} lessons</Text>
+                  </View>
+                  
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </Animated.View>
+
+        {/* Progress Summary */}
+        <Animated.View
+          style={[
+            styles.progressSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.progressCard}>
+            <Text style={styles.progressTitle}>Your Progress</Text>
+            <View style={styles.progressStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>18</Text>
+                <Text style={styles.statLabel}>Total Lessons</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0%</Text>
+                <Text style={styles.statLabel}>Progress</Text>
+              </View>
+            </View>
+          </View>
+        </Animated.View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111629",
+    backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    marginRight: 15,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  goalContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  goalTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#D2D5E1",
-    marginBottom: 8,
-  },
-  goalDescription: {
-    fontSize: 16,
-    color: "#D2D5E1",
-    lineHeight: 22,
-  },
-  optionContainer: {
-    flexDirection: "row",
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  optionIcon: {
-    marginRight: 20,
-  },
-  optionTextContainer: {
+  scrollView: {
     flex: 1,
   },
-  optionTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#93E893",
-    marginBottom: 6,
+  scrollContent: {
+    paddingTop: 60,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing['2xl'],
   },
-  optionDescription: {
-    fontSize: 14,
-    color: "#D2D5E1",
+  header: {
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  headerContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 10,
+  },
+  backButtonCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  titleCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.base,
+    ...Shadows.md,
+  },
+  headerTitle: {
+    fontSize: Typography.fontSize['4xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  headerSubtitle: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  goalSection: {
+    marginBottom: Spacing.xl,
+  },
+  goalCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+  },
+  goalContent: {
+    alignItems: 'center',
+  },
+  goalTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  goalDescription: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  activitiesSection: {
+    marginBottom: Spacing.xl,
+  },
+  sectionHeader: {
+    marginBottom: Spacing.md,
+  },
+  sectionHeaderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
+  },
+  activityCard: {
+    marginBottom: Spacing.base,
+  },
+  activityButton: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+  },
+  activityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+  },
+  activityIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.base,
+  },
+  activityTextContainer: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  activityDescription: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     lineHeight: 18,
+    marginBottom: 4,
+  },
+  lessonCount: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  arrowContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressSection: {
+    marginBottom: Spacing.xl,
+  },
+  progressCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+  },
+  progressTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.base,
+    textAlign: 'center',
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.border,
+    marginHorizontal: Spacing.sm,
   },
 });
 
-export default Stage4Home; 
+export default Stage4Screen; 

@@ -1,19 +1,16 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import {
+    Animated,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-const { width, height } = Dimensions.get('window');
 
 const Stage6Screen = () => {
   const router = useRouter();
@@ -33,8 +30,6 @@ const Stage6Screen = () => {
       description: 'Practice real-time conversations with AI, focusing on natural flow and quick thinking',
       icon: 'rocket-outline' as const,
       screen: '/(tabs)/practice/stage6/ai-guided-spontaneous-speech' as any,
-      gradient: ['#6C5CE7', '#5F3DC4'] as const,
-      iconBg: 'rgba(108, 92, 231, 0.2)',
     },
     {
       id: 'roleplaySensitive',
@@ -42,8 +37,6 @@ const Stage6Screen = () => {
       description: 'Simulate real-world interviews to improve fluency and confidence',
       icon: 'people-outline' as const,
       screen: '/(tabs)/practice/stage6/roleplay-handle-sensitive-scenario' as any,
-      gradient: ['#5F3DC4', '#4C3F91'] as const,
-      iconBg: 'rgba(95, 61, 196, 0.2)',
     },
     {
       id: 'criticalOpinion',
@@ -51,8 +44,6 @@ const Stage6Screen = () => {
       description: 'Develop and articulate complex opinions on various topics, supported by evidence and logic',
       icon: 'bulb-outline' as const,
       screen: '/(tabs)/practice/stage6/critical-opinion-builder' as any,
-      gradient: ['#4C3F91', '#3D2C56'] as const,
-      iconBg: 'rgba(76, 63, 145, 0.2)',
     },
   ];
 
@@ -61,17 +52,17 @@ const Stage6Screen = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 800,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 1000,
+        duration: 800,
         useNativeDriver: true,
       }),
       Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
@@ -97,6 +88,8 @@ const Stage6Screen = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      
       {/* Main ScrollView containing everything */}
       <ScrollView 
         style={styles.scrollView}
@@ -116,17 +109,14 @@ const Stage6Screen = () => {
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
-                <Ionicons name="arrow-back" size={24} color="#6C5CE7" />
+                <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
               </View>
             </TouchableOpacity>
             
             <View style={styles.titleContainer}>
-              <LinearGradient
-                colors={['#6C5CE7', '#5F3DC4']}
-                style={styles.titleGradient}
-              >
-                <Ionicons name="school" size={32} color="#FFFFFF" />
-              </LinearGradient>
+              <View style={styles.titleCircle}>
+                <Ionicons name="school" size={32} color={Colors.background} />
+              </View>
               <Text style={styles.headerTitle}>Stage 6</Text>
               <Text style={styles.headerSubtitle}>C2 Proficiency Level</Text>
             </View>
@@ -143,18 +133,15 @@ const Stage6Screen = () => {
             },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(108, 92, 231, 0.1)', 'rgba(95, 61, 196, 0.05)']}
-            style={styles.goalGradient}
-          >
+          <View style={styles.goalCard}>
             <View style={styles.goalContent}>
-              <Ionicons name="flag" size={28} color="#6C5CE7" />
+              <Ionicons name="flag" size={28} color={Colors.primary} />
               <Text style={styles.goalTitle}>Your Learning Goal</Text>
               <Text style={styles.goalDescription}>
                 Master real-time fluency, advanced argumentation, and nuanced emotional communication
               </Text>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Activities Section */}
@@ -168,13 +155,10 @@ const Stage6Screen = () => {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(108, 92, 231, 0.1)', 'rgba(95, 61, 196, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="play-circle" size={24} color="#6C5CE7" />
+            <View style={styles.sectionHeaderCard}>
+              <Ionicons name="play-circle" size={24} color={Colors.primary} />
               <Text style={styles.sectionTitle}>Practice Activities</Text>
-            </LinearGradient>
+            </View>
           </View>
 
           {activities.map((activity, index) => (
@@ -196,23 +180,18 @@ const Stage6Screen = () => {
                 onPress={() => navigateToActivity(activity.screen, index)}
                 activeOpacity={0.8}
               >
-                <LinearGradient
-                  colors={activity.gradient}
-                  style={styles.activityGradient}
-                >
-                  <View style={styles.activityContent}>
-                    <View style={[styles.activityIconContainer, { backgroundColor: activity.iconBg }]}>
-                      <Ionicons name={activity.icon} size={28} color="#FFFFFF" />
-                    </View>
-                    <View style={styles.activityTextContainer}>
-                      <Text style={styles.activityTitle}>{activity.title}</Text>
-                      <Text style={styles.activityDescription}>{activity.description}</Text>
-                    </View>
-                    <View style={styles.arrowContainer}>
-                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                    </View>
+                <View style={styles.activityContent}>
+                  <View style={styles.activityIconContainer}>
+                    <Ionicons name={activity.icon} size={28} color={Colors.primary} />
                   </View>
-                </LinearGradient>
+                  <View style={styles.activityTextContainer}>
+                    <Text style={styles.activityTitle}>{activity.title}</Text>
+                    <Text style={styles.activityDescription}>{activity.description}</Text>
+                  </View>
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="arrow-forward" size={20} color={Colors.textSecondary} />
+                  </View>
+                </View>
               </TouchableOpacity>
             </Animated.View>
           ))}
@@ -228,31 +207,17 @@ const Stage6Screen = () => {
             },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(108, 92, 231, 0.1)', 'rgba(95, 61, 196, 0.05)']}
-            style={styles.progressGradient}
-          >
+          <View style={styles.progressContainer}>
             <View style={styles.progressContent}>
-              <Ionicons name="trending-up" size={32} color="#6C5CE7" />
+              <Ionicons name="trending-up" size={32} color={Colors.primary} />
               <Text style={styles.progressTitle}>Track Your Progress</Text>
               <Text style={styles.progressDescription}>
                 Complete activities to unlock advanced stages and track your improvement
               </Text>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
       </ScrollView>
-
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
     </View>
   );
 };
@@ -260,19 +225,19 @@ const Stage6Screen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingTop: 60,
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.lg,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
   headerContent: {
     alignItems: 'center',
@@ -288,252 +253,162 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.15)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   titleContainer: {
     alignItems: 'center',
     marginTop: 20,
   },
-  titleGradient: {
+  titleCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    marginBottom: Spacing.base,
+    ...Shadows.md,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
+    fontSize: Typography.fontSize['4xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(108, 92, 231, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: Spacing.xs,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
   goalSection: {
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
-  goalGradient: {
-    borderRadius: 20,
-    padding: 24,
+  goalCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   goalContent: {
     alignItems: 'center',
   },
   goalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 8,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   goalDescription: {
-    fontSize: 14,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   activitiesSection: {
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
-    marginBottom: 20,
+    marginBottom: Spacing.md,
   },
-  sectionHeaderGradient: {
+  sectionHeaderCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: Colors.border,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginLeft: 12,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
   },
   activityCard: {
-    marginBottom: 16,
-    height: 120,
+    marginBottom: Spacing.base,
   },
   activityButton: {
-    borderRadius: 20,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
     overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  activityGradient: {
-    paddingHorizontal: 24,
-    height: '100%',
-    justifyContent: 'center',
   },
   activityContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: Spacing.md,
+    minHeight: 80,
   },
   activityIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: Spacing.base,
   },
   activityTextContainer: {
     flex: 1,
+    justifyContent: 'center',
+    paddingRight: Spacing.sm,
   },
   activityTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   activityDescription: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   arrowContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingLeft: Spacing.sm,
   },
   progressCard: {
-    marginTop: 20,
+    marginTop: Spacing.md,
   },
-  progressGradient: {
-    borderRadius: 20,
-    padding: 24,
+  progressContainer: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   progressContent: {
     alignItems: 'center',
   },
   progressTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 8,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   progressDescription: {
-    fontSize: 14,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
   },
 });
 

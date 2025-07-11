@@ -1,20 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    Animated,
     Dimensions,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BorderRadius, Colors, Gradients, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Audio } from 'expo-av';
-import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchAudioFromText } from '../../../../config/api';
 
@@ -41,36 +41,36 @@ const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => 
   }
 };
 
-// Enhanced data structure with icons and colors
+// Enhanced data structure with icons
 const sightWordsData = [
-  { english: "I", urdu: "میں", pron: "aai", icon: "👤", color: ['#FF6B6B', '#4ECDC4'] },
-  { english: "You", urdu: "آپ", pron: "yoo", icon: "🤝", color: ['#45B7D1', '#96CEB4'] },
-  { english: "He", urdu: "وہ (مرد)", pron: "hee", icon: "👨", color: ['#FFA07A', '#98D8C8'] },
-  { english: "She", urdu: "وہ (عورت)", pron: "shee", icon: "👩", color: ['#DDA0DD', '#F0E68C'] },
-  { english: "It", urdu: "یہ", pron: "it", icon: "🔍", color: ['#FFD700', '#87CEEB'] },
-  { english: "We", urdu: "ہم", pron: "wee", icon: "👥", color: ['#FF6347', '#32CD32'] },
+  { english: "I", urdu: "میں", pron: "aai", icon: "person-outline" },
+  { english: "You", urdu: "آپ", pron: "yoo", icon: "people-outline" },
+  { english: "He", urdu: "وہ (مرد)", pron: "hee", icon: "man-outline" },
+  { english: "She", urdu: "وہ (عورت)", pron: "shee", icon: "woman-outline" },
+  { english: "It", urdu: "یہ", pron: "it", icon: "locate-outline" },
+  { english: "We", urdu: "ہم", pron: "wee", icon: "people-outline" },
 ];
 
 const greetingsData = [
-  { english: "Hello", urdu: "السلام علیکم", pron: "he-lo", icon: "👋", color: ['#58D68D', '#45B7A8'] },
-  { english: "How are you?", urdu: "تم کیسے ہو؟", pron: "how ar yoo", icon: "❓", color: ['#FF6B6B', '#4ECDC4'] },
-  { english: "My name is Ali", urdu: "میرا نام علی ہے", pron: "mai neim iz aa-lee", icon: "📝", color: ['#45B7D1', '#96CEB4'] },
+  { english: "Hello", urdu: "السلام علیکم", pron: "he-lo", icon: "hand-right-outline" },
+  { english: "How are you?", urdu: "تم کیسے ہو؟", pron: "how ar yoo", icon: "help-outline" },
+  { english: "My name is Ali", urdu: "میرا نام علی ہے", pron: "mai neim iz aa-lee", icon: "person-add-outline" },
 ];
 
 const phrasesData = [
-  { english: "How are you?", urdu: "آپ کیسے ہیں؟", pron: "how ar yoo", icon: "💬", color: ['#FFA07A', '#98D8C8'] },
-  { english: "I'm doing well.", urdu: "میں ٹھیک ہوں-", pron: "aaim doo-ing wel", icon: "😊", color: ['#DDA0DD', '#F0E68C'] },
-  { english: "What's your name?", urdu: "تمہارا نام کیا ہے؟", pron: "wats yor neim", icon: "🏷️", color: ['#FFD700', '#87CEEB'] },
-  { english: "My name is Aaliyah.", urdu: "میرا نام عالیہ ہے-", pron: "mai neim iz aa-lee-ya", icon: "👤", color: ['#FF6347', '#32CD32'] },
-  { english: "Nice to meet you.", urdu: "تم سے مل کر خوشی ہوئی-", pron: "nais to meet yoo", icon: "🤗", color: ['#8A2BE2', '#20B2AA'] },
+  { english: "How are you?", urdu: "آپ کیسے ہیں؟", pron: "how ar yoo", icon: "chatbox-outline" },
+  { english: "I'm doing well.", urdu: "میں ٹھیک ہوں-", pron: "aaim doo-ing wel", icon: "happy-outline" },
+  { english: "What's your name?", urdu: "تمہارا نام کیا ہے؟", pron: "wats yor neim", icon: "text-outline" },
+  { english: "My name is Aaliyah.", urdu: "میرا نام عالیہ ہے-", pron: "mai neim iz aa-lee-ya", icon: "person-outline" },
+  { english: "Nice to meet you.", urdu: "تم سے مل کر خوشی ہوئی-", pron: "nais to meet yoo", icon: "handshake-outline" },
 ];
 
 const uiWordsData = [
-  { english: "Inbox", urdu: "ان باکس", pron: "in-boks", icon: "📥", color: ['#58D68D', '#45B7A8'] },
-  { english: "Settings", urdu: "سیٹنگز", pron: "set-ings", icon: "⚙️", color: ['#FF6B6B', '#4ECDC4'] },
-  { english: "Notifications", urdu: "اطلاعات", pron: "no-ti-fi-ka-shuns", icon: "🔔", color: ['#45B7D1', '#96CEB4'] },
-  { english: "Options", urdu: "اختیارات", pron: "op-shuns", icon: "📋", color: ['#FFA07A', '#98D8C8'] },
-  { english: "Select", urdu: "منتخب کریں", pron: "se-lekt", icon: "✅", color: ['#DDA0DD', '#F0E68C'] },
+  { english: "Inbox", urdu: "ان باکس", pron: "in-boks", icon: "mail-outline" },
+  { english: "Settings", urdu: "سیٹنگز", pron: "set-ings", icon: "settings-outline" },
+  { english: "Notifications", urdu: "اطلاعات", pron: "no-ti-fi-ka-shuns", icon: "notifications-outline" },
+  { english: "Options", urdu: "اختیارات", pron: "op-shuns", icon: "options-outline" },
+  { english: "Select", urdu: "منتخب کریں", pron: "se-lekt", icon: "checkmark-outline" },
 ];
 
 const exerciseData = [
@@ -93,69 +93,90 @@ const Lesson4Screen: React.FC = () => {
 
     // Animation values
     const [fadeAnim] = useState(new Animated.Value(0));
-    const [slideAnim] = useState(new Animated.Value(30));
-    const [scaleAnim] = useState(new Animated.Value(0.9));
-    const [pulseAnim] = useState(new Animated.Value(1));
+    const [slideAnim] = useState(new Animated.Value(20));
     const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+
+    const pageData = [sightWordsData, greetingsData, phrasesData, uiWordsData, exerciseData];
+    const pageTitle = ["Sight Words", "Greetings", "Common Phrases", "UI Words", "Practice"];
 
     useEffect(() => {
         // Initialize card animations based on current page
-        let animations: Animated.Value[] = [];
-        
-        if (currentPageIndex === 0) animations = sightWordsData.map(() => new Animated.Value(0));
-        else if (currentPageIndex === 1) animations = greetingsData.map(() => new Animated.Value(0));
-        else if (currentPageIndex === 2) animations = phrasesData.map(() => new Animated.Value(0));
-        else if (currentPageIndex === 3) animations = uiWordsData.map(() => new Animated.Value(0));
-        else if (currentPageIndex === 4) animations = exerciseData.map(() => new Animated.Value(0));
-        
+        const animations = pageData[currentPageIndex].map(() => new Animated.Value(0));
         setCardAnimations(animations);
 
-        // Animate header and content
+        // Subtle animations for professional feel
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
-                duration: 800,
+                duration: 600,
                 useNativeDriver: true,
             }),
             Animated.timing(slideAnim, {
                 toValue: 0,
-                duration: 800,
-                useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-                toValue: 1,
                 duration: 600,
                 useNativeDriver: true,
             }),
         ]).start();
 
         // Animate cards with stagger
-        animations.forEach((anim, index) => {
+        const cardAnimationSequence = animations.map((anim, index) =>
             Animated.timing(anim, {
                 toValue: 1,
                 duration: 400,
-                delay: index * 150,
+                delay: index * 100,
                 useNativeDriver: true,
-            }).start();
-        });
-
-        // Start pulse animation for play buttons
-        const pulseAnimation = Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, {
-                    toValue: 1.05,
-                    duration: 1500,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(pulseAnim, {
-                    toValue: 1,
-                    duration: 1500,
-                    useNativeDriver: true,
-                }),
-            ])
+            })
         );
-        pulseAnimation.start();
+
+        Animated.parallel(cardAnimationSequence).start();
     }, [currentPageIndex]);
+
+    const handlePlayAudio = (text: string, key: string) => {
+        if (playingItem === key) return;
+
+        setPlayingItem(key);
+        playAudioFromText(text, () => setPlayingItem(null));
+    };
+
+    const handleAnswerSelect = (exerciseIndex: number, selectedOption: string) => {
+        setSelectedAnswers(prev => ({
+            ...prev,
+            [exerciseIndex]: selectedOption
+        }));
+    };
+
+    const handleGoBack = () => {
+        if (currentPageIndex > 0) {
+            setCurrentPageIndex(currentPageIndex - 1);
+        } else {
+            router.back();
+        }
+    };
+
+    const handleNextOrFinish = () => {
+        if (currentPageIndex < pageData.length - 1) {
+            setCurrentPageIndex(currentPageIndex + 1);
+        } else {
+            setShowFinishAnimation(true);
+            setTimeout(() => {
+                router.push('/practice/stage0');
+            }, 2000);
+        }
+    };
+
+    if (showFinishAnimation) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.finishContainer}>
+                    <View style={styles.completionIconContainer}>
+                        <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
+                    </View>
+                    <Text style={styles.finishText}>Lesson Complete!</Text>
+                    <Text style={styles.finishSubtext}>Great job learning phrases!</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     const renderWordCard = (item: any, index: number) => {
         const cardAnim = cardAnimations[index] || new Animated.Value(0);
@@ -174,79 +195,48 @@ const Lesson4Screen: React.FC = () => {
                                     outputRange: [30, 0]
                                 })
                             },
-                            { scale: cardAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0.8, 1]
-                            })}
                         ],
                     },
                 ]}
             >
-                <LinearGradient
-                    colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                    style={styles.cardGradient}
-                >
+                <View style={styles.card}>
                     <View style={styles.cardContent}>
-                        {/* Header with Icon and Word */}
-                        <View style={styles.cardHeader}>
-                            <LinearGradient
-                                colors={item.color}
-                                style={styles.iconGradient}
-                            >
-                                <Text style={styles.cardIcon}>{item.icon}</Text>
-                            </LinearGradient>
-                            <View style={styles.wordContainer}>
-                                <Text style={styles.englishWord}>
-                                    {item.english} 
-                                    <Text style={styles.pronText}> ({item.pron})</Text>
-                                </Text>
-                                <Text style={styles.urduWord}>{item.urdu}</Text>
-                            </View>
-                            <Animated.View
-                                style={[
-                                    styles.playButtonContainer,
-                                    {
-                                        transform: [{ scale: playingItem === item.english ? 1.1 : pulseAnim }],
-                                    },
-                                ]}
-                            >
-                                <TouchableOpacity
-                                    style={styles.playButtonCircle}
-                                    disabled={playingItem !== null}
-                                    onPress={async () => {
-                                        setPlayingItem(item.english);
-                                        await playAudioFromText(item.english, () => setPlayingItem(null));
-                                    }}
-                                    activeOpacity={0.8}
-                                >
-                                    <LinearGradient
-                                        colors={playingItem === item.english ? ['#45B7A8', '#58D68D'] : ['#58D68D', '#45B7A8']}
-                                        style={styles.playButtonGradient}
-                                    >
-                                        {playingItem === item.english ? (
-                                            <Ionicons name="pause" size={20} color="#FFFFFF" />
-                                        ) : (
-                                            <Ionicons name="play" size={20} color="#FFFFFF" />
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            </Animated.View>
+                        <View style={styles.iconContainer}>
+                            <Ionicons name={item.icon as any} size={24} color={Colors.primary} />
+                        </View>
+                        <View style={styles.textContainer}>
+                            <Text style={styles.englishText}>{item.english}</Text>
+                            <Text style={styles.urduText}>{item.urdu}</Text>
+                            <Text style={styles.pronText}>({item.pron})</Text>
                         </View>
                     </View>
-                </LinearGradient>
+                    <TouchableOpacity
+                        style={styles.playButtonContainer}
+                        onPress={() => handlePlayAudio(item.english, item.english)}
+                        disabled={playingItem === item.english}
+                    >
+                        <View style={styles.playButton}>
+                            {playingItem === item.english ? (
+                                <Ionicons name="refresh" size={16} color={Colors.textOnPrimary} />
+                            ) : (
+                                <Ionicons name="play" size={16} color={Colors.textOnPrimary} />
+                            )}
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </Animated.View>
         );
     };
 
     const renderExerciseCard = (exercise: any, index: number) => {
         const cardAnim = cardAnimations[index] || new Animated.Value(0);
-        const isCorrect = selectedAnswers[exercise.sentence] === exercise.answer;
-        
+        const isCorrect = selectedAnswers[index] === exercise.answer;
+
         return (
             <Animated.View
                 key={index}
                 style={[
-                    styles.exerciseCardWrapper,
+                    styles.cardWrapper,
                     {
                         opacity: cardAnim,
                         transform: [
@@ -256,415 +246,225 @@ const Lesson4Screen: React.FC = () => {
                                     outputRange: [30, 0]
                                 })
                             },
-                            { scale: cardAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0.8, 1]
-                            })}
                         ],
                     },
                 ]}
             >
-                <LinearGradient
-                    colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                    style={styles.exerciseCardGradient}
-                >
-                    <View style={styles.exerciseCardContent}>
-                        <View style={styles.exerciseHeader}>
-                            <LinearGradient
-                                colors={['#58D68D', '#45B7A8']}
-                                style={styles.exerciseIconGradient}
+                <View style={styles.exerciseCard}>
+                    <Text style={styles.exerciseText}>{exercise.sentence}</Text>
+                    <View style={styles.optionsContainer}>
+                        {exercise.options.map((option: string, optionIndex: number) => (
+                            <TouchableOpacity
+                                key={optionIndex}
+                                style={[
+                                    styles.optionButton,
+                                    selectedAnswers[index] === option && styles.selectedOption,
+                                    selectedAnswers[index] === option && isCorrect && styles.correctOption,
+                                    selectedAnswers[index] === option && !isCorrect && styles.incorrectOption,
+                                ]}
+                                onPress={() => handleAnswerSelect(index, option)}
                             >
-                                <Text style={styles.exerciseIcon}>✏️</Text>
-                            </LinearGradient>
-                            <Text style={styles.exerciseTitle}>Exercise {index + 1}</Text>
-                        </View>
-                        
-                        <Text style={styles.exerciseSentence}>{exercise.sentence}</Text>
-                        
-                        <View style={styles.optionsContainer}>
-                            {exercise.options.map((option: string, optionIndex: number) => (
-                                <TouchableOpacity
-                                    key={optionIndex}
-                                    style={[
-                                        styles.optionButton,
-                                        selectedAnswers[exercise.sentence] === option && {
-                                            backgroundColor: isCorrect ? '#58D68D' : '#FF6B6B',
-                                        }
-                                    ]}
-                                    onPress={() => setSelectedAnswers({
-                                        ...selectedAnswers,
-                                        [exercise.sentence]: option
-                                    })}
-                                >
-                                    <Text style={[
-                                        styles.optionButtonText,
-                                        selectedAnswers[exercise.sentence] === option && {
-                                            color: '#FFFFFF'
-                                        }
-                                    ]}>
-                                        {option}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                        
-                        {selectedAnswers[exercise.sentence] && (
-                            <View style={[
-                                styles.feedbackContainer,
-                                { backgroundColor: isCorrect ? 'rgba(88, 214, 141, 0.1)' : 'rgba(255, 107, 107, 0.1)' }
-                            ]}>
                                 <Text style={[
-                                    styles.feedbackText,
-                                    { color: isCorrect ? '#58D68D' : '#FF6B6B' }
+                                    styles.optionText,
+                                    selectedAnswers[index] === option && styles.selectedOptionText,
                                 ]}>
-                                    {isCorrect ? '✅ Correct!' : '❌ Try again!'}
+                                    {option}
                                 </Text>
-                            </View>
-                        )}
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                </LinearGradient>
+                </View>
             </Animated.View>
         );
     };
 
-    const lessonPages = [
-        // Page 1: Common Sight Words
-        <View key="page1_common_sight_words" style={styles.pageContent}>
-            <View style={styles.pageHeader}>
-                <LinearGradient
-                    colors={['#58D68D', '#45B7A8']}
-                    style={styles.pageIconGradient}
-                >
-                    <Text style={styles.pageIcon}>👁️</Text>
-                </LinearGradient>
-                <Text style={styles.pageTitle}>Common Sight Words</Text>
-                <Text style={styles.pageSubtitle}>Essential words for everyday communication, with Urdu translations.</Text>
-            </View>
-            {sightWordsData.map((item, index) => renderWordCard(item, index))}
-        </View>,
-        
-        // Page 2: Greetings & Introductions
-        <View key="page2_greetings" style={styles.pageContent}>
-            <View style={styles.pageHeader}>
-                <LinearGradient
-                    colors={['#FF6B6B', '#4ECDC4']}
-                    style={styles.pageIconGradient}
-                >
-                    <Text style={styles.pageIcon}>🤝</Text>
-                </LinearGradient>
-                <Text style={styles.pageTitle}>Greetings & Introductions</Text>
-                <Text style={styles.pageSubtitle}>Learn essential English greetings and introductory phrases with Urdu translations.</Text>
-            </View>
-            {greetingsData.map((item, index) => renderWordCard(item, index))}
-        </View>,
-        
-        // Page 3: Useful Phrases
-        <View key="page3_phrases" style={styles.pageContent}>
-            <View style={styles.pageHeader}>
-                <LinearGradient
-                    colors={['#45B7D1', '#96CEB4']}
-                    style={styles.pageIconGradient}
-                >
-                    <Text style={styles.pageIcon}>💬</Text>
-                </LinearGradient>
-                <Text style={styles.pageTitle}>Useful Phrases</Text>
-                <Text style={styles.pageSubtitle}>Everyday phrases for better communication.</Text>
-            </View>
-            {phrasesData.map((item, index) => renderWordCard(item, index))}
-        </View>,
-        
-        // Page 4: Sight Words (UI)
-        <View key="page4_ui_sight_words" style={styles.pageContent}>
-            <View style={styles.pageHeader}>
-                <LinearGradient
-                    colors={['#FFA07A', '#98D8C8']}
-                    style={styles.pageIconGradient}
-                >
-                    <Text style={styles.pageIcon}>📱</Text>
-                </LinearGradient>
-                <Text style={styles.pageTitle}>Sight Words</Text>
-                <Text style={styles.pageSubtitle}>Common UI words you'll encounter in apps and websites.</Text>
-            </View>
-            {uiWordsData.map((item, index) => renderWordCard(item, index))}
-        </View>,
-        
-        // Page 5: Fill in the blanks Exercise
-        <View key="page5_exercise" style={styles.pageContent}>
-            <View style={styles.pageHeader}>
-                <LinearGradient
-                    colors={['#DDA0DD', '#F0E68C']}
-                    style={styles.pageIconGradient}
-                >
-                    <Text style={styles.pageIcon}>🧩</Text>
-                </LinearGradient>
-                <Text style={styles.pageTitle}>Practice Exercises</Text>
-                <Text style={styles.pageSubtitle}>Test your knowledge with these interactive exercises.</Text>
-            </View>
-            {exerciseData.map((exercise, index) => renderExerciseCard(exercise, index))}
-        </View>,
-    ];
-
-    const totalPages = lessonPages.length;
-
-    const handleGoBack = () => {
-        if (currentPageIndex > 0) {
-            setCurrentPageIndex(currentPageIndex - 1);
-        } else {
-            if (router.canGoBack()) router.back();
-        }
-    };
-
-    const handleNextOrFinish = () => {
-        if (currentPageIndex < totalPages - 1) {
-            setCurrentPageIndex(currentPageIndex + 1);
-        } else {
-            console.log('Lesson 4 Finished!');
-            setShowFinishAnimation(true);
-            setTimeout(() => {
-                router.replace('/(tabs)/practice/stage0');
-            }, 3000);
-        }
-    };
-
-    // Determine the correct header title based on the current page
-    let currentHeaderTitle = "Lesson 4";
-    if (currentPageIndex === 0) currentHeaderTitle = "Sight Words";
-    if (currentPageIndex === 1) currentHeaderTitle = "Greetings";
-    if (currentPageIndex === 2) currentHeaderTitle = "Useful Phrases";
-    if (currentPageIndex === 3) currentHeaderTitle = "UI Words";
-    if (currentPageIndex === 4) currentHeaderTitle = "Exercises";
-
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-            <View style={styles.container}>
-                {/* Header Section */}
-                <Animated.View 
-                    style={[
-                        styles.header,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ translateY: slideAnim }],
-                        },
-                    ]}
-                >
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                        <LinearGradient
-                            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                            style={styles.backButtonGradient}
-                        >
-                            <Ionicons name="arrow-back" size={24} color="#58D68D" />
-                        </LinearGradient>
-                    </TouchableOpacity>
-                    
-                    <View style={styles.headerContent}>
-                        <View style={styles.headerIconContainer}>
-                            <LinearGradient
-                                colors={['#58D68D', '#45B7A8']}
-                                style={styles.headerIconGradient}
-                            >
-                                <Text style={styles.headerIcon}>📚</Text>
-                            </LinearGradient>
-                        </View>
-                        <Text style={styles.headerTitle}>{currentHeaderTitle}</Text>
-                        <Text style={styles.headerSubtitle}>Essential English Vocabulary</Text>
-                    </View>
-                    
-                    <View style={{ width: 50 }} />
-                </Animated.View>
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
-                {/* Progress Indicator */}
-                <Animated.View 
-                    style={[
-                        styles.progressContainer,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ translateY: slideAnim }],
-                        },
-                    ]}
-                >
+            {/* Header */}
+            <Animated.View
+                style={[
+                    styles.header,
+                    {
+                        opacity: fadeAnim,
+                        transform: [{ translateY: slideAnim }],
+                    },
+                ]}
+            >
+                <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+                    <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+                </TouchableOpacity>
+                <View style={styles.progressContainer}>
+                    <Text style={styles.progressText}>
+                        {currentPageIndex + 1} / {pageData.length}
+                    </Text>
                     <View style={styles.progressBar}>
-                        <LinearGradient
-                            colors={['#58D68D', '#45B7A8']}
+                        <View
                             style={[
                                 styles.progressFill,
-                                { width: `${((currentPageIndex + 1) / totalPages) * 100}%` }
+                                {
+                                    width: `${((currentPageIndex + 1) / pageData.length) * 100}%`,
+                                },
                             ]}
                         />
                     </View>
-                    <Text style={styles.progressText}>
-                        {currentPageIndex + 1} of {totalPages}
-                    </Text>
-                </Animated.View>
+                </View>
+            </Animated.View>
 
-                {/* Main Content */}
-                <Animated.View 
-                    style={[
-                        styles.contentContainer,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ scale: scaleAnim }],
-                        },
-                    ]}
+            {/* Title */}
+            <Animated.View
+                style={[
+                    styles.titleContainer,
+                    {
+                        opacity: fadeAnim,
+                        transform: [{ translateY: slideAnim }],
+                    },
+                ]}
+            >
+                <Text style={styles.title}>{pageTitle[currentPageIndex]}</Text>
+                <Text style={styles.subtitle}>Essential words and phrases for communication</Text>
+            </Animated.View>
+
+            {/* Content */}
+            <View style={styles.contentContainer}>
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollViewContentContainer}
+                    showsVerticalScrollIndicator={false}
                 >
-                    <ScrollView
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollViewContentContainer}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {lessonPages[currentPageIndex]}
-                    </ScrollView>
-                </Animated.View>
-
-                {/* Navigation Button */}
-                <Animated.View 
-                    style={[
-                        styles.buttonContainer,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ translateY: slideAnim }],
-                        },
-                    ]}
-                >
-                    <TouchableOpacity
-                        style={styles.buttonWrapper}
-                        onPress={handleNextOrFinish}
-                        activeOpacity={0.8}
-                    >
-                        <LinearGradient
-                            colors={['#58D68D', '#45B7A8', '#58D68D']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.buttonGradient}
-                        >
-                            <View style={styles.buttonContent}>
-                                <View style={styles.buttonIconContainer}>
-                                    <Text style={styles.buttonIcon}>
-                                        {currentPageIndex === totalPages - 1 ? '🎉' : '→'}
-                                    </Text>
-                                </View>
-                                <View style={styles.buttonTextContainer}>
-                                    <Text style={styles.buttonText}>
-                                        {currentPageIndex === totalPages - 1 ? 'Complete Lesson' : 'Continue'}
-                                    </Text>
-                                    <Text style={styles.buttonSubtext}>
-                                        {currentPageIndex === totalPages - 1 ? 'Great job! You did it!' : 'Next section →'}
-                                    </Text>
-                                </View>
-                            </View>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </Animated.View>
-
-                {/* Decorative Elements */}
-                <View style={styles.decorativeCircle1} />
-                <View style={styles.decorativeCircle2} />
-                <View style={styles.decorativeCircle3} />
-                <View style={styles.particle1} />
-                <View style={styles.particle2} />
-                <View style={styles.particle3} />
-
-                {/* Finish Animation */}
-                {showFinishAnimation && (
-                    <View style={styles.animationOverlay}>
-                        <LottieView
-                            source={require('../../../../assets/animations/sparkle.json')}
-                            autoPlay
-                            loop={false}
-                            style={styles.fullScreenAnimation}
-                        />
+                    <View style={styles.pageContent}>
+                        {currentPageIndex === 4 ? (
+                            // Exercise page
+                            pageData[currentPageIndex].map((item: any, index: number) => 
+                                renderExerciseCard(item, index)
+                            )
+                        ) : (
+                            // Word/phrase pages
+                            pageData[currentPageIndex].map((item: any, index: number) => 
+                                renderWordCard(item, index)
+                            )
+                        )}
                     </View>
-                )}
+                </ScrollView>
             </View>
+
+            {/* Navigation Button */}
+            <Animated.View
+                style={[
+                    styles.buttonContainer,
+                    {
+                        opacity: fadeAnim,
+                        transform: [{ translateY: slideAnim }],
+                    },
+                ]}
+            >
+                <TouchableOpacity style={styles.navigationButton} onPress={handleNextOrFinish}>
+                    <LinearGradient colors={Gradients.success} style={styles.buttonGradient}>
+                        <View style={styles.buttonContent}>
+                            <View style={styles.buttonIconContainer}>
+                                <Ionicons
+                                    name={currentPageIndex < pageData.length - 1 ? "arrow-forward" : "checkmark"}
+                                    size={20}
+                                    color={Colors.textOnPrimary}
+                                />
+                            </View>
+                            <View style={styles.buttonTextContainer}>
+                                <Text style={styles.buttonText}>
+                                    {currentPageIndex < pageData.length - 1 ? 'Next Section' : 'Complete Lesson'}
+                                </Text>
+                                <Text style={styles.buttonSubtext}>
+                                    {currentPageIndex < pageData.length - 1 ? 'Continue learning' : 'Finish lesson'}
+                                </Text>
+                            </View>
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </Animated.View>
         </SafeAreaView>
     );
 };
 
+export default Lesson4Screen;
+
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
-        paddingTop: 20,
+        backgroundColor: Colors.background,
+    },
+    finishContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.lg,
+    },
+    completionIconContainer: {
+        marginBottom: Spacing.lg,
+    },
+    finishText: {
+        fontSize: Typography.fontSize['3xl'],
+        fontWeight: Typography.fontWeight.bold,
+        color: Colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: Spacing.sm,
+    },
+    finishSubtext: {
+        fontSize: Typography.fontSize.base,
+        color: Colors.textSecondary,
+        textAlign: 'center',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.base,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.borderLight,
     },
     backButton: {
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    backButtonGradient: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        alignItems: 'center',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: Colors.backgroundTertiary,
         justifyContent: 'center',
-    },
-    headerContent: {
-        flex: 1,
         alignItems: 'center',
-    },
-    headerIconContainer: {
-        marginBottom: 8,
-    },
-    headerIconGradient: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 12,
-    },
-    headerIcon: {
-        fontSize: 28,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#000000',
-        textAlign: 'center',
-        marginBottom: 4,
-        textShadowColor: 'rgba(88, 214, 141, 0.2)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
-    },
-    headerSubtitle: {
-        fontSize: 14,
-        color: '#6C757D',
-        textAlign: 'center',
+        marginRight: Spacing.base,
     },
     progressContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 20,
+        flex: 1,
+    },
+    progressText: {
+        fontSize: Typography.fontSize.sm,
+        color: Colors.textSecondary,
+        marginBottom: Spacing.xs,
+        textAlign: 'center',
     },
     progressBar: {
-        height: 6,
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-        borderRadius: 3,
-        marginBottom: 8,
-        overflow: 'hidden',
+        height: 4,
+        backgroundColor: Colors.backgroundTertiary,
+        borderRadius: 2,
     },
     progressFill: {
         height: '100%',
-        borderRadius: 3,
+        backgroundColor: Colors.primary,
+        borderRadius: 2,
     },
-    progressText: {
-        fontSize: 12,
-        color: '#6C757D',
+    titleContainer: {
+        alignItems: 'center',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.lg,
+    },
+    title: {
+        fontSize: Typography.fontSize['2xl'],
+        fontWeight: Typography.fontWeight.bold,
+        color: Colors.textPrimary,
         textAlign: 'center',
-        fontWeight: '600',
+        marginBottom: Spacing.sm,
+    },
+    subtitle: {
+        fontSize: Typography.fontSize.base,
+        color: Colors.textSecondary,
+        textAlign: 'center',
     },
     contentContainer: {
         flex: 1,
@@ -673,328 +473,165 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollViewContentContainer: {
-        padding: 20,
-        paddingTop: 10,
-        paddingBottom: 40,
+        padding: Spacing.lg,
+        paddingBottom: Spacing['2xl'],
     },
     pageContent: {
         alignItems: 'center',
     },
-    pageHeader: {
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-    pageIconGradient: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 12,
-    },
-    pageIcon: {
-        fontSize: 36,
-    },
-    pageTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#000000',
-        textAlign: 'center',
-        marginBottom: 8,
-        textShadowColor: 'rgba(88, 214, 141, 0.2)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
-    },
-    pageSubtitle: {
-        fontSize: 16,
-        color: '#6C757D',
-        textAlign: 'center',
-        lineHeight: 22,
-    },
     cardWrapper: {
         width: '100%',
-        marginBottom: 20,
-        borderRadius: 24,
-        overflow: 'hidden',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.1,
-        shadowRadius: 24,
-        elevation: 16,
+        marginBottom: Spacing.base,
     },
-    cardGradient: {
-        padding: 24,
+    card: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.background,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.base,
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#F8F9FA',
+        borderColor: Colors.border,
+        minHeight: 80,
+        ...Shadows.base,
     },
     cardContent: {
-        flexDirection: 'column',
-    },
-    cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    iconGradient: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    cardIcon: {
-        fontSize: 24,
-    },
-    wordContainer: {
         flex: 1,
     },
-    englishWord: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#000000',
-        marginBottom: 4,
+    iconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: Colors.backgroundSecondary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: Spacing.base,
     },
-    urduWord: {
-        fontSize: 18,
-        color: '#6C757D',
-        fontWeight: '500',
+    textContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingRight: Spacing.sm,
+    },
+    englishText: {
+        fontSize: Typography.fontSize.lg,
+        fontWeight: Typography.fontWeight.semibold,
+        color: Colors.textPrimary,
+        marginBottom: Spacing.xs,
+    },
+    urduText: {
+        fontSize: Typography.fontSize.base,
+        color: Colors.textSecondary,
+        marginBottom: Spacing.xs,
     },
     pronText: {
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#58D68D',
+        fontSize: Typography.fontSize.sm,
+        color: Colors.textSecondary,
+        fontWeight: Typography.fontWeight.medium,
     },
     playButtonContainer: {
-        marginLeft: 12,
-    },
-    playButtonCircle: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        overflow: 'hidden',
-        shadowColor: '#58D68D',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    playButtonGradient: {
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
+        paddingLeft: Spacing.sm,
     },
-    exerciseCardWrapper: {
-        width: '100%',
-        marginBottom: 20,
-        borderRadius: 24,
-        overflow: 'hidden',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.1,
-        shadowRadius: 24,
-        elevation: 16,
+    playButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: Colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    exerciseCardGradient: {
-        padding: 24,
+
+    exerciseCard: {
+        backgroundColor: Colors.background,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#F8F9FA',
+        borderColor: Colors.border,
+        ...Shadows.base,
     },
-    exerciseCardContent: {
-        flexDirection: 'column',
-    },
-    exerciseHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    exerciseIconGradient: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    exerciseIcon: {
-        fontSize: 20,
-    },
-    exerciseTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#000000',
-    },
-    exerciseSentence: {
-        fontSize: 18,
-        color: '#000000',
+    exerciseText: {
+        fontSize: Typography.fontSize.lg,
+        fontWeight: Typography.fontWeight.semibold,
+        color: Colors.textPrimary,
+        marginBottom: Spacing.md,
         textAlign: 'center',
-        marginBottom: 20,
-        lineHeight: 24,
     },
     optionsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: 12,
-        marginBottom: 16,
+        justifyContent: 'space-between',
     },
     optionButton: {
-        backgroundColor: 'rgba(88, 214, 141, 0.1)',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
+        width: '48%',
+        backgroundColor: Colors.backgroundSecondary,
+        borderRadius: BorderRadius.sm,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.base,
+        marginBottom: Spacing.sm,
         borderWidth: 1,
-        borderColor: 'rgba(88, 214, 141, 0.3)',
-        minWidth: 80,
-    },
-    optionButtonText: {
-        color: '#000000',
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    feedbackContainer: {
-        padding: 12,
-        borderRadius: 12,
+        borderColor: Colors.border,
         alignItems: 'center',
     },
-    feedbackText: {
-        fontSize: 16,
-        fontWeight: 'bold',
+    selectedOption: {
+        backgroundColor: Colors.primary,
+        borderColor: Colors.primary,
+    },
+    correctOption: {
+        backgroundColor: Colors.success,
+        borderColor: Colors.success,
+    },
+    incorrectOption: {
+        backgroundColor: Colors.error,
+        borderColor: Colors.error,
+    },
+    optionText: {
+        fontSize: Typography.fontSize.base,
+        color: Colors.textPrimary,
+        fontWeight: Typography.fontWeight.medium,
+    },
+    selectedOptionText: {
+        color: Colors.textOnPrimary,
     },
     buttonContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
-        marginBottom: -10,
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: Spacing.lg,
     },
-    buttonWrapper: {
-        borderRadius: 30,
+    navigationButton: {
+        borderRadius: BorderRadius.md,
         overflow: 'hidden',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 12,
+        ...Shadows.md,
     },
     buttonGradient: {
-        paddingHorizontal: 32,
-        paddingVertical: 20,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.base,
     },
     buttonContent: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     buttonIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
-    },
-    buttonIcon: {
-        fontSize: 20,
-        marginTop: -10,
+        alignItems: 'center',
+        marginRight: Spacing.base,
     },
     buttonTextContainer: {
         flex: 1,
     },
     buttonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 4,
+        color: Colors.textOnPrimary,
+        fontSize: Typography.fontSize.lg,
+        fontWeight: Typography.fontWeight.semibold,
+        marginBottom: 2,
     },
     buttonSubtext: {
-        color: '#FFFFFF',
-        fontSize: 14,
+        color: Colors.textOnPrimary,
+        fontSize: Typography.fontSize.sm,
         opacity: 0.9,
-        marginTop: -3,
     },
-    decorativeCircle1: {
-        position: 'absolute',
-        top: height * 0.1,
-        right: -60,
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    },
-    decorativeCircle2: {
-        position: 'absolute',
-        bottom: height * 0.2,
-        left: -40,
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    },
-    decorativeCircle3: {
-        position: 'absolute',
-        top: height * 0.6,
-        right: -30,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: 'rgba(0, 0, 0, 0.015)',
-    },
-    particle1: {
-        position: 'absolute',
-        top: height * 0.3,
-        left: width * 0.1,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#6C757D',
-        opacity: 0.3,
-    },
-    particle2: {
-        position: 'absolute',
-        top: height * 0.7,
-        right: width * 0.15,
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: '#ADB5BD',
-        opacity: 0.2,
-    },
-    particle3: {
-        position: 'absolute',
-        bottom: height * 0.4,
-        left: width * 0.2,
-        width: 2,
-        height: 2,
-        borderRadius: 1,
-        backgroundColor: '#CED4DA',
-        opacity: 0.25,
-    },
-    animationOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    fullScreenAnimation: {
-        width: '100%',
-        height: '100%',
-    },
-});
-
-export default Lesson4Screen; 
+}); 

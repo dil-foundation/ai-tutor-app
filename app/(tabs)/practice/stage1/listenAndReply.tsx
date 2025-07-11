@@ -1,7 +1,8 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ListenAndReplyScreen = () => {
@@ -9,34 +10,45 @@ const ListenAndReplyScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Listen and Reply</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.dialogueContainer}>
-            <Ionicons name="person-circle-outline" size={100} color="#93E893" style={styles.avatar} />
+          <View style={styles.dialogueCard}>
+            <View style={styles.avatarContainer}>
+              <Ionicons name="person-circle-outline" size={80} color={Colors.primary} />
+            </View>
             <Text style={styles.dialogueText}>Hi! My name is Sarah. What is your name?</Text>
             <TouchableOpacity style={styles.listenButton}>
-              <Ionicons name="volume-high-outline" size={32} color="#111629" />
+              <Ionicons name="volume-high-outline" size={24} color={Colors.textOnPrimary} />
+              <Text style={styles.listenButtonText}>Listen</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.suggestionBox}>
+          <View style={styles.suggestionCard}>
+            <View style={styles.suggestionIcon}>
+              <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
+            </View>
             <Text style={styles.suggestionText}>
-              Try saying: <Text style={styles.suggestionBoldText}>My name is Amina.</Text>
+              Try saying: <Text style={styles.suggestionBold}>My name is Amina.</Text>
             </Text>
           </View>
         </ScrollView>
 
-        <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic-outline" size={28} color="#111629" />
-          <Text style={styles.speakButtonText}>Speak Now</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.speakButton}>
+            <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
+            <Text style={styles.speakButtonText}>Speak Now</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -45,85 +57,130 @@ const ListenAndReplyScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#111629',
+    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    width: '100%',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
   scrollContent: {
     flexGrow: 1,
+    padding: Spacing.lg,
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  dialogueContainer: {
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    padding: 30,
+  dialogueCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
     alignItems: 'center',
-    width: '100%',
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
-  avatar: {
-    marginBottom: 20,
+  avatarContainer: {
+    marginBottom: Spacing.md,
   },
   dialogueText: {
-    fontSize: 20,
-    color: '#D2D5E1',
+    fontSize: Typography.fontSize.xl,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: Spacing.md,
+    fontWeight: Typography.fontWeight.medium,
+    lineHeight: 28,
   },
   listenButton: {
-    backgroundColor: '#93E893',
-    padding: 20,
-    borderRadius: 50,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    borderRadius: BorderRadius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...Shadows.md,
   },
-  suggestionBox: {
-    backgroundColor: '#1E293B',
-    borderRadius: 15,
-    padding: 20,
-    width: '100%',
+  listenButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
+  },
+  suggestionCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  suggestionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   suggestionText: {
-    fontSize: 16,
-    color: '#D2D5E1',
-    textAlign: 'center',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+    flex: 1,
+    lineHeight: 24,
   },
-  suggestionBoldText: {
-    fontWeight: 'bold',
-    color: '#93E893',
+  suggestionBold: {
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+  },
+  buttonContainer: {
+    padding: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: '#93E893',
-    paddingVertical: 20,
-    borderRadius: 30,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.base,
+    borderRadius: BorderRadius.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    alignSelf: 'center',
-    marginBottom: 40,
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: '#111629',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

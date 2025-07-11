@@ -219,7 +219,7 @@ export default function GreetingScreen() {
           <View style={styles.headerContent}>
             <View style={styles.iconContainer}>
               <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
+                colors={['#22C55E', '#22C55E']}
                 style={styles.iconGradient}
               >
                 <Text style={styles.iconText}>🎯</Text>
@@ -257,7 +257,7 @@ export default function GreetingScreen() {
             <View style={styles.fixedButtonContainer}>
               <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue} activeOpacity={0.85}>
                 <LinearGradient
-                  colors={["#58D68D", "#45B7A8", "#58D68D"]}
+                  colors={["#22C55E", "#22C55E", "#22C55E"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.buttonGradient}

@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -5,6 +6,7 @@ import {
     FlatList,
     SafeAreaView,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -42,38 +44,57 @@ const GroupDialogueScreen = () => {
       style={[styles.scenarioCard, selectedScenario.id === item.id && styles.selectedScenarioCard]}
       onPress={() => setSelectedScenario(item)}
     >
-      <Ionicons name={item.icon} size={40} color={selectedScenario.id === item.id ? '#111629' : "#93E893"} />
-      <Text style={[styles.scenarioTitle, selectedScenario.id === item.id && styles.selectedScenarioTitle]}>{item.title}</Text>
+      <Ionicons 
+        name={item.icon} 
+        size={32} 
+        color={selectedScenario.id === item.id ? Colors.textOnPrimary : Colors.primary} 
+      />
+      <Text style={[styles.scenarioTitle, selectedScenario.id === item.id && styles.selectedScenarioTitle]}>
+        {item.title}
+      </Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+          <View style={styles.backButtonCircle}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Group Dialogue</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageSubtitle}>Solve Real-Life Situations</Text>
+        <View style={styles.titleCard}>
+          <Ionicons name="chatbubbles-outline" size={32} color={Colors.primary} />
+          <Text style={styles.pageSubtitle}>Solve Real-Life Situations</Text>
+        </View>
         
         <View style={styles.chatContainer}>
           <View style={styles.aiMessageContainer}>
-            <Ionicons name="person-circle-outline" size={40} color="#93E893" style={styles.avatar} />
+            <View style={styles.avatarContainer}>
+              <Ionicons name="person-circle-outline" size={24} color={Colors.primary} />
+            </View>
             <View style={styles.aiMessageBox}>
               <Text style={styles.chatText}>{messages[0].text}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.feedbackBox}>
-            <Ionicons name="information-circle-outline" size={24} color="#93E893" style={styles.feedbackIcon} />
+        <View style={styles.feedbackCard}>
+          <View style={styles.feedbackIconContainer}>
+            <Ionicons name="information-circle-outline" size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.feedbackContent}>
+            <Text style={styles.feedbackTitle}>Well done!</Text>
             <Text style={styles.feedbackText}>
-              Well done! Try: 'Could you please fix it today?' to sound polite.
+              Try: 'Could you please fix it today?' to sound more polite.
             </Text>
+          </View>
         </View>
 
         <Text style={styles.scenarioSectionTitle}>Choose a Scenario</Text>
@@ -89,7 +110,7 @@ const GroupDialogueScreen = () => {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
           <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
@@ -100,124 +121,188 @@ const GroupDialogueScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111629",
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: Spacing.lg,
+  },
+  titleCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    alignItems: 'center',
   },
   pageSubtitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
     textAlign: "center",
-    marginVertical: 16,
-    color: '#D2D5E1',
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
   },
   chatContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
   aiMessageContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "flex-end",
+    marginBottom: Spacing.sm,
   },
-  avatar: {
-    marginRight: 10,
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginRight: Spacing.sm,
   },
   aiMessageBox: {
-    backgroundColor: "#1E293B",
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    maxWidth: "85%",
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    maxWidth: "80%",
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   chatText: {
-    fontSize: 16,
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.base,
+    color: Colors.textPrimary,
+    lineHeight: 22,
   },
-  feedbackBox: {
-    backgroundColor: 'rgba(147, 232, 147, 0.1)',
-    borderRadius: 15,
-    padding: 20,
-    marginHorizontal: 16,
+  feedbackCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    marginHorizontal: Spacing.lg,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+    alignItems: 'flex-start',
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
-  feedbackIcon: {
-    marginRight: 15,
+  feedbackIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  feedbackContent: {
+    flex: 1,
+  },
+  feedbackTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   feedbackText: {
-    fontSize: 16,
-    color: "#93E893",
-    flex: 1,
-    fontStyle: 'italic',
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
   },
   scenarioSectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 16,
-    marginBottom: 15,
-    color: '#D2D5E1',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.lg,
+    marginBottom: Spacing.base,
+    color: Colors.textPrimary,
   },
   scenarioList: {
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.lg,
   },
   scenarioCard: {
-    backgroundColor: "#1E293B",
-    borderRadius: 15,
-    padding: 20,
-    marginRight: 15,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    marginRight: Spacing.base,
     alignItems: "center",
     justifyContent: 'center',
-    width: 160,
-    height: 160,
+    width: 140,
+    height: 140,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   selectedScenarioCard: {
-    backgroundColor: "#93E893",
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   scenarioTitle: {
-    fontSize: 14,
+    fontSize: Typography.fontSize.sm,
     textAlign: "center",
-    fontWeight: "600",
-    color: '#93E893',
-    marginTop: 10,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textSecondary,
+    marginTop: Spacing.sm,
+    lineHeight: 18,
   },
   selectedScenarioTitle: {
-    color: '#111629'
+    color: Colors.textOnPrimary,
   },
   bottomBar: {
-    padding: 16,
-    backgroundColor: "#111629",
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: "#93E893",
-    borderRadius: 30,
-    paddingVertical: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.base,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: "#111629",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 12,
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

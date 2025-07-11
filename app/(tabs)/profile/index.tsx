@@ -1,62 +1,70 @@
-import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  Image,
-  Alert,
-  Animated,
-  Dimensions
-} from 'react-native';
+import { fetchUserProfile, fetchUserProgress } from '@/config/api';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
+import { UserProfile } from '@/types/user';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearAuthData, getAuthData } from '../../utils/authStorage';
 
 const { width, height } = Dimensions.get('window');
 
-// Mock user data - replace with actual API calls
-const mockUserData = {
-  name: "Ahmed Khan",
-  email: "ahmed.khan@example.com",
-  avatar: require('../../../assets/images/user_avatar.png'),
-  currentLevel: "A2 Elementary",
-  memberSince: "January 2025",
-  learningGoals: "Improve conversational English for work",
-  preferredTime: "Evening",
-  difficultyLevel: "Medium",
-  practiceDuration: "30 minutes"
+// Helper function to safely display data with N/A fallback
+const safeDisplay = (value: any, fallback: string = 'N/A'): string => {
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
+  return String(value);
+};
+
+// Helper function to format date
+const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  } catch (error) {
+    return 'N/A';
+  }
 };
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [userData, setUserData] = useState(mockUserData);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
+  const [progressData, setProgressData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(30));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [slideAnim] = useState(new Animated.Value(20));
 
   useEffect(() => {
-    // Load user data from storage/API
     loadUserData();
     
-    // Animate elements on mount
+    // Subtle animations for professional feel
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 600,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
@@ -64,11 +72,64 @@ export default function ProfileScreen() {
 
   const loadUserData = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const authData = await getAuthData();
-      // Load user profile data from API using authData.userId
-      // For now, using mock data
+      
+      if (!authData.token || !authData.userId) {
+        setError('Authentication required');
+        router.replace('/(auth)/login');
+        return;
+      }
+
+      // Fetch user profile and progress data in parallel
+      const [profileData, progressData] = await Promise.all([
+        fetchUserProfile(authData.userId, authData.token),
+        fetchUserProgress(authData.userId, authData.token)
+      ]);
+
+      if (profileData) {
+        // Transform API data to match our UserProfile interface
+        const transformedUserData: UserProfile = {
+          id: profileData.id || authData.userId,
+          name: profileData.name || profileData.full_name || 'N/A',
+          email: profileData.email || 'N/A',
+          avatar: profileData.avatar_url ? { uri: profileData.avatar_url } : require('../../../assets/images/user_avatar.png'),
+          currentLevel: profileData.current_level || profileData.level || 'N/A',
+          memberSince: formatDate(profileData.created_at || profileData.join_date),
+          nativeLanguage: profileData.native_language || profileData.first_language || 'N/A',
+          learningGoals: profileData.learning_goals || 'N/A',
+          preferredTime: profileData.preferred_time || 'N/A',
+          difficultyLevel: profileData.difficulty_level || 'N/A',
+          practiceDuration: profileData.practice_duration || 'N/A',
+          notifications: profileData.notifications || {
+            dailyReminder: false,
+            weeklyProgress: false,
+            achievementAlerts: false,
+            newContent: false,
+          },
+          privacy: profileData.privacy || {
+            shareProgress: false,
+            allowAnalytics: false,
+            publicProfile: false,
+          },
+        };
+
+        setUserData(transformedUserData);
+      } else {
+        setError('Failed to load profile data');
+      }
+
+      if (progressData) {
+        setProgressData(progressData);
+      }
+
     } catch (error) {
       console.error('Error loading user data:', error);
+      setError('Failed to load user data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,26 +152,83 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    // Navigate to edit profile screen
-    // router.push('/(tabs)/profile/edit');
+    router.push('/(tabs)/profile/edit');
+  };
+
+  const handleRefresh = () => {
+    loadUserData();
   };
 
   const renderSettingItem = (icon: string, title: string, subtitle: string, onPress: () => void) => (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.settingItem} onPress={onPress} activeOpacity={1}>
       <View style={styles.settingIcon}>
-        <Ionicons name={icon as any} size={24} color="#58D68D" />
+        <Ionicons name={icon as any} size={20} color={Colors.primary} />
       </View>
       <View style={styles.settingContent}>
         <Text style={styles.settingTitle}>{title}</Text>
         <Text style={styles.settingSubtitle}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#6C757D" />
+      <View style={styles.settingArrow}>
+        <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+      </View>
     </TouchableOpacity>
   );
 
+  // Calculate fluency level from progress data
+  const getFluencyLevel = (): number => {
+    if (!progressData || !progressData.completion_percentage) return 0;
+    return Math.round(progressData.completion_percentage);
+  };
+
+  const getCurrentStage = (): string => {
+    if (!progressData || !progressData.current_stage) return 'N/A';
+    return `Stage ${progressData.current_stage}`;
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color={Colors.error} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // No user data
+  if (!userData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="person-circle" size={48} color={Colors.textSecondary} />
+          <Text style={styles.errorText}>No profile data available</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Main ScrollView - Entire Screen */}
+    <SafeAreaView style={styles.container}>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -126,18 +244,13 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="person" size={32} color="#FFFFFF" />
-              </LinearGradient>
+          <View style={styles.headerIconContainer}>
+            <View style={styles.iconWrapper}>
+              <Ionicons name="person" size={24} color={Colors.primary} />
             </View>
-            <Text style={styles.headerTitle}>Your Profile</Text>
-            <Text style={styles.headerSubtitle}>Manage your account and preferences</Text>
           </View>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerSubtitle}>Manage your account and learning preferences</Text>
         </Animated.View>
 
         {/* Profile Card */}
@@ -150,22 +263,17 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <LinearGradient
-            colors={['#58D68D', '#45B7A8']}
-            style={styles.profileGradient}
-          >
-            <View style={styles.profileContent}>
-              <Image source={userData.avatar} style={styles.avatar} />
-              <View style={styles.profileInfo}>
-                <Text style={styles.userName}>{userData.name}</Text>
-                <Text style={styles.userLevel}>{userData.currentLevel}</Text>
-                <Text style={styles.memberSince}>Member since {userData.memberSince}</Text>
-              </View>
-              <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                <Ionicons name="pencil" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
+          <View style={styles.profileContent}>
+            <Image source={userData.avatar} style={styles.avatar} />
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>{safeDisplay(userData.name)}</Text>
+              <Text style={styles.userLevel}>{safeDisplay(userData.currentLevel)}</Text>
+              <Text style={styles.memberSince}>Member since {safeDisplay(userData.memberSince)}</Text>
             </View>
-          </LinearGradient>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+              <Ionicons name="pencil" size={16} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* Personal Information */}
@@ -179,36 +287,74 @@ export default function ProfileScreen() {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="person-circle" size={24} color="#58D68D" />
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="person-circle-outline" size={20} color={Colors.primary} />
               <Text style={styles.sectionTitle}>Personal Information</Text>
-            </LinearGradient>
+            </View>
           </View>
 
           <View style={styles.infoCard}>
-           <View style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>Ram</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.name)}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{userData.email}</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.email)}</Text>
             </View>
-            
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Preferred Language</Text>
-              <Text style={styles.infoValue}>Urdu</Text>
+              <Text style={styles.infoLabel}>Native Language</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.nativeLanguage)}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Current Stage</Text>
-              <Text style={styles.infoValue}>Stage 2</Text>
+              <Text style={styles.infoValue}>{getCurrentStage()}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Fluency Level</Text>
-              <Text style={styles.infoValue}>75/100</Text>
+              <View style={styles.fluencyContainer}>
+                <Text style={styles.infoValue}>{getFluencyLevel()}%</Text>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${getFluencyLevel()}%` }]} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Learning Preferences */}
+        <Animated.View
+          style={[
+            styles.sectionContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="book-outline" size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Learning Preferences</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Learning Goals</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.learningGoals)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Preferred Time</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.preferredTime)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Difficulty Level</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.difficultyLevel)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Practice Duration</Text>
+              <Text style={styles.infoValue}>{safeDisplay(userData.practiceDuration)}</Text>
             </View>
           </View>
         </Animated.View>
@@ -224,22 +370,19 @@ export default function ProfileScreen() {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="settings" size={24} color="#58D68D" />
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="settings-outline" size={20} color={Colors.primary} />
               <Text style={styles.sectionTitle}>Settings</Text>
-            </LinearGradient>
+            </View>
           </View>
 
           <View style={styles.settingsCard}>
-            {renderSettingItem("person", "Edit Profile", "Update your personal information", handleEditProfile)}
-            {renderSettingItem("lock-closed", "Change Password", "Update your password", () => {})}
-            {renderSettingItem("notifications", "Notifications", "Manage notification preferences", () => {})}
-            {renderSettingItem("language", "Language Settings", "App language preferences", () => {})}
-            {renderSettingItem("shield-checkmark", "Privacy", "Privacy and data settings", () => {})}
-            {renderSettingItem("download", "Export Data", "Download your progress data", () => {})}
+            {renderSettingItem("person-outline", "Edit Profile", "Update your personal information", handleEditProfile)}
+            {renderSettingItem("lock-closed-outline", "Change Password", "Update your password", () => {})}
+            {renderSettingItem("notifications-outline", "Notifications", "Manage notification preferences", () => {})}
+            {renderSettingItem("language-outline", "Language Settings", "App language preferences", () => {})}
+            {renderSettingItem("shield-checkmark-outline", "Privacy", "Privacy and data settings", () => {})}
+            {renderSettingItem("download-outline", "Export Data", "Download your progress data", () => {})}
           </View>
         </Animated.View>
 
@@ -253,328 +396,263 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-            <LinearGradient
-              colors={['#FF6B6B', '#FF5252']}
-              style={styles.logoutGradient}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </LinearGradient>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={1}>
+            <View style={styles.logoutContent}>
+              <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+              <Text style={styles.logoutButtonText}>Sign Out</Text>
+            </View>
           </TouchableOpacity>
         </Animated.View>
-
-        <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: Spacing.lg,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginBottom: 16,
-  },
-  iconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    padding: Spacing.xl,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  errorText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.error,
+    textAlign: 'center',
+    marginVertical: Spacing.md,
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+  },
+  retryButtonText: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textOnPrimary,
+  },
+  header: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  headerIconContainer: {
+    marginBottom: Spacing.sm,
+  },
+  iconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
   },
   profileCard: {
-    marginBottom: 30,
-  },
-  profileGradient: {
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.sm,
   },
   profileContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginRight: Spacing.md,
   },
   profileInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   userLevel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 2,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
   },
   memberSince: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.8,
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textSecondary,
   },
   editButton: {
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionContainer: {
-    marginBottom: 30,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
   sectionHeader: {
-    marginBottom: 20,
-  },
-  sectionHeaderGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginLeft: 12,
-  },
-  infoCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.07)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    marginBottom: Spacing.md,
+  },
+  sectionHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
+  },
+  infoCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.sm,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: Colors.border,
   },
   infoLabel: {
-    flex: 1.2,
-    fontSize: 15,
-    color: '#8A929A',
-    fontWeight: '500',
-    textAlign: 'left',
-    letterSpacing: 0.1,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textSecondary,
+    flex: 1,
   },
   infoValue: {
-    flex: 1.5,
-    fontSize: 16,
-    color: '#222B45',
-    fontWeight: '700',
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.textPrimary,
+    flex: 1,
     textAlign: 'right',
-    letterSpacing: 0.1,
+  },
+  fluencyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  progressBar: {
+    width: 60,
+    height: 4,
+    backgroundColor: Colors.backgroundTertiary,
+    borderRadius: 2,
+    marginLeft: Spacing.sm,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
   },
   settingsCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    ...Shadows.sm,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    borderBottomColor: Colors.border,
   },
   settingIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
-    marginRight: 16,
+    alignItems: 'center',
+    marginRight: Spacing.md,
   },
   settingContent: {
     flex: 1,
   },
   settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   settingSubtitle: {
-    fontSize: 14,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.normal,
+    color: Colors.textSecondary,
+  },
+  settingArrow: {
+    padding: Spacing.xs,
   },
   logoutContainer: {
-    marginTop: 20,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
   logoutButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.sm,
   },
-  logoutGradient: {
+  logoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
   },
   logoutButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.error,
+    marginLeft: Spacing.sm,
   },
 }); 

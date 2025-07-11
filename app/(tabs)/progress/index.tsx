@@ -1,21 +1,20 @@
+import RoadmapLine from '@/components/progress/RoadmapLine';
+import StageCard from '@/components/progress/StageCard';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity,
-  Animated,
-  LayoutAnimation,
-  Platform,
-  UIManager,
+    Animated,
+    Dimensions,
+    LayoutAnimation,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    UIManager,
+    View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import StageCard from '@/components/progress/StageCard';
-import RoadmapLine from '@/components/progress/RoadmapLine';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -101,7 +100,7 @@ const progressData = {
   achievements: [
     { name: "Beginner Badge", icon: "star", date: "2025-01-15", color: "#FFD700" },
     { name: "7-Day Streak", icon: "flame", date: "2025-01-20", color: "#FF6B35" },
-    { name: "First Exercise", icon: "checkmark-circle", date: "2025-01-10", color: "#58D68D" },
+    { name: "First Exercise", icon: "checkmark-circle", date: "2025-01-10", color: "#22C55E" },
     { name: "Quick Learner", icon: "rocket", date: "2025-01-18", color: "#3498DB" }
   ],
   fluency_trend: [50, 60, 65, 70, 75, 78, 82]
@@ -115,7 +114,7 @@ const getStageStatus = (stage: any) => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'completed': return '#58D68D';
+    case 'completed': return '#22C55E';
     case 'in_progress': return '#3B82F6';
     case 'locked': return '#BDC3C7';
     default: return '#BDC3C7';
@@ -181,7 +180,7 @@ export default function ProgressScreen() {
         >
           <View style={styles.headerContent}>
             <LinearGradient
-              colors={['#58D68D', '#45B7A8']}
+              colors={['#22C55E', '#22C55E']}
               style={styles.headerGradient}
             >
               <Ionicons name="trending-up" size={32} color="#FFFFFF" />
@@ -252,7 +251,7 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="git-branch" size={24} color="#58D68D" />
+              <Ionicons name="git-branch" size={24} color="#22C55E" />
               <Text style={styles.sectionTitle}>Learning Path</Text>
             </View>
             {progressData.stages.map((stage, idx) => {
@@ -301,7 +300,7 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="trophy" size={24} color="#58D68D" />
+              <Ionicons name="trophy" size={24} color="#22C55E" />
               <Text style={styles.sectionTitle}>Achievements</Text>
             </View>
 
@@ -334,7 +333,7 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="analytics" size={24} color="#58D68D" />
+              <Ionicons name="analytics" size={24} color="#22C55E" />
               <Text style={styles.sectionTitle}>Fluency Trend</Text>
             </View>
 
@@ -389,7 +388,7 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="time" size={24} color="#58D68D" />
+              <Ionicons name="time" size={24} color="#22C55E" />
               <Text style={styles.sectionTitle}>Practice Statistics</Text>
             </View>
 
@@ -399,7 +398,7 @@ export default function ProgressScreen() {
                   colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="time-outline" size={24} color="#58D68D" />
+                  <Ionicons name="time-outline" size={24} color="#22C55E" />
                   <Text style={styles.statCardValue}>{progressData.total_practice_time}h</Text>
                   <Text style={styles.statCardLabel}>Total Practice Time</Text>
                 </LinearGradient>
@@ -446,7 +445,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
+    shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
@@ -471,7 +470,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   overviewCard: {
@@ -515,7 +514,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#58D68D',
+    color: '#22C55E',
     marginBottom: 4,
   },
   statLabel: {
@@ -540,7 +539,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#58D68D',
+    backgroundColor: '#22C55E',
     borderRadius: 4,
   },
   progressText: {
@@ -699,7 +698,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chartBarFill: {
-    backgroundColor: '#58D68D',
+    backgroundColor: '#22C55E',
     borderRadius: 10,
     position: 'absolute',
     bottom: 0,
@@ -719,7 +718,7 @@ const styles = StyleSheet.create({
   chartStatValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#58D68D',
+    color: '#22C55E',
     marginBottom: 4,
   },
   chartStatLabel: {

@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Image,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const AITutorChatScreen = () => {
     const [message, setMessage] = useState('');
     const navigation = useNavigation(); // Initialize useNavigation
@@ -85,7 +85,7 @@ const AITutorChatScreen = () => {
                     />
                     {message.trim() ? (
                         <TouchableOpacity onPress={handleSend} style={styles.iconButton}>
-                            <Ionicons name="send" size={22} color="#93E893" />
+                            <Ionicons name="send" size={22} color="#22C55E" />
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity style={styles.iconButton}>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
     },
     progressContainer: {
         marginTop: 20,
@@ -139,14 +139,14 @@ const styles = StyleSheet.create({
     },
     progressBarForeground: {
         height: 8,
-        backgroundColor: '#93E893',
+        backgroundColor: '#22C55E',
         borderRadius: 4,
         width: '33%',
     },
     mainTitle: {
         fontSize: 26,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 30,
     },
     chatContainer: {

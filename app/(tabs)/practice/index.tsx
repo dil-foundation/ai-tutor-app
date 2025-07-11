@@ -1,84 +1,90 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  SafeAreaView, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import {
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 const practiceStages = [
   {
-    title: "Stage 0 - Beginner Lessons",
-    description: "Start your English learning journey with basic fundamentals",
+    title: "Foundation Course",
+    subtitle: "Stage 0 - English Basics",
+    description: "Start your English learning journey with essential fundamentals",
     icon: "library-outline",
     path: './practice/stage0',
-    gradient: ['#58D68D', '#45B7A8'] as const,
-    category: "Beginner"
+    category: "Beginner",
+    lessons: 5
   },
   {
-    title: "Stage 1 - Intermediate Lessons", 
-    description: "Build confidence with structured conversation practice",
+    title: "Conversation Skills", 
+    subtitle: "Stage 1 - Structured Practice",
+    description: "Build confidence with guided conversation exercises",
     icon: "chatbubbles-outline",
     path: './practice/stage1',
-    gradient: ['#45B7A8', '#3A8B9F'] as const,
-    category: "Beginner"
+    category: "Beginner",
+    lessons: 8
   },
   {
-    title: "Stage 2 - Upper Intermediate",
-    description: "Master everyday conversations and real-life scenarios",
+    title: "Real-World Practice",
+    subtitle: "Stage 2 - Practical Scenarios",
+    description: "Master everyday conversations and common situations",
     icon: "people-outline",
     path: './practice/stage2',
-    gradient: ['#3A8B9F', '#2E7D8F'] as const,
-    category: "Beginner"
+    category: "Intermediate",
+    lessons: 12
   },
   {
-    title: "Stage 3 - Advanced Lessons",
-    description: "Express complex ideas and handle detailed discussions",
+    title: "Advanced Communication",
+    subtitle: "Stage 3 - Complex Discussions",
+    description: "Express complex ideas and handle detailed conversations",
     icon: "bulb-outline",
     path: './practice/stage3',
-    gradient: ['#2E7D8F', '#236F7F'] as const,
-    category: "Advanced"
+    category: "Intermediate",
+    lessons: 15
   },
   {
-    title: "Stage 4 - Expert Lessons",
+    title: "Professional English",
+    subtitle: "Stage 4 - Expert Level",
     description: "Achieve fluency with sophisticated language skills",
     icon: "trophy-outline",
     path: './practice/stage4',
-    gradient: ['#236F7F', '#18616F'] as const,
-    category: "Advanced"
+    category: "Advanced",
+    lessons: 18
   },
   {
-    title: "Stage 5 - Master Lessons",
-    description: "Perfect your English with professional-level proficiency",
+    title: "Master Proficiency",
+    subtitle: "Stage 5 - Native-Level",
+    description: "Perfect your English with professional-level expertise",
     icon: "star-outline",
     path: './practice/stage5',
-    gradient: ['#18616F', '#0D535F'] as const,
-    category: "Advanced"
+    category: "Advanced",
+    lessons: 20
   },
   {
-    title: "Stage 6 - Fluency Lessons",
-    description: "Master real-time fluency and advanced communication",
+    title: "Fluency Mastery",
+    subtitle: "Stage 6 - Spontaneous Speech",
+    description: "Master real-time fluency and natural communication",
     icon: "rocket-outline",
     path: './practice/stage6',
-    gradient: ['#0D535F', '#02454F'] as const,
-    category: "Advanced"
+    category: "Advanced",
+    lessons: 25
   }
 ];
 
 export default function PracticeLandingScreen() {
   const router = useRouter();
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(30));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [slideAnim] = useState(new Animated.Value(20));
   
   // Create individual scale animations for each stage
   const [stageScaleAnims] = useState(() => 
@@ -86,31 +92,26 @@ export default function PracticeLandingScreen() {
   );
 
   useEffect(() => {
-    // Animate elements on mount
+    // Subtle animations for professional feel
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 600,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
   const navigateToStage = (stagePath: string, stageIndex: number) => {
-    // Add a small scale animation on press for the specific stage
+    // Subtle press animation
     Animated.sequence([
       Animated.timing(stageScaleAnims[stageIndex], {
-        toValue: 0.95,
+        toValue: 0.98,
         duration: 100,
         useNativeDriver: true,
       }),
@@ -125,17 +126,57 @@ export default function PracticeLandingScreen() {
   };
 
   const beginnerStages = practiceStages.filter(stage => stage.category === "Beginner");
+  const intermediateStages = practiceStages.filter(stage => stage.category === "Intermediate");
   const advancedStages = practiceStages.filter(stage => stage.category === "Advanced");
 
+  const renderStageCard = (stage: typeof practiceStages[0], index: number) => {
+    const stageIndex = practiceStages.findIndex(s => s.title === stage.title);
+    return (
+      <Animated.View
+        key={stage.title}
+        style={[
+          styles.stageCard,
+          {
+            transform: [{ scale: stageScaleAnims[stageIndex] }],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.stageButton}
+          onPress={() => navigateToStage(stage.path, stageIndex)}
+          activeOpacity={1}
+        >
+          <View style={styles.stageContent}>
+            <View style={styles.stageIconContainer}>
+              <Ionicons name={stage.icon as any} size={24} color={Colors.primary} />
+            </View>
+            <View style={styles.stageTextContainer}>
+              <Text style={styles.stageSubtitle}>{stage.subtitle}</Text>
+              <Text style={styles.stageTitle}>{stage.title}</Text>
+              <Text style={styles.stageDescription}>{stage.description}</Text>
+              <View style={styles.stageMeta}>
+                <Text style={styles.stageMetaText}>{stage.lessons} lessons</Text>
+                <Text style={styles.stageMetaText}>•</Text>
+                <Text style={styles.stageMetaText}>{stage.category}</Text>
+              </View>
+            </View>
+            <View style={styles.stageArrow}>
+              <Ionicons name="arrow-forward" size={16} color={Colors.textSecondary} />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Main ScrollView containing everything */}
+    <SafeAreaView style={styles.container}>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section - Now inside ScrollView */}
+        {/* Header Section */}
         <Animated.View
           style={[
             styles.header,
@@ -145,18 +186,13 @@ export default function PracticeLandingScreen() {
             },
           ]}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="school" size={32} color="#FFFFFF" />
-              </LinearGradient>
+          <View style={styles.headerIconContainer}>
+            <View style={styles.iconWrapper}>
+              <Ionicons name="school" size={24} color={Colors.primary} />
             </View>
-            <Text style={styles.headerTitle}>Practice Your English</Text>
-            <Text style={styles.headerSubtitle}>Choose your level and start practicing</Text>
           </View>
+          <Text style={styles.headerTitle}>Practice English</Text>
+          <Text style={styles.headerSubtitle}>Choose your learning path and advance through structured lessons</Text>
         </Animated.View>
 
         {/* Beginner Stages */}
@@ -170,57 +206,33 @@ export default function PracticeLandingScreen() {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="leaf" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Beginner Stages</Text>
-            </LinearGradient>
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="leaf-outline" size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Beginner Level</Text>
+            </View>
+            <Text style={styles.sectionDescription}>Perfect for starting your English journey</Text>
           </View>
+          {beginnerStages.map((stage, index) => renderStageCard(stage, index))}
+        </Animated.View>
 
-          {beginnerStages.map((stage, index) => {
-            const stageIndex = practiceStages.findIndex(s => s.title === stage.title);
-            return (
-              <Animated.View
-                key={stage.title}
-                style={[
-                  styles.stageCard,
-                  {
-                    opacity: fadeAnim,
-                    transform: [
-                      { translateY: slideAnim },
-                      { scale: stageScaleAnims[stageIndex] }
-                    ],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.stageButton}
-                  onPress={() => navigateToStage(stage.path, stageIndex)}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={stage.gradient}
-                    style={styles.stageGradient}
-                  >
-                    <View style={styles.stageContent}>
-                      <View style={styles.stageIconContainer}>
-                        <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
-                      </View>
-                      <View style={styles.stageTextContainer}>
-                        <Text style={styles.stageTitle}>{stage.title}</Text>
-                        <Text style={styles.stageDescription}>{stage.description}</Text>
-                      </View>
-                      <View style={styles.arrowContainer}>
-                        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                      </View>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
+        {/* Intermediate Stages */}
+        <Animated.View
+          style={[
+            styles.sectionContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="trending-up-outline" size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Intermediate Level</Text>
+            </View>
+            <Text style={styles.sectionDescription}>Build confidence with real-world practice</Text>
+          </View>
+          {intermediateStages.map((stage, index) => renderStageCard(stage, index))}
         </Animated.View>
 
         {/* Advanced Stages */}
@@ -234,317 +246,216 @@ export default function PracticeLandingScreen() {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(45, 183, 168, 0.1)', 'rgba(58, 214, 141, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="rocket" size={24} color="#45B7A8" />
-              <Text style={styles.sectionTitle}>Advanced Stages</Text>
-            </LinearGradient>
+            <View style={styles.sectionHeaderContent}>
+              <Ionicons name="rocket-outline" size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Advanced Level</Text>
+            </View>
+            <Text style={styles.sectionDescription}>Master fluency and professional communication</Text>
           </View>
-
-          {advancedStages.map((stage, index) => {
-            const stageIndex = practiceStages.findIndex(s => s.title === stage.title);
-            return (
-              <Animated.View
-                key={stage.title}
-                style={[
-                  styles.stageCard,
-                  {
-                    opacity: fadeAnim,
-                    transform: [
-                      { translateY: slideAnim },
-                      { scale: stageScaleAnims[stageIndex] }
-                    ],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.stageButton}
-                  onPress={() => navigateToStage(stage.path, stageIndex)}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={stage.gradient}
-                    style={styles.stageGradient}
-                  >
-                    <View style={styles.stageContent}>
-                      <View style={styles.stageIconContainer}>
-                        <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
-                      </View>
-                      <View style={styles.stageTextContainer}>
-                        <Text style={styles.stageTitle}>{stage.title}</Text>
-                        <Text style={styles.stageDescription}>{stage.description}</Text>
-                      </View>
-                      <View style={styles.arrowContainer}>
-                        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                      </View>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
+          {advancedStages.map((stage, index) => renderStageCard(stage, index))}
         </Animated.View>
 
-        {/* Progress Info Card */}
+        {/* Progress Section */}
         <Animated.View
           style={[
-            styles.progressCard,
+            styles.progressSection,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-            style={styles.progressGradient}
-          >
+          <View style={styles.progressCard}>
             <View style={styles.progressContent}>
-              <Ionicons name="trending-up" size={32} color="#58D68D" />
-              <Text style={styles.progressTitle}>Track Your Progress</Text>
-              <Text style={styles.progressDescription}>
-                Monitor your learning journey and see your improvement over time
-              </Text>
+              <View style={styles.progressIconContainer}>
+                <Ionicons name="analytics-outline" size={24} color={Colors.primary} />
+              </View>
+              <View style={styles.progressTextContainer}>
+                <Text style={styles.progressTitle}>Track Your Progress</Text>
+                <Text style={styles.progressDescription}>
+                  Monitor your learning journey and celebrate milestones as you advance through each stage
+                </Text>
+              </View>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
       </ScrollView>
-
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: Spacing['4xl'],
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing['2xl'],
   },
-  headerContent: {
-    alignItems: 'center',
+  headerIconContainer: {
+    marginBottom: Spacing.md,
   },
-  iconContainer: {
-    marginBottom: 16,
-  },
-  iconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  iconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
+    fontSize: Typography.fontSize['3xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: Spacing.sm,
+    lineHeight: Typography.fontSize['3xl'] * Typography.lineHeight.tight,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: Typography.fontSize.base * Typography.lineHeight.relaxed,
   },
   sectionContainer: {
-    marginBottom: 30,
+    marginBottom: Spacing['2xl'],
+    paddingHorizontal: Spacing.lg,
   },
   sectionHeader: {
-    marginBottom: 20,
+    marginBottom: Spacing.md,
   },
-  sectionHeaderGradient: {
+  sectionHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    marginBottom: Spacing.sm,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginLeft: 12,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
+  },
+  sectionDescription: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.fontSize.sm * Typography.lineHeight.normal,
   },
   stageCard: {
-    marginBottom: 16,
+    marginBottom: Spacing.base,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   stageButton: {
-    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  stageGradient: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
+    borderRadius: BorderRadius.lg,
   },
   stageContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: Spacing.md,
   },
   stageIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: Spacing.base,
   },
   stageTextContainer: {
     flex: 1,
   },
+  stageSubtitle: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.primary,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   stageTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
+    lineHeight: Typography.fontSize.lg * Typography.lineHeight.tight,
   },
   stageDescription: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    lineHeight: 20,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.fontSize.sm * Typography.lineHeight.normal,
+    marginBottom: Spacing.sm,
   },
-  arrowContainer: {
+  stageMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  stageMetaText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  stageArrow: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: Colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  progressCard: {
-    marginTop: 20,
+  progressSection: {
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
   },
-  progressGradient: {
-    borderRadius: 20,
-    padding: 24,
+  progressCard: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: Colors.border,
+    padding: Spacing.lg,
+    ...Shadows.base,
   },
   progressContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  progressIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: Spacing.base,
+  },
+  progressTextContainer: {
+    flex: 1,
   },
   progressTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 8,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   progressDescription: {
-    fontSize: 14,
-    color: '#6C757D',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.fontSize.sm * Typography.lineHeight.relaxed,
   },
 }); 

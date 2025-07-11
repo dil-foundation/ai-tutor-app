@@ -1,18 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  TextInput,
-  Switch,
-  Alert
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { UserProfile, ProfileUpdateData } from '../../../types/user';
+import { ProfileUpdateData, UserProfile } from '../../../types/user';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -187,7 +187,7 @@ export default function EditProfileScreen() {
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#374151', true: '#93E893' }}
+        trackColor={{ false: '#374151', true: '#22C55E' }}
         thumbColor={value ? '#FFFFFF' : '#9CA3AF'}
       />
     </View>
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   saveButton: {
-    backgroundColor: '#93E893',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Lexend-Bold',
-    color: '#93E893',
+    color: '#22C55E',
     marginBottom: 15,
   },
   sectionCard: {
@@ -434,8 +434,8 @@ const styles = StyleSheet.create({
     borderColor: '#4B5563',
   },
   pickerOptionSelected: {
-    backgroundColor: '#93E893',
-    borderColor: '#93E893',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   pickerOptionText: {
     fontSize: 14,

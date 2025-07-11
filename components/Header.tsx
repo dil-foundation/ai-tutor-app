@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Lexend-SemiBold',
-    color: "#93E893",
+    color: "#22C55E",
     textAlign: "center",
     flex: 1, // Allow title to take up available space and center itself
   },

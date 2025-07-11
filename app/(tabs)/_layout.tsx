@@ -1,7 +1,8 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -9,21 +10,22 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   console.log('[TabLayout] colorScheme:', colorScheme);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#58D68D',
+        tabBarActiveTintColor: '#22C55E',
         tabBarInactiveTintColor: '#6C757D',
         headerShown: false,
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: 'rgba(0, 0, 0, 0.1)',
           borderTopWidth: 1,
-          height: 85,
+          height: 65 + insets.bottom, // Use safe area insets for bottom
           paddingTop: 8,
-          paddingBottom: 20,
+          paddingBottom: Math.max(insets.bottom, 20), // Ensure minimum padding but respect safe area
           paddingHorizontal: 16,
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: -4 },
@@ -51,7 +53,7 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               {focused ? (
                 <LinearGradient
-                  colors={['#58D68D', '#45B7A8']}
+                  colors={['#22C55E', '#22C55E']}
                   style={styles.activeIconGradient}
                 >
                   <IconSymbol size={24} name="graduationcap.fill" color="#FFFFFF" />
@@ -79,7 +81,7 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               {focused ? (
                 <LinearGradient
-                  colors={['#58D68D', '#45B7A8']}
+                  colors={['#22C55E', '#22C55E']}
                   style={styles.activeIconGradient}
                 >
                   <IconSymbol size={24} name="rectangle.inset.filled.on.rectangle" color="#FFFFFF" />
@@ -107,7 +109,7 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               {focused ? (
                 <LinearGradient
-                  colors={['#58D68D', '#45B7A8']}
+                  colors={['#22C55E', '#22C55E']}
                   style={styles.activeIconGradient}
                 >
                   <IconSymbol size={24} name="chart.line.uptrend.xyaxis" color="#FFFFFF" />
@@ -135,7 +137,7 @@ export default function TabLayout() {
             <View style={styles.iconContainer}>
               {focused ? (
                 <LinearGradient
-                  colors={['#58D68D', '#45B7A8']}
+                  colors={['#22C55E', '#22C55E']}
                   style={styles.activeIconGradient}
                 >
                   <IconSymbol size={24} name="person.fill" color="#FFFFFF" />
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
+    shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
