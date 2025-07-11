@@ -38,6 +38,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
 
+
 const { width, height } = Dimensions.get('window');
 
 interface Message {
@@ -151,6 +152,20 @@ export default function ConversationScreen() {
   const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500; // iOS needs more time for silence detection
   const MIN_SPEECH_DURATION = 200; // Minimum 500ms of speech to be valid
 
+  // --- iOS Silence Detection Calibration ---
+  // This will store the highest metering value detected during the first second of recording
+  const IOS_VAD_OFFSET_DB = 20; // dB below max for threshold (more aggressive)
+  const IOS_VAD_MIN_THRESHOLD = -90; // Allow lower threshold
+  const iOSMeteringCalibration = useRef({
+    calibrated: false,
+    maxMetering: -160,
+    calibrationStart: 0,
+    calibrationDuration: 1000, // ms
+  });
+
+  // ... existing code ...
+  const [vadThreshold, setVadThreshold] = useState(Platform.OS === 'ios' ? -70 : -45); // Default, will auto-calibrate on iOS
+  // ... existing code ...
 
   // Handle screen focus and blur events
   useFocusEffect(
@@ -1032,6 +1047,9 @@ export default function ConversationScreen() {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
       });
     } catch (error) {
       console.error('Failed to set audio mode for recording:', error);
@@ -1073,6 +1091,16 @@ export default function ConversationScreen() {
       return;
     }
 
+    // --- iOS Metering Calibration Reset ---
+    if (Platform.OS === 'ios') {
+      iOSMeteringCalibration.current = {
+        calibrated: false,
+        maxMetering: -160,
+        calibrationStart: Date.now(),
+        calibrationDuration: 1000,
+      };
+    }
+
     try {
       // Immediately set listening state to prevent blank screen
       setState(prev => ({ 
@@ -1104,7 +1132,7 @@ export default function ConversationScreen() {
           setState(prevState => {
             if (prevState.currentStep === 'listening') {
               setIsTalking(false);
-              // Stop listening, do not process audio
+              console.log('SILENCE DETECTED: Timer triggered, stopping recording.');
               stopRecording(true); // pass true to indicate silence
             }
             return prevState;
@@ -1124,13 +1152,30 @@ export default function ConversationScreen() {
           // Only process metering if we are not in the process of stopping
           if (status.metering != null && status.isRecording && !isStoppingRef.current) {
             const currentTime = Date.now();
-            
-            // Platform-specific logging for debugging VAD
+
+            // --- iOS Metering Calibration ---
             if (Platform.OS === 'ios') {
+              // Log metering for debugging
               console.log(`iOS Metering: ${status.metering} dB`);
+              // During the first second, find the max metering value
+              if (!iOSMeteringCalibration.current.calibrated) {
+                if (status.metering > iOSMeteringCalibration.current.maxMetering) {
+                  iOSMeteringCalibration.current.maxMetering = status.metering;
+                }
+                if (currentTime - iOSMeteringCalibration.current.calibrationStart > iOSMeteringCalibration.current.calibrationDuration) {
+                  // Set threshold to OFFSET dB below max detected, but never below MIN_THRESHOLD
+                  const newThreshold = Math.max(iOSMeteringCalibration.current.maxMetering - IOS_VAD_OFFSET_DB, IOS_VAD_MIN_THRESHOLD);
+                  setVadThreshold(newThreshold);
+                  iOSMeteringCalibration.current.calibrated = true;
+                  console.log(`iOS VAD threshold auto-calibrated to: ${newThreshold}`);
+                }
+              }
             }
 
-            if (status.metering > VAD_THRESHOLD) {
+            // Use dynamic threshold
+            const threshold = Platform.OS === 'ios' ? vadThreshold : VAD_THRESHOLD;
+
+            if (status.metering > threshold) {
               // Voice detected
               if (speechStartTimeRef.current === null) {
                 speechStartTimeRef.current = currentTime; // Set start time ONLY on the first detection
@@ -1150,8 +1195,6 @@ export default function ConversationScreen() {
               // No voice detected
               if (isTalking) {
                 setIsTalking(false);
-                // DO NOT RESET speechStartTimeRef here. Let the silence timer handle the end of speech.
-                // speechStartTimeRef.current = null; 
                 setState(prev => ({ 
                   ...prev, 
                   isVoiceDetected: false,
@@ -1159,6 +1202,20 @@ export default function ConversationScreen() {
                 }));
               }
               // Don't reset timer - let it count down
+            }
+          } else if (Platform.OS === 'ios' && status.isRecording && !isStoppingRef.current) {
+            // Fallback: If metering is always -160 (not working), use a timer to stop after 3s
+            if (!iOSMeteringCalibration.current.calibrated && Date.now() - iOSMeteringCalibration.current.calibrationStart > 2000) {
+              // If after 2s, maxMetering is still -160, metering is not working
+              if (iOSMeteringCalibration.current.maxMetering <= -159) {
+                console.warn('iOS metering not working, using fallback silence timer.');
+                if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = setTimeout(() => {
+                  setIsTalking(false);
+                  stopRecording(true);
+                }, 3000); // Stop after 3s if no metering
+                iOSMeteringCalibration.current.calibrated = true;
+              }
             }
           }
         },
