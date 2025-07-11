@@ -2,16 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import {
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,8 +32,8 @@ const Stage5Screen = () => {
       description: 'Engage in thought-provoking conversations on complex topics',
       icon: 'bulb-outline' as const,
       screen: '/(tabs)/practice/stage5/critical-thinking-dialogues' as any,
-      gradient: ['#F39C12', '#E67E22'] as const,
-      iconBg: 'rgba(243, 156, 18, 0.2)',
+      gradient: ['#2ECC71', '#27AE60'] as const,
+      iconBg: 'rgba(46, 204, 113, 0.2)',
     },
     {
       id: 'academicPresentation',
@@ -42,8 +41,8 @@ const Stage5Screen = () => {
       description: 'Practice delivering polished presentations on academic subjects',
       icon: 'school-outline' as const,
       screen: '/(tabs)/practice/stage5/academic-presentation' as any,
-      gradient: ['#E67E22', '#D35400'] as const,
-      iconBg: 'rgba(230, 126, 34, 0.2)',
+      gradient: ['#27AE60', '#229954'] as const,
+      iconBg: 'rgba(39, 174, 96, 0.2)',
     },
     {
       id: 'inDepthInterview',
@@ -51,8 +50,8 @@ const Stage5Screen = () => {
       description: 'Simulate challenging interviews to refine your communication skills',
       icon: 'briefcase-outline' as const,
       screen: '/(tabs)/practice/stage5/in-depth-interview' as any,
-      gradient: ['#D35400', '#BA4A00'] as const,
-      iconBg: 'rgba(211, 84, 0, 0.2)',
+      gradient: ['#229954', '#1E8449'] as const,
+      iconBg: 'rgba(34, 153, 84, 0.2)',
     },
   ];
 
@@ -116,13 +115,13 @@ const Stage5Screen = () => {
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
-                <Ionicons name="arrow-back" size={24} color="#F39C12" />
+                <Ionicons name="arrow-back" size={24} color="#2ECC71" />
               </View>
             </TouchableOpacity>
             
             <View style={styles.titleContainer}>
               <LinearGradient
-                colors={['#F39C12', '#E67E22']}
+                colors={['#2ECC71', '#27AE60']}
                 style={styles.titleGradient}
               >
                 <Ionicons name="school" size={32} color="#FFFFFF" />
@@ -144,11 +143,11 @@ const Stage5Screen = () => {
           ]}
         >
           <LinearGradient
-            colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+            colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
             style={styles.goalGradient}
           >
             <View style={styles.goalContent}>
-              <Ionicons name="flag" size={28} color="#F39C12" />
+              <Ionicons name="flag" size={28} color="#2ECC71" />
               <Text style={styles.goalTitle}>Your Learning Goal</Text>
               <Text style={styles.goalDescription}>
                 Understand and produce complex texts, and express ideas fluently and spontaneously
@@ -169,10 +168,10 @@ const Stage5Screen = () => {
         >
           <View style={styles.sectionHeader}>
             <LinearGradient
-              colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+              colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
               style={styles.sectionHeaderGradient}
             >
-              <Ionicons name="play-circle" size={24} color="#F39C12" />
+              <Ionicons name="play-circle" size={24} color="#2ECC71" />
               <Text style={styles.sectionTitle}>Practice Activities</Text>
             </LinearGradient>
           </View>
@@ -229,11 +228,11 @@ const Stage5Screen = () => {
           ]}
         >
           <LinearGradient
-            colors={['rgba(243, 156, 18, 0.1)', 'rgba(230, 126, 34, 0.05)']}
+            colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
             style={styles.progressGradient}
           >
             <View style={styles.progressContent}>
-              <Ionicons name="trending-up" size={32} color="#F39C12" />
+              <Ionicons name="trending-up" size={32} color="#2ECC71" />
               <Text style={styles.progressTitle}>Track Your Progress</Text>
               <Text style={styles.progressDescription}>
                 Complete activities to unlock advanced stages and track your improvement
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(243, 156, 18, 0.15)',
+    borderColor: 'rgba(46, 204, 113, 0.15)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -322,7 +321,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
     marginBottom: 8,
-    textShadowColor: 'rgba(243, 156, 18, 0.2)',
+    textShadowColor: 'rgba(46, 204, 113, 0.2)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },

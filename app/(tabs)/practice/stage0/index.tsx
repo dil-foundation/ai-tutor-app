@@ -6,7 +6,6 @@ import {
     Animated,
     Dimensions,
     Image,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -241,24 +240,22 @@ const BeginnerLessonsScreen: React.FC = () => {
                             >
                                 <Image source={lesson.image} style={styles.lessonImage} />
                                 <View style={styles.lessonContent}>
-                                    <View style={styles.lessonIconContainer}>
-                                        <Ionicons name={lesson.icon as any} size={24} color="#FFFFFF" />
-                                    </View>
-                                    <View style={styles.lessonTextContainer}>
-                                        <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                                        <Text style={styles.lessonDescription}>{lesson.description}</Text>
+                                    <View style={styles.lessonHeader}>
+                                        <View style={styles.lessonIconContainer}>
+                                            <Ionicons name={lesson.icon as any} size={24} color="#FFFFFF" />
+                                        </View>
+                                        <View style={styles.lessonTextContainer}>
+                                            <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                                            <Text style={styles.lessonDescription}>{lesson.description}</Text>
+                                        </View>
                                     </View>
                                     <View style={styles.startButtonContainer}>
                                         <LinearGradient
-                                            colors={['#58D68D', '#45B7A8']}
+                                            colors={['rgba(255, 255, 255, 0.25)', 'rgba(255, 255, 255, 0.15)']}
                                             style={styles.startButtonGradient}
                                         >
-                                            <View style={styles.startButtonContent}>
-                                                <Text style={styles.startButtonText}>Start</Text>
-                                                <View style={styles.startButtonIconContainer}>
-                                                    <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                                                </View>
-                                            </View>
+                                            <Text style={styles.startButtonText}>Start</Text>
+                                            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                                         </LinearGradient>
                                     </View>
                                 </View>
@@ -428,8 +425,13 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 15,
     },
     lessonContent: {
-        padding: 15,
+        padding: 20,
         flex: 1,
+    },
+    lessonHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
     },
     lessonIconContainer: {
         width: 48,
@@ -456,43 +458,30 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     startButtonContainer: {
-        marginLeft: 16,
+        alignItems: 'flex-end',
     },
     startButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 10,
-    },
-    startButtonContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+        shadowColor: 'rgba(0, 0, 0, 0.1)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+        elevation: 3,
     },
     startButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 8,
-        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        fontSize: 14,
+        fontWeight: '600',
+        marginRight: 6,
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
         textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-    },
-    startButtonIconContainer: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        textShadowRadius: 1,
     },
     progressCard: {
         marginTop: 20,
