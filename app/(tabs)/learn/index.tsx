@@ -1,73 +1,48 @@
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Gradients, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import LottieView from 'lottie-react-native';
 import React, { useEffect, useState } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View,
-  ScrollView,
-  SafeAreaView,
+import {
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LearnScreen() {
   const router = useRouter();
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(30));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
-  const [pulseAnim] = useState(new Animated.Value(1));
+  const [slideAnim] = useState(new Animated.Value(20));
+  const [scaleAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
-    // Animate elements on mount
+    // Subtle animations for professional feel
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 600,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Start pulse animation
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimation.start();
   }, []);
 
   const handleConversationPress = () => {
-    // Add a small scale animation on press
+    // Subtle press animation
     Animated.sequence([
       Animated.timing(scaleAnim, {
-        toValue: 0.95,
+        toValue: 0.98,
         duration: 100,
         useNativeDriver: true,
       }),
@@ -93,34 +68,48 @@ export default function LearnScreen() {
         bounces={true}
       >
         {/* Header Section */}
-        <View style={styles.header}>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.headerIconContainer}>
+            <View style={styles.iconWrapper}>
+              <Ionicons name="mic" size={24} color={Colors.primary} />
+            </View>
+          </View>
+          <Text style={styles.headerTitle}>Speak to Translate</Text>
+          <Text style={styles.headerSubtitle}>Transform your Urdu into English conversation</Text>
+        </Animated.View>
+
+        {/* Main Content */}
+        <View style={styles.contentContainer}>
+          {/* Instruction Card */}
           <Animated.View
             style={[
-              styles.headerContent,
+              styles.instructionCard,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
               },
             ]}
           >
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="mic" size={32} color="#000000" />
-              </LinearGradient>
+            <View style={styles.instructionContent}>
+              <Text style={styles.instructionTitle}>Ready to Start?</Text>
+              <Text style={styles.instructionText}>
+                Press the button below and speak in Urdu. Our AI will translate your words into English and help you learn pronunciation.
+              </Text>
             </View>
-            <Text style={styles.headerTitle}>Speak to Translate</Text>
-            <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
           </Animated.View>
-        </View>
 
-        {/* Main Content */}
-        <View style={styles.contentContainer}>
+          {/* Action Button */}
           <Animated.View
             style={[
-              styles.mainCard,
+              styles.actionButtonContainer,
               {
                 opacity: fadeAnim,
                 transform: [
@@ -130,90 +119,96 @@ export default function LearnScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.cardGradient}
-            >
-              {/* Main Text */}
-              <View style={styles.textSection}>
-                <Text style={styles.mainText}>
-                  Press the button and speak in urdu to get started
-                </Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          {/* Action Button */}
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: pulseAnim }
-                ],
-              },
-            ]}
-          >
             <TouchableOpacity 
               onPress={handleConversationPress}
-              style={styles.buttonWrapper}
-              activeOpacity={0.8}
+              style={styles.actionButton}
+              activeOpacity={1}
             >
               <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                colors={Gradients.success}
                 style={styles.buttonGradient}
               >
                 <View style={styles.buttonContent}>
                   <View style={styles.buttonIconContainer}>
-                    <Ionicons name="chatbubbles" size={24} color="#000000" />
+                    <Ionicons name="chatbubbles" size={20} color={Colors.textOnPrimary} />
                   </View>
                   <View style={styles.buttonTextContainer}>
-                    <Text style={styles.buttonText}>Start Real-time Conversation</Text>
-                    <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
+                    <Text style={styles.buttonText}>Start Conversation</Text>
+                    <Text style={styles.buttonSubtext}>Begin your learning journey</Text>
                   </View>
-                  <View style={styles.arrowContainer}>
-                    <Ionicons name="arrow-forward" size={20} color="#000000" />
+                  <View style={styles.buttonArrow}>
+                    <Ionicons name="arrow-forward" size={16} color={Colors.textOnPrimary} />
                   </View>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Additional Info Cards */}
+          {/* Feature Cards */}
           <Animated.View
             style={[
-              styles.infoContainer,
+              styles.featuresContainer,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
               },
             ]}
           >
-            <View style={styles.infoCard}>
-              <Ionicons name="bulb" size={24} color="#58D68D" />
-              <Text style={styles.infoText}>Perfect for daily conversations</Text>
+            <View style={styles.featureCard}>
+              <View style={styles.featureIconContainer}>
+                <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
+              </View>
+              <Text style={styles.featureTitle}>Daily Practice</Text>
+              <Text style={styles.featureText}>Perfect for everyday conversations</Text>
             </View>
-            <View style={styles.infoCard}>
-              <Ionicons name="time" size={24} color="#58D68D" />
-              <Text style={styles.infoText}>Learn at your own pace</Text>
+            
+            <View style={styles.featureCard}>
+              <View style={styles.featureIconContainer}>
+                <Ionicons name="time-outline" size={20} color={Colors.primary} />
+              </View>
+              <Text style={styles.featureTitle}>Your Pace</Text>
+              <Text style={styles.featureText}>Learn at your own speed</Text>
+            </View>
+            
+            <View style={styles.featureCard}>
+              <View style={styles.featureIconContainer}>
+                <Ionicons name="trending-up-outline" size={20} color={Colors.primary} />
+              </View>
+              <Text style={styles.featureTitle}>Track Progress</Text>
+              <Text style={styles.featureText}>Monitor your improvement</Text>
+            </View>
+          </Animated.View>
+
+          {/* Tips Section */}
+          <Animated.View
+            style={[
+              styles.tipsSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.tipsHeader}>
+              <Ionicons name="information-circle-outline" size={20} color={Colors.primary} />
+              <Text style={styles.tipsTitle}>Pro Tips</Text>
+            </View>
+            <View style={styles.tipsList}>
+              <View style={styles.tipItem}>
+                <View style={styles.tipBullet} />
+                <Text style={styles.tipText}>Speak clearly and at a natural pace</Text>
+              </View>
+              <View style={styles.tipItem}>
+                <View style={styles.tipBullet} />
+                <Text style={styles.tipText}>Practice in a quiet environment</Text>
+              </View>
+              <View style={styles.tipItem}>
+                <View style={styles.tipBullet} />
+                <Text style={styles.tipText}>Don't worry about making mistakes</Text>
+              </View>
             </View>
           </Animated.View>
         </View>
-
-        {/* Decorative Elements */}
-        <View style={styles.decorativeCircle1} />
-        <View style={styles.decorativeCircle2} />
-        <View style={styles.decorativeCircle3} />
-        <View style={styles.decorativeCircle4} />
-        
-        {/* Floating Particles */}
-        <View style={styles.particle1} />
-        <View style={styles.particle2} />
-        <View style={styles.particle3} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -222,112 +217,85 @@ export default function LearnScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 50,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+    paddingBottom: Spacing['4xl'],
   },
   header: {
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 40,
-    paddingTop: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing['2xl'],
   },
-  headerContent: {
-    alignItems: 'center',
+  headerIconContainer: {
+    marginBottom: Spacing.md,
   },
-  iconContainer: {
-    marginBottom: 16,
-  },
-  iconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  iconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
+    fontSize: Typography.fontSize['3xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: Spacing.sm,
+    lineHeight: Typography.fontSize['3xl'] * Typography.lineHeight.tight,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: Typography.fontSize.base * Typography.lineHeight.relaxed,
   },
   contentContainer: {
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    paddingVertical: 20,
-    width: '100%',
+    paddingHorizontal: Spacing.lg,
   },
-  mainCard: {
-    width: '100%',
-    marginBottom: 40,
-  },
-  cardGradient: {
-    borderRadius: 24,
-    padding: 40,
+  instructionCard: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    elevation: 16,
-    position: 'relative',
-    overflow: 'hidden',
+    borderColor: Colors.border,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    ...Shadows.base,
   },
-
-  textSection: {
+  instructionContent: {
     alignItems: 'center',
-    zIndex: 2,
   },
-  mainText: {
-    fontSize: 22,
-    color: '#000000',
+  instructionTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+  },
+  instructionText: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 30,
-    fontWeight: '600',
+    lineHeight: Typography.fontSize.base * Typography.lineHeight.relaxed,
   },
-
-  buttonContainer: {
-    width: '100%',
-    marginBottom: 40,
+  actionButtonContainer: {
+    marginBottom: Spacing.xl,
   },
-  buttonWrapper: {
-    borderRadius: 30,
+  actionButton: {
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
+    ...Shadows.md,
   },
   buttonGradient: {
-    paddingHorizontal: 32,
-    paddingVertical: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -335,123 +303,112 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   buttonIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonTextContainer: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: Spacing.base,
   },
   buttonText: {
-    color: '#000000',
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 4,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textOnPrimary,
+    marginBottom: 2,
   },
   buttonSubtext: {
-    color: '#000000',
-    fontSize: 14,
-    opacity: 0.8,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textOnPrimary,
+    opacity: 0.9,
   },
-  arrowContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  buttonArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  infoContainer: {
+  featuresContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
   },
-  infoCard: {
+  featureCard: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 4,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: Colors.border,
+    padding: Spacing.base,
+    alignItems: 'center',
+    ...Shadows.sm,
   },
-  infoText: {
-    fontSize: 12,
-    color: '#6C757D',
+  featureIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  featureTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
     textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 16,
   },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+  featureText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: Typography.fontSize.xs * Typography.lineHeight.normal,
   },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  tipsSection: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.lg,
+    ...Shadows.base,
   },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
+  tipsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
   },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
+  tipsTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
   },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
+  tipsList: {
+    gap: Spacing.sm,
   },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
+  tipBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+    marginTop: 6,
+    marginRight: Spacing.sm,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.fontSize.sm * Typography.lineHeight.normal,
   },
 }); 

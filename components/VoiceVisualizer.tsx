@@ -21,7 +21,7 @@ export default function VoiceVisualizer({
   isListening,
   intensity = 0.5,
   barCount = 5,
-  color = '#93E893',
+  color = '#22C55E',
 }: VoiceVisualizerProps) {
   const bars = Array.from({ length: barCount }, (_, i) => i);
   
@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
   bar: {
     width: 4,
     borderRadius: 2,
-    backgroundColor: '#93E893',
+    backgroundColor: '#22C55E',
   },
 }); 

@@ -52,5 +52,90 @@ export const fetchAudioFromText = async (text: string): Promise<string | null> =
   }
 };
 
+/**
+ * Fetch user profile data from the backend
+ * @param userId - User ID from auth data
+ * @param token - Auth token for authenticated requests
+ * @returns User profile data or null on error
+ */
+export const fetchUserProfile = async (userId: string, token: string): Promise<any | null> => {
+  try {
+    const response = await fetch(`${BASE_API_URL}/user/profile/${userId}`, {
+      method: "GET",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
+};
+
+/**
+ * Update user profile data in the backend
+ * @param userId - User ID from auth data
+ * @param token - Auth token for authenticated requests
+ * @param profileData - Updated profile data
+ * @returns Updated profile data or null on error
+ */
+export const updateUserProfile = async (userId: string, token: string, profileData: any): Promise<any | null> => {
+  try {
+    const response = await fetch(`${BASE_API_URL}/user/profile/${userId}`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    return null;
+  }
+};
+
+/**
+ * Fetch user progress and statistics
+ * @param userId - User ID from auth data
+ * @param token - Auth token for authenticated requests
+ * @returns User progress data or null on error
+ */
+export const fetchUserProgress = async (userId: string, token: string): Promise<any | null> => {
+  try {
+    const response = await fetch(`${BASE_API_URL}/user/progress/${userId}`, {
+      method: "GET",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user progress:", error);
+    return null;
+  }
+};
 
 export default BASE_API_URL;

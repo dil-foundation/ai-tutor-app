@@ -11,7 +11,7 @@ import LottieView from 'lottie-react-native';
 // Placeholder for actual icons
 const BackIcon = () => <Ionicons name="arrow-back" size={24} color="#D2D5E1" />;
 const PlayIcon = () => <Ionicons name="play" size={24} color="#111629" />;
-const MicIcon = () => <Ionicons name="mic" size={24} color="#93E893" />;
+const MicIcon = () => <Ionicons name="mic" size={24} color="#22C55E" />;
 
 interface FeedbackData {
   user_text: string;
@@ -227,7 +227,7 @@ export default function FeedbackScreen() {
 
       {isLoading && (
         <View style={styles.centeredMessageContainer}>
-            <ActivityIndicator size="large" color="#93E893" />
+            <ActivityIndicator size="large" color="#22C55E" />
             <Text style={styles.loadingText}>Getting your feedback...</Text>
         </View>
       )}
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#93E893',
+    color: '#22C55E',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#93E893',
+    backgroundColor: '#22C55E',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   feedbackTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#93E893',
+    color: '#22C55E',
     marginTop: 10,
     marginBottom: 15,
     textAlign: 'center',
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   pronunciationScoreText: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#93E893',
+    color: '#22C55E',
     textAlign: 'center',
   },
   apiFeedbackText: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   tryAgainButton: {
-    backgroundColor: '#93E893',
+    backgroundColor: '#22C55E',
     paddingVertical: 15,
     borderRadius: 30,
     alignItems: 'center',

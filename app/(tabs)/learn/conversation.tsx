@@ -18,24 +18,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { Buffer } from 'buffer';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
+import LottieView from 'lottie-react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Animated,
+    Dimensions,
     Easing,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    Dimensions,
-    Platform,
+    Platform
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
 
 
@@ -1869,7 +1869,7 @@ export default function ConversationScreen() {
           <View style={styles.headerContent}>
             <View style={styles.iconContainer}>
               <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
+                colors={['#22C55E', '#22C55E']}
                 style={styles.iconGradient}
               >
                 <Ionicons name="chatbubbles" size={24} color="#000000" />
@@ -1881,7 +1881,7 @@ export default function ConversationScreen() {
             </View>
             <View style={[
               styles.connectionIndicator,
-              { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
+              { backgroundColor: state.isConnected ? '#22C55E' : '#FF6B6B' }
             ]} />
           </View>
         </LinearGradient>
@@ -2004,20 +2004,20 @@ export default function ConversationScreen() {
             <LinearGradient
               colors={
                 state.currentStep === 'listening' && isTalking
-                  ? ['#00C853', '#4CAF50']
+                  ? ['#22C55E', '#22C55E']
                   : state.currentStep === 'listening'
-                    ? ['#58D68D', '#45B7A8']
+                    ? ['#22C55E', '#22C55E']
                     : state.currentStep === 'playing_intro'
-                      ? ['#58D68D', '#45B7A8']
+                      ? ['#22C55E', '#22C55E']
                       : state.currentStep === 'playing_await_next'
-                        ? ['#58D68D', '#45B7A8']
+                        ? ['#22C55E', '#22C55E']
                         : state.currentStep === 'playing_retry'
-                          ? ['#58D68D', '#45B7A8']
+                          ? ['#22C55E', '#22C55E']
                           : state.currentStep === 'playing_feedback'
-                            ? ['#58D68D', '#45B7A8']
+                            ? ['#22C55E', '#22C55E']
                             : state.currentStep === 'word_by_word'
-                              ? ['#58D68D', '#45B7A8']
-                              : ['#58D68D', '#45B7A8']
+                              ? ['#22C55E', '#22C55E']
+                              : ['#22C55E', '#22C55E']
               }
               style={[
                 styles.micButtonGradient,
@@ -2325,28 +2325,28 @@ const styles = StyleSheet.create({
   introLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },
   awaitNextLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },
   retryLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },
   feedbackLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -2521,7 +2521,7 @@ const styles = StyleSheet.create({
   },
   sentenceTitle: {
     fontSize: 18,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: 'bold',
     marginBottom: 16,
@@ -2550,7 +2550,7 @@ const styles = StyleSheet.create({
   },
   wordProgressText: {
     fontSize: 14,
-    color: '#58D68D',
+    color: '#22C55E',
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -2562,7 +2562,7 @@ const styles = StyleSheet.create({
   wordByWordLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -2576,7 +2576,7 @@ const styles = StyleSheet.create({
   youSaidLabel: {
     marginTop: 12,
     fontSize: 16,
-    color: '#58D68D',
+    color: '#22C55E',
     textAlign: 'center',
     fontWeight: '600',
   },

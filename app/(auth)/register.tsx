@@ -8,7 +8,6 @@ import {
     KeyboardAvoidingView,
     Modal,
     Platform,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -17,6 +16,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FloatingLabelInput from '../../components/ui/FloatingLabelInput';
 import { saveAuthData } from '../utils/authStorage';
 
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     mainTitle: {
         fontSize: 28,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginTop: 40,
         marginBottom: 10,
         textAlign: 'center',
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     },
     registerButton: {
         width: '100%',
-        backgroundColor: '#93E893',
+        backgroundColor: '#22C55E',
         paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     },
     loginLinkText: {
         fontSize: 14,
-        color: '#93E893',
+        color: '#22C55E',
         fontFamily: 'Lexend-Regular',
     },
     errorText: {
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     doneButton: {
-        backgroundColor: '#93E893',
+        backgroundColor: '#22C55E',
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',

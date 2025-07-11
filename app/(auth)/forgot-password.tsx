@@ -6,13 +6,13 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FloatingLabelInput from '../../components/ui/FloatingLabelInput';
 import { WORDPRESS_API_URL } from '../../config/api';
 
@@ -110,7 +110,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} style={styles.backLinkContainer}>
-                        <FontAwesome5 name="arrow-left" size={14} color="#93E893" />
+                        <FontAwesome5 name="arrow-left" size={14} color="#22C55E" />
                         <Text style={styles.backLinkText}> Back to Login</Text>
                     </TouchableOpacity>
                 </ScrollView>
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     mainTitle: {
         fontSize: 28,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         width: '100%',
-        backgroundColor: '#93E893',
+        backgroundColor: '#22C55E',
         paddingVertical: 18,
         borderRadius: 10,
         alignItems: 'center',
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     },
     backLinkText: {
         fontSize: 14,
-        color: '#93E893',
+        color: '#22C55E',
         fontFamily: 'Lexend-Regular',
     },
 }); 
