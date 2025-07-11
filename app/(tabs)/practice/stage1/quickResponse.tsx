@@ -1,7 +1,8 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const QuickResponseScreen = () => {
@@ -9,21 +10,28 @@ const QuickResponseScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+            <View style={styles.backButtonCircle}>
+              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Quick Response</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.instructionText}>Respond to the AI's question.</Text>
+          <View style={styles.instructionCard}>
+            <Text style={styles.instructionText}>Respond to the AI's question</Text>
+          </View>
 
           {/* Chat bubbles */}
           <View style={styles.chatContainer}>
             <View style={styles.aiBubbleContainer}>
-              <Ionicons name="hardware-chip-outline" size={28} color="#93E893" style={styles.avatar} />
+              <View style={styles.avatarContainer}>
+                <Ionicons name="hardware-chip-outline" size={24} color={Colors.primary} />
+              </View>
               <View style={styles.aiBubble}>
                 <Text style={styles.chatText}>How are you today?</Text>
               </View>
@@ -32,19 +40,28 @@ const QuickResponseScreen = () => {
               <View style={styles.userBubble}>
                 <Text style={styles.userChatText}>I am fine.</Text>
               </View>
-              <Ionicons name="person-outline" size={28} color="#93E893" style={styles.avatar} />
+              <View style={styles.avatarContainer}>
+                <Ionicons name="person-outline" size={24} color={Colors.primary} />
+              </View>
             </View>
           </View>
 
-          <View style={styles.suggestionBox}>
-            <Text style={styles.suggestionText}>Great! Now try saying, "I'm fine, thank you."</Text>
+          <View style={styles.suggestionCard}>
+            <View style={styles.suggestionIcon}>
+              <Ionicons name="bulb-outline" size={20} color={Colors.primary} />
+            </View>
+            <Text style={styles.suggestionText}>
+              Great! Now try saying: <Text style={styles.suggestionBold}>"I'm fine, thank you."</Text>
+            </Text>
           </View>
         </ScrollView>
 
-        <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic-outline" size={28} color="#111629" />
-          <Text style={styles.speakButtonText}>Speak Now</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.speakButton}>
+            <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
+            <Text style={styles.speakButtonText}>Speak Now</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -53,107 +70,158 @@ const QuickResponseScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#111629',
+    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    width: '100%',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    padding: Spacing.lg,
+  },
+  instructionCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   instructionText: {
-    fontSize: 18,
-    color: '#D2D5E1',
+    fontSize: Typography.fontSize.lg,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 30,
+    fontWeight: Typography.fontWeight.medium,
   },
   chatContainer: {
-    width: '100%',
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
   aiBubbleContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginBottom: 15,
+    marginBottom: Spacing.base,
     alignSelf: 'flex-start',
-  },
-  aiBubble: {
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    maxWidth: '80%',
-    marginLeft: 8,
   },
   userBubbleContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     alignSelf: 'flex-end',
   },
-  userBubble: {
-    backgroundColor: '#93E893',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    maxWidth: '80%',
-    marginRight: 8,
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  avatar: {
-    // Icons replace the images
+  aiBubble: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    maxWidth: '80%',
+    marginLeft: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  userBubble: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    maxWidth: '80%',
+    marginRight: Spacing.sm,
   },
   chatText: {
-    fontSize: 16,
-    color: '#D2D5E1',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textPrimary,
   },
   userChatText: {
-    fontSize: 16,
-    color: '#111629',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textOnPrimary,
   },
-  suggestionBox: {
-    backgroundColor: '#1E293B',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 30,
+  suggestionCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  suggestionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   suggestionText: {
-    fontSize: 16,
-    color: '#D2D5E1',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+    flex: 1,
+    lineHeight: 24,
+  },
+  suggestionBold: {
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+  },
+  buttonContainer: {
+    padding: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: '#93E893',
-    paddingVertical: 20,
-    borderRadius: 30,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.base,
+    borderRadius: BorderRadius.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    alignSelf: 'center',
-    marginBottom: 40,
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: '#111629',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

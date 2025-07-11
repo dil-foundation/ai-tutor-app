@@ -2,7 +2,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; // Import
 import React from 'react';
 import {
     Image,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -10,6 +9,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LevelOneScreen = () => {
     // You would typically use useNavigation from '@react-navigation/native'
@@ -126,7 +126,7 @@ const LevelOneScreen = () => {
                         <Text style={styles.navText}>Learn</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Practice')}>
-                        <MaterialCommunityIcons name="chat-processing-outline" size={24} color="#93E893" />
+                        <MaterialCommunityIcons name="chat-processing-outline" size={24} color="#22C55E" />
                         <Text style={[styles.navText, styles.activeNavText]}>Practice</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.navItem} onPress={() => handleBottomNavPress('Progress')}>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontFamily: 'Lexend-SemiBold',
-        color: '#93E893',
+        color: '#22C55E',
         flex: 1, // Allows the title to take available space
         textAlign: 'center', // Center the title
         marginRight: 24, // Account for the back button's width
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     levelHeading: {
         fontSize: 26,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 8,
     },
     goalText: {
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     activityTitle: {
         fontSize: 18,
         fontFamily: 'Lexend-Bold',
-        color: '#93E893',
+        color: '#22C55E',
         marginBottom: 5,
     },
     activityDescription: {
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     startButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#93E893', // Light blue background for the button
+        backgroundColor: '#22C55E', // Light blue background for the button
         paddingVertical: 8,
         paddingHorizontal: 15,
         borderRadius: 20,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Lexend-Regular',
     },
     activeNavText: {
-        color: '#93E893', // Active tab text color
+        color: '#22C55E', // Active tab text color
         fontFamily: 'Lexend-SemiBold',
     },
 });

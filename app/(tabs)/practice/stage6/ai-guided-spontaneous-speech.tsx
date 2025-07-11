@@ -1,242 +1,314 @@
-import { useRouter } from "expo-router";
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useRouter } from "expo-router";
 import React from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+
+const feedbackItems = [
+  {
+    id: "1",
+    title: "Hesitation Score",
+    value: "12 hesitations",
+    description: "Good control over hesitations, consider pause techniques",
+    icon: "pulse-outline",
+  },
+  {
+    id: "2",
+    title: "Speech Duration",
+    value: "2 minutes 15 seconds",
+    description: "Perfect timing for the allocated duration",
+    icon: "time-outline",
+  },
+  {
+    id: "3",
+    title: "Vocabulary Range",
+    value: "Advanced level",
+    description: "Excellent use of sophisticated vocabulary",
+    icon: "book-outline",
+  },
+  {
+    id: "4",
+    title: "Coherence & Flow",
+    value: "Well-structured",
+    description: "Clear progression of ideas with logical connections",
+    icon: "git-branch-outline",
+  },
+];
 
 const AIGuidedSpontaneousSpeechScreen = () => {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <View style={styles.backButtonCircle}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </View>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Spontaneous Speaking Challenge</Text>
+        <Text style={styles.headerTitle}>Spontaneous Speech</Text>
       </View>
 
-      <View style={styles.imageContainer}>
-        <Image
-          source={require("../../../../assets/images/abstract-topic-graphic-1.png")} // Update this path as needed
-          style={styles.mainImage}
-        />
-        {/* <View style={styles.imageOverlay}>
-          <Text style={styles.overlayTextTitle}>
-            Leadership in the 21st Century
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.titleCard}>
+          <Ionicons name="chatbubble-outline" size={32} color={Colors.primary} />
+          <Text style={styles.pageTitle}>AI-Guided Challenge</Text>
+        </View>
+
+        <View style={styles.topicCard}>
+          <Text style={styles.topicTitle}>Leadership in the 21st Century</Text>
+          <Text style={styles.topicText}>
+            Discuss the evolving role of leadership in today's rapidly changing world. 
+            Consider the impact of technology, globalization, and societal shifts on effective leadership.
           </Text>
-          <Text style={styles.overlayText}>
-            Discuss the evolving role of leadership in today's rapidly changing
-            world. Consider the impact of technology, globalization, and
-            societal shifts on effective leadership.
+        </View>
+
+        <View style={styles.timerContainer}>
+          <View style={styles.timerBox}>
+            <Text style={styles.timerText}>02</Text>
+            <Text style={styles.timerLabel}>Minutes</Text>
+          </View>
+          <View style={styles.timerBox}>
+            <Text style={styles.timerText}>00</Text>
+            <Text style={styles.timerLabel}>Seconds</Text>
+          </View>
+        </View>
+
+        <View style={styles.transcriptionContainer}>
+          <Text style={styles.transcriptionTitle}>Live Transcription</Text>
+          <Text style={styles.transcriptionText}>
+            Start speaking and your words will appear here in real-time...
           </Text>
-        </View> */}
-      </View>
-
-      <View style={styles.timerContainer}>
-        <View style={styles.timerBox}>
-          <Text style={styles.timerText}>02</Text>
-          <Text style={styles.timerLabel}>Minutes</Text>
         </View>
-        <View style={styles.timerBox}>
-          <Text style={styles.timerText}>00</Text>
-          <Text style={styles.timerLabel}>Seconds</Text>
-        </View>
+
+        <Text style={styles.feedbackSectionTitle}>AI Feedback</Text>
+        {feedbackItems.map((item) => (
+          <View key={item.id} style={styles.feedbackCard}>
+            <View style={styles.feedbackIconContainer}>
+              <Ionicons name={item.icon as any} size={24} color={Colors.primary} />
+            </View>
+            <View style={styles.feedbackTextContainer}>
+              <Text style={styles.feedbackTitle}>{item.title}</Text>
+              <Text style={styles.feedbackValue}>{item.value}</Text>
+              <Text style={styles.feedbackDescription}>{item.description}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.speakButton}>
+          <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
+          <Text style={styles.speakButtonText}>Start Speaking</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.liveTranscriptionTitle}>Live Transcription</Text>
-      <Text style={styles.liveTranscriptionText}>...</Text>
-
-      <Text style={styles.feedbackTitle}>AI Feedback</Text>
-
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Hesitation Score</Text>
-          <Text style={styles.feedbackItemValue}>12 hesitations</Text>
-        </View>
-        <Image
-          source={require("../../../../assets/images/feedback-vocab-1.png")} // Placeholder, update as needed
-          style={styles.feedbackImage}
-        />
-      </View>
-
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Speech Duration</Text>
-          <Text style={styles.feedbackItemValue}>2 minutes 15 seconds</Text>
-        </View>
-        <Image
-          source={require("../../../../assets/images/feedback-sentence-1.png")} // Placeholder, update as needed
-          style={styles.feedbackImage}
-        />
-      </View>
-
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Vocabulary Range & Grammar Accuracy</Text>
-          <Text style={styles.feedbackItemValue}>Advanced vocabulary, minor grammatical errors</Text>
-        </View>
-        <Image
-          source={require("../../../../assets/images/abstract-art-1.png")} // Placeholder, update as needed
-          style={styles.feedbackImage}
-        />
-      </View>
-
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Coherence & Logical Flow</Text>
-          <Text style={styles.feedbackItemValue}>Well-structured arguments, clear progression of ideas</Text>
-        </View>
-        {/* Add image if available */}
-      </View>
-
-      <TouchableOpacity style={styles.speakButton}>
-        <Text style={styles.speakButtonText}>Speak</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 50, // Adjust as per status bar height
-    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    fontSize: 24,
-    marginRight: 10,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
-  imageContainer: {
-    position: "relative",
-    alignItems: "center",
-    marginBottom: 20,
+  scrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
-  mainImage: {
-    width: "90%",
-    height: 460,
-    // height: "100%",
-    borderRadius: 10,
-    marginTop: 10,
+  titleCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    alignItems: 'center',
   },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 10,
-    left: 25, // Adjust to align with image
-    right: 25, // Adjust to align with image
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    padding: 10,
-    borderRadius: 5,
+  pageTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
   },
-  overlayTextTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
+  topicCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
-  overlayText: {
-    color: "#fff",
-    fontSize: 12,
+  topicTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  topicText: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   timerContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginVertical: 20,
-    paddingHorizontal: "10%",
+    marginBottom: Spacing.xl,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   timerBox: {
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
     alignItems: "center",
-    minWidth: 100,
+    flex: 1,
   },
   timerText: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 40,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
   },
   timerLabel: {
-    fontSize: 12,
-    color: "#555",
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+    fontWeight: Typography.fontWeight.medium,
   },
-  liveTranscriptionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 20,
+  transcriptionContainer: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    minHeight: 100,
   },
-  liveTranscriptionText: {
-    fontSize: 14,
-    marginHorizontal: 20,
-    marginVertical: 10,
-    color: "#333",
-    fontStyle: "italic",
+  transcriptionTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
   },
-  feedbackTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 30,
-    marginBottom: 10,
+  transcriptionText: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 24,
+  },
+  feedbackSectionTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.base,
   },
   feedbackCard: {
     flexDirection: "row",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 15,
-    marginHorizontal: 20,
-    marginBottom: 15,
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    marginBottom: Spacing.sm,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+  },
+  feedbackIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   feedbackTextContainer: {
     flex: 1,
-    marginRight: 10,
   },
-  feedbackItemTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
+  feedbackTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
-  feedbackItemValue: {
-    fontSize: 12,
-    color: "#555",
+  feedbackValue: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
   },
-  feedbackImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 5,
+  feedbackDescription: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  bottomBar: {
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 25, // Pill shape
-    marginHorizontal: "20%",
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.base,
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 40,
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

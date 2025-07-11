@@ -1,31 +1,25 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View 
+import {
+    Animated,
+    Dimensions,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 const Stage1Screen = () => {
   const router = useRouter();
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(30));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [slideAnim] = useState(new Animated.Value(20));
   
-  // Create individual scale animations for each activity
-  const [activityScaleAnims] = useState(() => 
-    [1, 2, 3].map(() => new Animated.Value(1))
-  );
-
   const activities = [
     {
       id: 'repeatAfterMe',
@@ -33,8 +27,7 @@ const Stage1Screen = () => {
       description: 'Practice speaking by repeating phrases with perfect pronunciation',
       icon: 'mic-outline' as const,
       screen: '/(tabs)/practice/stage1/repeatAfterMe' as any,
-      gradient: ['#58D68D', '#45B7A8'] as const,
-      iconBg: 'rgba(88, 214, 141, 0.2)',
+      lessonCount: 8,
     },
     {
       id: 'quickResponse',
@@ -42,8 +35,7 @@ const Stage1Screen = () => {
       description: 'Answer simple questions quickly to build fluency',
       icon: 'flash-outline' as const,
       screen: '/(tabs)/practice/stage1/quickResponse' as any,
-      gradient: ['#45B7A8', '#3A8B9F'] as const,
-      iconBg: 'rgba(69, 183, 168, 0.2)',
+      lessonCount: 6,
     },
     {
       id: 'listenAndReply',
@@ -51,53 +43,34 @@ const Stage1Screen = () => {
       description: 'Improve listening skills by responding to audio prompts',
       icon: 'ear-outline' as const,
       screen: '/(tabs)/practice/stage1/listenAndReply' as any,
-      gradient: ['#3A8B9F', '#2E7D8F'] as const,
-      iconBg: 'rgba(58, 139, 159, 0.2)',
+      lessonCount: 7,
     },
   ];
 
   useEffect(() => {
-    // Animate elements on mount
+    // Subtle animations for professional feel
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 600,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  const navigateToActivity = (activityScreen: any, activityIndex: number) => {
-    // Add a small scale animation on press for the specific activity
-    Animated.sequence([
-      Animated.timing(activityScaleAnims[activityIndex], {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(activityScaleAnims[activityIndex], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
+  const navigateToActivity = (activityScreen: any) => {
     router.push(activityScreen);
   };
 
   return (
     <View style={styles.container}>
-      {/* Main ScrollView containing everything */}
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -116,17 +89,14 @@ const Stage1Screen = () => {
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
-                <Ionicons name="arrow-back" size={24} color="#58D68D" />
+                <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
               </View>
             </TouchableOpacity>
             
             <View style={styles.titleContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.titleGradient}
-              >
-                <Ionicons name="school" size={32} color="#FFFFFF" />
-              </LinearGradient>
+              <View style={styles.titleCircle}>
+                <Ionicons name="school" size={32} color={Colors.background} />
+              </View>
               <Text style={styles.headerTitle}>Stage 1</Text>
               <Text style={styles.headerSubtitle}>A1 Beginner Level</Text>
             </View>
@@ -143,18 +113,15 @@ const Stage1Screen = () => {
             },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-            style={styles.goalGradient}
-          >
+          <View style={styles.goalCard}>
             <View style={styles.goalContent}>
-              <Ionicons name="flag" size={28} color="#58D68D" />
+              <Ionicons name="flag" size={28} color={Colors.primary} />
               <Text style={styles.goalTitle}>Your Learning Goal</Text>
               <Text style={styles.goalDescription}>
                 Build confidence in using basic phrases and perfect your pronunciation
               </Text>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Activities Section */}
@@ -168,13 +135,10 @@ const Stage1Screen = () => {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.sectionHeaderGradient}
-            >
-              <Ionicons name="play-circle" size={24} color="#58D68D" />
+            <View style={styles.sectionHeaderCard}>
+              <Ionicons name="play-circle" size={24} color={Colors.primary} />
               <Text style={styles.sectionTitle}>Practice Activities</Text>
-            </LinearGradient>
+            </View>
           </View>
 
           {activities.map((activity, index) => (
@@ -184,75 +148,66 @@ const Stage1Screen = () => {
                 styles.activityCard,
                 {
                   opacity: fadeAnim,
-                  transform: [
-                    { translateY: slideAnim },
-                    { scale: activityScaleAnims[index] }
-                  ],
+                  transform: [{ translateY: slideAnim }],
                 },
               ]}
             >
               <TouchableOpacity
                 style={styles.activityButton}
-                onPress={() => navigateToActivity(activity.screen, index)}
-                activeOpacity={0.8}
+                onPress={() => navigateToActivity(activity.screen)}
+                activeOpacity={0.7}
               >
-                <LinearGradient
-                  colors={activity.gradient}
-                  style={styles.activityGradient}
-                >
-                  <View style={styles.activityContent}>
-                    <View style={[styles.activityIconContainer, { backgroundColor: activity.iconBg }]}>
-                      <Ionicons name={activity.icon} size={28} color="#FFFFFF" />
-                    </View>
-                    <View style={styles.activityTextContainer}>
-                      <Text style={styles.activityTitle}>{activity.title}</Text>
-                      <Text style={styles.activityDescription}>{activity.description}</Text>
-                    </View>
-                    <View style={styles.arrowContainer}>
-                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                    </View>
+                <View style={styles.activityContent}>
+                  <View style={styles.activityIconContainer}>
+                    <Ionicons name={activity.icon} size={28} color={Colors.primary} />
                   </View>
-                </LinearGradient>
+                  
+                  <View style={styles.activityTextContainer}>
+                    <Text style={styles.activityTitle}>{activity.title}</Text>
+                    <Text style={styles.activityDescription}>{activity.description}</Text>
+                    <Text style={styles.lessonCount}>{activity.lessonCount} lessons</Text>
+                  </View>
+                  
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                  </View>
+                </View>
               </TouchableOpacity>
             </Animated.View>
           ))}
         </Animated.View>
 
-        {/* Progress Info Card */}
+        {/* Progress Summary */}
         <Animated.View
           style={[
-            styles.progressCard,
+            styles.progressSection,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-            style={styles.progressGradient}
-          >
-            <View style={styles.progressContent}>
-              <Ionicons name="trending-up" size={32} color="#58D68D" />
-              <Text style={styles.progressTitle}>Track Your Progress</Text>
-              <Text style={styles.progressDescription}>
-                Complete activities to unlock advanced stages and track your improvement
-              </Text>
+          <View style={styles.progressCard}>
+            <Text style={styles.progressTitle}>Your Progress</Text>
+            <View style={styles.progressStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>21</Text>
+                <Text style={styles.statLabel}>Total Lessons</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0%</Text>
+                <Text style={styles.statLabel}>Progress</Text>
+              </View>
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
       </ScrollView>
-
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
     </View>
   );
 };
@@ -260,19 +215,19 @@ const Stage1Screen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing['2xl'],
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
   headerContent: {
     alignItems: 'center',
@@ -288,252 +243,175 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.15)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   titleContainer: {
     alignItems: 'center',
     marginTop: 20,
   },
-  titleGradient: {
+  titleCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 12,
+    marginBottom: Spacing.base,
+    ...Shadows.md,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
+    fontSize: Typography.fontSize['4xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.2)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: Spacing.xs,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.base,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
   goalSection: {
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
-  goalGradient: {
-    borderRadius: 20,
-    padding: 24,
+  goalCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
   goalContent: {
     alignItems: 'center',
   },
   goalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 8,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   goalDescription: {
-    fontSize: 14,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   activitiesSection: {
-    marginBottom: 30,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
-    marginBottom: 20,
+    marginBottom: Spacing.md,
   },
-  sectionHeaderGradient: {
+  sectionHeaderCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: Colors.border,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginLeft: 12,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
   },
   activityCard: {
-    marginBottom: 16,
-    height: 120,
+    marginBottom: Spacing.base,
   },
   activityButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  activityGradient: {
-    paddingHorizontal: 24,
-    height: '100%',
-    justifyContent: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   activityContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: Spacing.lg,
   },
   activityIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: Colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: Spacing.base,
   },
   activityTextContainer: {
     flex: 1,
   },
   activityTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   activityDescription: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    lineHeight: 20,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.fontSize.sm * Typography.lineHeight.normal,
+    marginBottom: Spacing.xs,
+  },
+  lessonCount: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
   },
   arrowContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginLeft: Spacing.sm,
+  },
+  progressSection: {
+    marginBottom: Spacing.base,
   },
   progressCard: {
-    marginTop: 20,
-  },
-  progressGradient: {
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  progressContent: {
-    alignItems: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
   progressTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  progressDescription: {
-    fontSize: 14,
-    color: '#6C757D',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.base,
     textAlign: 'center',
-    lineHeight: 20,
   },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+  progressStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
   },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
   },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
+  statNumber: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
   },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
+  statLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
+    backgroundColor: Colors.border,
   },
 });
 

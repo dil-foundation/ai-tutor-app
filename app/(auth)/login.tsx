@@ -1,4 +1,6 @@
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { BorderRadius, Colors, Gradients, Shadows, Spacing, Typography } from '@/constants/Theme';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -8,7 +10,6 @@ import {
     Dimensions,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -17,7 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FloatingLabelInput from '../../components/ui/FloatingLabelInput';
 import BASE_API_URL from '../../config/api';
 import { saveAuthData } from '../utils/authStorage';
@@ -36,46 +37,22 @@ const LoginScreen: React.FC = () => {
 
     // Animation values
     const [fadeAnim] = useState(new Animated.Value(0));
-    const [slideAnim] = useState(new Animated.Value(50));
-    const [scaleAnim] = useState(new Animated.Value(0.9));
-    const [pulseAnim] = useState(new Animated.Value(1));
+    const [slideAnim] = useState(new Animated.Value(20));
 
     useEffect(() => {
-        // Animate elements on mount
+        // Subtle animations for professional feel
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
-                duration: 1000,
+                duration: 600,
                 useNativeDriver: true,
             }),
             Animated.timing(slideAnim, {
                 toValue: 0,
-                duration: 1000,
-                useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-                toValue: 1,
-                duration: 800,
+                duration: 600,
                 useNativeDriver: true,
             }),
         ]).start();
-
-        // Start pulse animation for the login button
-        const pulseAnimation = Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, {
-                    toValue: 1.02,
-                    duration: 2000,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(pulseAnim, {
-                    toValue: 1,
-                    duration: 2000,
-                    useNativeDriver: true,
-                }),
-            ])
-        );
-        pulseAnimation.start();
     }, []);
 
     const toggleLanguageSwitch = () => setIsEnglishLanguage((previousState) => !previousState);
@@ -134,7 +111,7 @@ const LoginScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
             
             {/* Language Toggle Header */}
             <Animated.View 
@@ -147,15 +124,15 @@ const LoginScreen: React.FC = () => {
                 ]}
             >
                 <View style={styles.languageContent}>
-                    <Ionicons name="language" size={20} color="#58D68D" />
+                    <Ionicons name="language" size={20} color={Colors.primary} />
                     <Text style={styles.appLanguageLabel}>App Language</Text>
                 </View>
                 <View style={styles.languageToggle}>
                     <Text style={styles.languageText}>English</Text>
                     <Switch
-                        trackColor={{ false: '#E9ECEF', true: '#58D68D' }}
-                        thumbColor={isEnglishLanguage ? '#FFFFFF' : '#FFFFFF'}
-                        ios_backgroundColor="#E9ECEF"
+                        trackColor={{ false: Colors.borderLight, true: Colors.primary }}
+                        thumbColor={Colors.background}
+                        ios_backgroundColor={Colors.borderLight}
                         onValueChange={toggleLanguageSwitch}
                         value={isEnglishLanguage}
                     />
@@ -182,14 +159,11 @@ const LoginScreen: React.FC = () => {
                         ]}
                     >
                         <View style={styles.iconContainer}>
-                            <LinearGradient
-                                colors={['#58D68D', '#45B7A8']}
-                                style={styles.iconGradient}
-                            >
-                                <Ionicons name="school" size={32} color="#FFFFFF" />
-                            </LinearGradient>
+                            <View style={styles.iconWrapper}>
+                                <Ionicons name="school" size={24} color={Colors.primary} />
+                            </View>
                         </View>
-                        <Text style={styles.mainTitle}>Welcome Back!</Text>
+                        <Text style={styles.mainTitle}>Welcome Back</Text>
                         <Text style={styles.subtitle}>
                             Continue your English learning journey with personalized AI tutoring
                         </Text>
@@ -201,95 +175,76 @@ const LoginScreen: React.FC = () => {
                             styles.formCard,
                             {
                                 opacity: fadeAnim,
-                                transform: [
-                                    { translateY: slideAnim },
-                                    { scale: scaleAnim }
-                                ],
+                                transform: [{ translateY: slideAnim }],
                             },
                         ]}
                     >
-                        <LinearGradient
-                            colors={['rgba(88, 214, 141, 0.05)', 'rgba(69, 183, 168, 0.02)']}
-                            style={styles.cardGradient}
+                        <Text style={styles.formTitle}>Sign In</Text>
+                        <Text style={styles.formSubtitle}>Enter your credentials to continue</Text>
+
+                        <FloatingLabelInput
+                            label="Email Address"
+                            value={email}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (emailError) setEmailError('');
+                            }}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            error={emailError}
+                        />
+
+                        <FloatingLabelInput
+                            label="Password"
+                            value={password}
+                            onChangeText={(text) => {
+                                setPassword(text);
+                                if (passwordError) setPasswordError('');
+                            }}
+                            secureTextEntry={!isPasswordVisible}
+                            onToggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
+                            isPasswordVisible={isPasswordVisible}
+                            error={passwordError}
+                        />
+
+                        <TouchableOpacity
+                            style={styles.forgotContainer}
+                            onPress={() => router.push('/(auth)/forgot-password' as any)}
                         >
-                            <Text style={styles.formTitle}>Sign In</Text>
-                            <Text style={styles.formSubtitle}>Enter your credentials to continue</Text>
+                            <Ionicons name="lock-open-outline" size={14} color={Colors.primary} />
+                            <Text style={styles.forgotText}> Forgot Password?</Text>
+                        </TouchableOpacity>
 
-                            <FloatingLabelInput
-                                label="Email Address"
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (emailError) setEmailError('');
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                error={emailError}
-                            />
-
-                            <FloatingLabelInput
-                                label="Password"
-                                value={password}
-                                onChangeText={(text) => {
-                                    setPassword(text);
-                                    if (passwordError) setPasswordError('');
-                                }}
-                                secureTextEntry={!isPasswordVisible}
-                                onToggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
-                                isPasswordVisible={isPasswordVisible}
-                                error={passwordError}
-                            />
-
-                            <TouchableOpacity
-                                style={styles.forgotContainer}
-                                onPress={() => router.push('/(auth)/forgot-password' as any)}
+                        {/* Login Button */}
+                        <TouchableOpacity 
+                            style={styles.loginButton}
+                            onPress={handleLogin} 
+                            disabled={isLoading}
+                            activeOpacity={1}
+                        >
+                            <LinearGradient
+                                colors={Gradients.success}
+                                style={styles.loginButtonGradient}
                             >
-                                <Ionicons name="lock-open" size={14} color="#58D68D" />
-                                <Text style={styles.forgotText}> Forgot Password?</Text>
-                            </TouchableOpacity>
+                                <View style={styles.loginButtonContent}>
+                                    {isLoading ? (
+                                        <ActivityIndicator color={Colors.textOnPrimary} size="small" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="log-in" size={20} color={Colors.textOnPrimary} />
+                                            <Text style={styles.loginText}>Sign In</Text>
+                                        </>
+                                    )}
+                                </View>
+                            </LinearGradient>
+                        </TouchableOpacity>
 
-                            {/* Login Button */}
-                            <Animated.View
-                                style={[
-                                    styles.loginButtonContainer,
-                                    {
-                                        transform: [{ scale: pulseAnim }],
-                                    },
-                                ]}
-                            >
-                                <TouchableOpacity 
-                                    style={styles.loginButtonWrapper}
-                                    onPress={handleLogin} 
-                                    disabled={isLoading}
-                                    activeOpacity={0.8}
-                                >
-                                    <LinearGradient
-                                        colors={['#58D68D', '#45B7A8', '#58D68D']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.loginButtonGradient}
-                                    >
-                                        <View style={styles.loginButtonContent}>
-                                            {isLoading ? (
-                                                <ActivityIndicator color="#FFFFFF" size="small" />
-                                            ) : (
-                                                <>
-                                                    <Ionicons name="log-in" size={20} color="#FFFFFF" />
-                                                    <Text style={styles.loginText}>Sign In</Text>
-                                                </>
-                                            )}
-                                        </View>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            </Animated.View>
-
-                            {/* Register Link */}
-                            <TouchableOpacity onPress={handleRegister} style={styles.registerLinkContainer}>
-                                <Text style={styles.registerText}>
-                                    Don't have an account? <Text style={styles.registerLink}>Sign Up</Text>
-                                </Text>
-                            </TouchableOpacity>
-                        </LinearGradient>
+                        {/* Register Link */}
+                        <TouchableOpacity onPress={handleRegister} style={styles.registerLinkContainer}>
+                            <Text style={styles.registerText}>
+                                Don't have an account? <Text style={styles.registerLink}>Sign Up</Text>
+                            </Text>
+                        </TouchableOpacity>
                     </Animated.View>
 
                     {/* Feature Highlights */}
@@ -304,36 +259,25 @@ const LoginScreen: React.FC = () => {
                     >
                         <View style={styles.featureItem}>
                             <View style={styles.featureIcon}>
-                                <Ionicons name="mic" size={20} color="#58D68D" />
+                                <Ionicons name="mic-outline" size={20} color={Colors.primary} />
                             </View>
                             <Text style={styles.featureText}>Voice Learning</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <View style={styles.featureIcon}>
-                                <Ionicons name="chatbubbles" size={20} color="#58D68D" />
+                                <Ionicons name="chatbubbles-outline" size={20} color={Colors.primary} />
                             </View>
                             <Text style={styles.featureText}>AI Conversations</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <View style={styles.featureIcon}>
-                                <Ionicons name="trending-up" size={20} color="#58D68D" />
+                                <Ionicons name="trending-up-outline" size={20} color={Colors.primary} />
                             </View>
                             <Text style={styles.featureText}>Progress Tracking</Text>
                         </View>
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-
-            {/* Decorative Elements */}
-            <View style={styles.decorativeCircle1} />
-            <View style={styles.decorativeCircle2} />
-            <View style={styles.decorativeCircle3} />
-            <View style={styles.decorativeCircle4} />
-            
-            {/* Floating Particles */}
-            <View style={styles.particle1} />
-            <View style={styles.particle2} />
-            <View style={styles.particle3} />
         </SafeAreaView>
     );
 };
@@ -343,260 +287,172 @@ export default LoginScreen;
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: Colors.background,
     },
     languageHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 10,
-        backgroundColor: 'rgba(88, 214, 141, 0.05)',
-        marginHorizontal: 16,
-        marginTop: 10,
-        borderRadius: 16,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.base,
+        backgroundColor: Colors.backgroundSecondary,
+        marginHorizontal: Spacing.base,
+        marginTop: Spacing.base,
+        borderRadius: BorderRadius.md,
         borderWidth: 1,
-        borderColor: 'rgba(88, 214, 141, 0.1)',
+        borderColor: Colors.borderLight,
     },
     languageContent: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     appLanguageLabel: {
-        fontSize: 16,
-        color: '#000000',
-        fontFamily: 'Lexend-Medium',
-        marginLeft: 8,
+        fontSize: Typography.fontSize.base,
+        color: Colors.textPrimary,
+        fontWeight: Typography.fontWeight.medium,
+        marginLeft: Spacing.sm,
     },
     languageToggle: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     languageText: {
-        fontSize: 16,
-        color: '#000000',
-        marginRight: 8,
-        fontFamily: 'Lexend-Regular',
+        fontSize: Typography.fontSize.base,
+        color: Colors.textPrimary,
+        marginRight: Spacing.sm,
+        fontWeight: Typography.fontWeight.normal,
     },
     contentContainer: {
         flexGrow: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: Spacing.lg,
         alignItems: 'center',
-        paddingBottom: 40,
+        paddingBottom: Spacing['2xl'],
     },
     headerSection: {
         alignItems: 'center',
-        marginBottom: 30,
-        marginTop: 20,
+        marginBottom: Spacing.xl,
+        marginTop: Spacing.lg,
     },
     iconContainer: {
-        marginBottom: 20,
+        marginBottom: Spacing.md,
     },
-    iconGradient: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+    iconWrapper: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: Colors.backgroundSecondary,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 12,
+        borderWidth: 1,
+        borderColor: Colors.borderLight,
     },
     mainTitle: {
-        fontSize: 32,
-        fontFamily: 'Lexend-Bold',
-        color: '#000000',
-        marginBottom: 12,
+        fontSize: Typography.fontSize['4xl'],
+        fontWeight: Typography.fontWeight.bold,
+        color: Colors.textPrimary,
+        marginBottom: Spacing.md,
         textAlign: 'center',
-        textShadowColor: 'rgba(88, 214, 141, 0.2)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#6C757D',
+        fontSize: Typography.fontSize.base,
+        color: Colors.textSecondary,
         textAlign: 'center',
-        lineHeight: 24,
-        fontFamily: 'Lexend-Regular',
-        paddingHorizontal: 20,
+        lineHeight: Typography.fontSize.base * Typography.lineHeight.relaxed,
+        paddingHorizontal: Spacing.md,
     },
     formCard: {
         width: '100%',
-        marginBottom: 30,
-    },
-    cardGradient: {
-        borderRadius: 24,
-        padding: 32,
+        backgroundColor: Colors.background,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.xl,
+        marginBottom: Spacing.xl,
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#F8F9FA',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.1,
-        shadowRadius: 24,
-        elevation: 16,
-        position: 'relative',
-        overflow: 'hidden',
+        borderColor: Colors.border,
+        ...Shadows.base,
     },
     formTitle: {
-        fontSize: 24,
-        fontFamily: 'Lexend-Bold',
-        color: '#000000',
+        fontSize: Typography.fontSize['2xl'],
+        fontWeight: Typography.fontWeight.bold,
+        color: Colors.textPrimary,
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: Spacing.sm,
     },
     formSubtitle: {
-        fontSize: 14,
-        color: '#6C757D',
+        fontSize: Typography.fontSize.sm,
+        color: Colors.textSecondary,
         textAlign: 'center',
-        marginBottom: 24,
-        fontFamily: 'Lexend-Regular',
+        marginBottom: Spacing.lg,
     },
     forgotContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 16,
-        marginBottom: 24,
+        marginTop: Spacing.base,
+        marginBottom: Spacing.lg,
     },
     forgotText: {
-        fontSize: 14,
-        color: '#58D68D',
-        fontFamily: 'Lexend-Medium',
+        fontSize: Typography.fontSize.sm,
+        color: Colors.primary,
+        fontWeight: Typography.fontWeight.medium,
     },
-    loginButtonContainer: {
+    loginButton: {
         width: '100%',
-        marginBottom: 20,
-    },
-    loginButtonWrapper: {
-        borderRadius: 30,
+        marginBottom: Spacing.md,
+        borderRadius: BorderRadius.md,
         overflow: 'hidden',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 12,
+        ...Shadows.md,
     },
     loginButtonGradient: {
-        paddingVertical: 18,
-        paddingHorizontal: 32,
+        paddingVertical: Spacing.base,
+        paddingHorizontal: Spacing.lg,
     },
     loginButtonContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: Spacing.sm,
     },
     loginText: {
-        color: '#FFFFFF',
-        fontFamily: 'Lexend-Bold',
-        fontSize: 18,
-        marginLeft: 8,
+        color: Colors.textOnPrimary,
+        fontWeight: Typography.fontWeight.semibold,
+        fontSize: Typography.fontSize.lg,
     },
     registerLinkContainer: {
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: Spacing.base,
     },
     registerText: {
-        fontSize: 14,
-        color: '#6C757D',
-        fontFamily: 'Lexend-Regular',
+        fontSize: Typography.fontSize.sm,
+        color: Colors.textSecondary,
     },
     registerLink: {
-        color: '#58D68D',
-        fontFamily: 'Lexend-Bold',
+        color: Colors.primary,
+        fontWeight: Typography.fontWeight.semibold,
     },
     featuresContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         width: '100%',
-        marginTop: 20,
+        marginTop: Spacing.md,
+        gap: Spacing.base,
     },
     featureItem: {
         alignItems: 'center',
         flex: 1,
     },
     featureIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(88, 214, 141, 0.1)',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: Colors.backgroundSecondary,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: Spacing.sm,
     },
     featureText: {
-        fontSize: 12,
-        color: '#58D68D',
+        fontSize: Typography.fontSize.xs,
+        color: Colors.textSecondary,
         textAlign: 'center',
-        fontFamily: 'Lexend-Medium',
-    },
-    decorativeCircle1: {
-        position: 'absolute',
-        top: height * 0.15,
-        right: -60,
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    },
-    decorativeCircle2: {
-        position: 'absolute',
-        bottom: height * 0.25,
-        left: -40,
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    },
-    decorativeCircle3: {
-        position: 'absolute',
-        top: height * 0.7,
-        right: -30,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: 'rgba(0, 0, 0, 0.015)',
-    },
-    decorativeCircle4: {
-        position: 'absolute',
-        bottom: height * 0.1,
-        right: width * 0.2,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.025)',
-    },
-    particle1: {
-        position: 'absolute',
-        top: height * 0.3,
-        left: width * 0.1,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#6C757D',
-        opacity: 0.3,
-    },
-    particle2: {
-        position: 'absolute',
-        top: height * 0.6,
-        right: width * 0.15,
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: '#ADB5BD',
-        opacity: 0.2,
-    },
-    particle3: {
-        position: 'absolute',
-        bottom: height * 0.3,
-        left: width * 0.2,
-        width: 2,
-        height: 2,
-        borderRadius: 1,
-        backgroundColor: '#CED4DA',
-        opacity: 0.25,
+        fontWeight: Typography.fontWeight.medium,
     },
 });

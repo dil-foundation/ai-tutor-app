@@ -55,7 +55,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
     }),
     color: animatedValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['#6C757D', error ? '#FF6B6B' : '#58D68D'],
+      outputRange: ['#6C757D', error ? '#FF6B6B' : '#22C55E'],
     }),
     backgroundColor: animatedValue.interpolate({
       inputRange: [0, 1],
@@ -93,7 +93,7 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({
         />
         {onToggleVisibility && (
           <TouchableOpacity onPress={onToggleVisibility} style={styles.icon}>
-            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={20} color="#58D68D" />
+            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={20} color="#22C55E" />
           </TouchableOpacity>
         )}
       </View>
@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   inputBoxFocused: {
-    borderColor: '#58D68D',
-    shadowColor: '#58D68D',
+    borderColor: '#22C55E',
+    shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

@@ -1,9 +1,11 @@
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Theme';
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
     SafeAreaView,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -26,24 +28,19 @@ const messages = [
     sender: "ai",
     text: "But what if privacy endangers lives? Consider scenarios where surveillance could prevent terrorist attacks or major crimes.",
   },
-  {
-    id: "4",
-    sender: "ai",
-    text: "Also, could you provide a specific example of a time you demonstrated innovation or problem-solving skills?",
-  },
 ];
 
 const feedbackItems = [
   {
     id: "1",
     title: "Depth of Ideas",
-    description: "Your word choice was diverse and appropriate for the topic.",
+    description: "Your arguments demonstrate sophisticated thinking and consideration of multiple perspectives.",
     icon: "bulb-outline" as const,
   },
   {
     id: "2",
     title: "Clarity & Nuance",
-    description: "The language is clear, but could be more nuanced. Phrases like 'absolute privacy' and 'unchecked surveillance' are strong but lack precision. Try qualifying these terms.",
+    description: "The language is clear, but could be more nuanced. Try qualifying terms like 'absolute privacy' for greater precision.",
     icon: "options-outline" as const,
   },
 ];
@@ -53,14 +50,22 @@ const CriticalThinkingDialoguesScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#D2D5E1" />
+          <View style={styles.backButtonCircle}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Critical Thinking</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.titleCard}>
+          <Ionicons name="chatbubbles-outline" size={32} color={Colors.primary} />
+          <Text style={styles.pageTitle}>Philosophical Dialogue</Text>
+        </View>
+        
         <View style={styles.chatContainer}>
           {messages.map((msg) => (
             <View
@@ -73,7 +78,9 @@ const CriticalThinkingDialoguesScreen = () => {
               ]}
             >
               {msg.sender === "ai" && (
-                <Ionicons name="hardware-chip-outline" size={28} color="#93E893" style={styles.avatar}/>
+                <View style={styles.avatarContainer}>
+                  <Ionicons name="hardware-chip-outline" size={24} color={Colors.primary} />
+                </View>
               )}
               <View
                 style={[
@@ -94,7 +101,9 @@ const CriticalThinkingDialoguesScreen = () => {
                 </Text>
               </View>
               {msg.sender === "user" && (
-                <Ionicons name="person-outline" size={28} color="#93E893" style={styles.avatar}/>
+                <View style={styles.avatarContainer}>
+                  <Ionicons name="person-outline" size={24} color={Colors.primary} />
+                </View>
               )}
             </View>
           ))}
@@ -103,7 +112,9 @@ const CriticalThinkingDialoguesScreen = () => {
         <Text style={styles.feedbackSectionTitle}>Feedback</Text>
         {feedbackItems.map((item) => (
           <View key={item.id} style={styles.feedbackCard}>
-            <Ionicons name={item.icon} size={32} color="#93E893" style={styles.feedbackIcon} />
+            <View style={styles.feedbackIconContainer}>
+              <Ionicons name={item.icon} size={24} color={Colors.primary} />
+            </View>
             <View style={styles.feedbackTextContainer}>
               <Text style={styles.feedbackTitle}>{item.title}</Text>
               <Text style={styles.feedbackDescription}>{item.description}</Text>
@@ -114,7 +125,7 @@ const CriticalThinkingDialoguesScreen = () => {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="mic-outline" size={28} color="#111629" />
+          <Ionicons name="mic-outline" size={24} color={Colors.textOnPrimary} />
           <Text style={styles.speakButtonText}>Speak Now</Text>
         </TouchableOpacity>
       </View>
@@ -125,35 +136,64 @@ const CriticalThinkingDialoguesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111629",
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: Spacing.base,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#93E893',
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  titleCard: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
+    alignItems: 'center',
+  },
+  pageTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
   },
   chatContainer: {
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
   },
   messageRow: {
     flexDirection: "row",
-    marginBottom: 16,
-    alignItems: "flex-start",
+    marginBottom: Spacing.base,
+    alignItems: "flex-end",
   },
   aiMessageRow: {
     justifyContent: "flex-start",
@@ -161,84 +201,107 @@ const styles = StyleSheet.create({
   userMessageRow: {
     justifyContent: "flex-end",
   },
-  avatar: {
-    marginHorizontal: 5,
-    marginTop: 5,
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginHorizontal: Spacing.xs,
   },
   messageBubble: {
-    borderRadius: 20,
-    padding: 15,
-    maxWidth: "85%",
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    maxWidth: "80%",
   },
   aiMessageBubble: {
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   userMessageBubble: {
-    backgroundColor: "#93E893",
+    backgroundColor: Colors.primary,
   },
   messageSenderText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#D2D5E1",
-    marginBottom: 5,
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
   },
   messageText: {
-    fontSize: 16,
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.base,
+    color: Colors.textPrimary,
     lineHeight: 22,
   },
   userMessageText: {
-    color: "#111629",
+    color: Colors.textOnPrimary,
   },
   feedbackSectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#D2D5E1",
-    marginBottom: 15,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.base,
   },
   feedbackCard: {
     flexDirection: "row",
-    backgroundColor: "#1E293B",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 12,
-    alignItems: "center",
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    marginBottom: Spacing.sm,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.base,
   },
-  feedbackIcon: {
-    marginRight: 20,
+  feedbackIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   feedbackTextContainer: {
     flex: 1,
   },
   feedbackTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#93E893",
-    marginBottom: 4,
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   feedbackDescription: {
-    fontSize: 14,
-    color: "#D2D5E1",
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   bottomBar: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#111629',
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   speakButton: {
-    backgroundColor: "#93E893",
-    borderRadius: 30,
-    paddingVertical: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.base,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    ...Shadows.md,
   },
   speakButtonText: {
-    color: "#111629",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 12,
+    color: Colors.textOnPrimary,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    marginLeft: Spacing.sm,
   },
 });
 

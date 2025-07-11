@@ -7,12 +7,12 @@ import React from 'react';
 import {
     GestureResponderEvent,
     Image,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Define your navigation types (customize based on your stack)
 type RootStackParamList = {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontFamily: 'Lexend-ExtraBold',
         textAlign: 'center',
-        color: '#93E893',
+        color: '#22C55E',
     },
     subtitle: {
         fontSize: 14,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     },
     button: {
         marginTop: 30,
-        backgroundColor: '#93E893',
+        backgroundColor: '#22C55E',
         paddingVertical: 16,
         borderRadius: 999,
         alignItems: 'center',
