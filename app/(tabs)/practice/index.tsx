@@ -129,36 +129,36 @@ export default function PracticeLandingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
+      {/* Main ScrollView containing everything */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section - Now inside ScrollView */}
         <Animated.View
           style={[
-            styles.headerContent,
+            styles.header,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <View style={styles.iconContainer}>
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8']}
-              style={styles.iconGradient}
-            >
-              <Ionicons name="school" size={32} color="#FFFFFF" />
-            </LinearGradient>
+          <View style={styles.headerContent}>
+            <View style={styles.iconContainer}>
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.iconGradient}
+              >
+                <Ionicons name="school" size={32} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.headerTitle}>Practice Your English</Text>
+            <Text style={styles.headerSubtitle}>Choose your level and start practicing</Text>
           </View>
-          <Text style={styles.headerTitle}>Practice Your English</Text>
-          <Text style={styles.headerSubtitle}>Choose your level and start practicing</Text>
         </Animated.View>
-      </View>
 
-      {/* Main Content */}
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
         {/* Beginner Stages */}
         <Animated.View
           style={[
@@ -329,12 +329,18 @@ export default function PracticeLandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
     backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    paddingHorizontal: 24,
     marginBottom: 30,
   },
   headerContent: {
@@ -370,13 +376,6 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
   },
   sectionContainer: {
     marginBottom: 30,
