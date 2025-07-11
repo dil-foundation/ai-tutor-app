@@ -32,4 +32,34 @@ export const clearAuthData = async () => {
   } catch (error) {
     console.error('Error clearing auth data', error);
   }
+};
+
+export const autoLoginWithCredentials = async (email: string, password: string) => {
+  try {
+    // First clear any existing auth data
+    await clearAuthData();
+    
+    // Attempt to login with provided credentials
+    const response = await fetch('https://api.dil.lms-staging.com/user/login-wordpress', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const responseData = await response.json();
+
+    if (response.ok && responseData.access_token && responseData.user_id) {
+      await saveAuthData(String(responseData.access_token), String(responseData.user_id));
+      console.log('Auto login successful');
+      return true;
+    } else {
+      console.error('Auto login failed:', responseData.message || 'Login failed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Auto login error:', error);
+    return false;
+  }
 }; 

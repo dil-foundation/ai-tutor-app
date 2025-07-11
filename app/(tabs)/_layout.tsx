@@ -151,7 +151,7 @@ export default function TabLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.navigate('profile' as any);
+            // router.navigate('profile' as any);
           },
         }}
       />
