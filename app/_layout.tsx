@@ -5,7 +5,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { getAuthData, autoLoginWithCredentials } from './utils/authStorage';
+import { getAuthData } from './utils/authStorage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,40 +13,18 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isAuthenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [hasAutoLoggedIn, setHasAutoLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Only run auto-login once per app session
-        if (!hasAutoLoggedIn) {
-          console.log('Running auto-login on app boot...');
-          const autoLoginSuccess = await autoLoginWithCredentials(
-            'arunyuvraj1998@gmail.com',
-            'Arun@123'
-          );
-          
-          if (autoLoginSuccess) {
-            const { token } = await getAuthData();
-            setAuthenticated(!!token);
-          } else {
-            // If auto login fails, check if user is already logged in
-            const { token } = await getAuthData();
-            setAuthenticated(!!token);
-          }
-          
-          setHasAutoLoggedIn(true);
-        } else {
-          // For subsequent navigation changes, just check current auth state
-          const { token } = await getAuthData();
-          setAuthenticated(!!token);
-        }
+        const { token } = await getAuthData();
+        setAuthenticated(!!token);
       } finally {
         SplashScreen.hideAsync();
       }
     };
     checkAuth();
-  }, [segments, hasAutoLoggedIn]); // Re-check on every navigation, but respect auto-login flag
+  }, [segments]); // Re-check on every navigation
 
   useEffect(() => {
     if (isAuthenticated === null) {
