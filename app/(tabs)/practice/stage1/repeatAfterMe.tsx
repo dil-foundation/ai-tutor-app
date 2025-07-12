@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
@@ -436,493 +436,204 @@ const RepeatAfterMeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <View style={styles.backButtonCircle}>
-              <Ionicons name="arrow-back" size={24} color="#58D68D" />
-            </View>
-          </TouchableOpacity>
+    <LinearGradient
+      colors={["#8EC5FC", "#6E73F2"]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {/* Header */}
           <Text style={styles.headerTitle}>Repeat After Me</Text>
-        </Animated.View>
+          <Text style={styles.progressText}>Progress: {currentPhraseId - 1} of 25 phrases completed</Text>
 
-        {/* Content */}
-        <View style={styles.content}>
-          <Animated.View
-            style={[
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.instructionContainer}>
-              <Ionicons name="information-circle" size={24} color="#58D68D" />
-              <Text style={styles.instructionText}>
-                Listen to the phrase and repeat it clearly. Recording will automatically stop after 5 seconds.
-              </Text>
-            </View>
-            {currentPhrase && (
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>
-                  Progress: {currentPhraseId - 1} of 25 phrases completed
-                </Text>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[
-                      styles.progressFill, 
-                      { width: `${((currentPhraseId - 1) / 25) * 100}%` }
-                    ]} 
-                  />
-                </View>
-              </View>
-            )}
-          </Animated.View>
-            
-          <Animated.View
-            style={[
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-              },
-            ]}
-          >
-                        <View style={styles.phraseContainer}>
-              {isLoading ? (
-                <Text style={styles.loadingText}>Loading phrase...</Text>
-              ) : currentPhrase ? (
-                <>
-                  <Text style={styles.phraseNumberText}>Phrase {currentPhraseId} of 25</Text>
-                  <Text style={styles.phraseText}>{currentPhrase.phrase}</Text>
-                  <TouchableOpacity 
-                    style={styles.listenButton}
-                    onPress={playPhraseAudio}
-                    disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
-                  >
-                <LinearGradient
-                      colors={getListenButtonColors()}
-                  style={styles.listenButtonGradient}
+          {/* Phrase Card */}
+          <View style={styles.card}>
+            {isLoading ? (
+              <Text style={styles.loadingText}>Loading phrase...</Text>
+            ) : currentPhrase ? (
+              <>
+                <Text style={styles.phraseText}>{currentPhrase.phrase}</Text>
+                <TouchableOpacity
+                  style={styles.playButton}
+                  onPress={playPhraseAudio}
+                  disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                 >
-                      <Ionicons 
-                        name={audioPlayer.state.isPlaying ? 'volume-high' : 'volume-high-outline'} 
-                        size={28} 
-                        color="#FFFFFF" 
-                      />
-                </LinearGradient>
-              </TouchableOpacity>
-                </>
-              ) : (
-                <Text style={styles.errorText}>Failed to load phrase</Text>
-              )}
-            </View>
-          </Animated.View>
+                  <LinearGradient
+                    colors={["#58D68D", "#45B7A8"]}
+                    style={styles.playButtonGradient}
+                  >
+                    <Ionicons name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} size={36} color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+                <Text style={styles.instructionText}>Listen to the phrase and repeat it clearly</Text>
+              </>
+            ) : (
+              <Text style={styles.errorText}>Failed to load phrase</Text>
+            )}
+          </View>
 
-          {/* Error Display */}
-          {(error || audioPlayer.state.error || audioRecorder.state.error) && (
-            <Animated.View
-              style={[
-                styles.errorContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
-              <Ionicons name="warning" size={20} color="#FF6B6B" />
-              <Text style={styles.errorText}>
-                {error || audioPlayer.state.error || audioRecorder.state.error}
-              </Text>
-            </Animated.View>
-          )}
-
-          {/* Evaluation Result */}
-          {evaluationResult && (
-            <Animated.View
-              style={[
-                styles.evaluationContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
-              {(() => {
-                console.log('🎨 Rendering evaluation result:', {
-                  success: evaluationResult.success,
-                  hasUserText: !!evaluationResult.user_text,
-                  hasEvaluation: !!evaluationResult.evaluation,
-                  message: evaluationResult.message
-                });
-                
-                return evaluationResult.success ? (
-                  <View style={styles.successContainer}>
-                    <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
-                    <Text style={styles.successText}>
-                      {evaluationResult.evaluation?.is_correct 
-                        ? 'Excellent! Moving to next phrase...' 
-                        : 'Great job! Your pronunciation was good.'}
-                    </Text>
-                    {evaluationResult.evaluation && (
-                      <Text style={styles.feedbackText}>
-                        {evaluationResult.evaluation.feedback || 'Keep practicing!'}
-                      </Text>
-                    )}
-                  </View>
-                ) : (
-                  <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle" size={24} color="#FF6B6B" />
-                    <Text style={styles.errorText}>
-                      {evaluationResult.message || 'Try again with clearer pronunciation.'}
-                    </Text>
-                    {evaluationResult.user_text && (
-                      <Text style={styles.userText}>You said: "{evaluationResult.user_text}"</Text>
-                    )}
-                  </View>
-                );
-              })()}
-            </Animated.View>
-          )}
-        </View>
-
-        {/* Speak Button */}
-        <Animated.View
-          style={[
-            styles.speakButtonContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <TouchableOpacity 
+          {/* Speak Button */}
+          <TouchableOpacity
             style={styles.speakButton}
             onPress={audioRecorder.state.isRecording ? handleStopRecording : handleStartRecording}
             disabled={isProcessing || audioPlayer.state.isPlaying || isLoading}
           >
             <LinearGradient
-              colors={getButtonColors()}
+              colors={["#58D68D", "#45B7A8"]}
               style={styles.speakButtonGradient}
             >
-              <Ionicons name={getButtonIcon()} size={28} color="#FFFFFF" />
-              <Text style={styles.speakButtonText}>{getButtonText()}</Text>
+              <Ionicons name={isProcessing ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} size={24} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.speakButtonText}>{isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording (5s max)' : 'Speak Now (5s max)'}</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
+
+        {/* All overlays and animations remain unchanged below */}
+        {/* ... overlays for congratulations, retry, evaluating, etc ... */}
+        {showCongratulationsAnimation && (
+          <View style={styles.congratulationsOverlay}>
+            <LottieView
+              source={require('../../../../assets/animations/correct_move_to_next_sentence.json')}
+              autoPlay
+              loop={false}
+              style={styles.congratulationsAnimation}
+            />
+            <View style={styles.congratulationsTextContainer}>
+              <Text style={styles.congratulationsTitle}>Congratulations!!!</Text>
+              <Text style={styles.congratulationsSubtitle}>Move on to the next sentence</Text>
+            </View>
+          </View>
+        )}
+        {showRetryAnimation && (
+          <View style={styles.retryOverlay}>
+            <LottieView
+              source={require('../../../../assets/animations/retry.json')}
+              autoPlay
+              loop={false}
+              style={styles.retryAnimation}
+            />
+            <View style={styles.retryTextContainer}>
+              <Text style={styles.retryTitle}>Kindly Try again</Text>
+              <Text style={styles.retrySubtitle}>the sentence</Text>
+            </View>
+          </View>
+        )}
+        {showEvaluatingAnimation && (
+          <View style={styles.evaluatingOverlay}>
+            <LottieView
+              source={require('../../../../assets/animations/evaluating.json')}
+              autoPlay
+              loop={true}
+              style={styles.evaluatingAnimation}
+            />
+            <View style={styles.evaluatingTextContainer}>
+              <Text style={styles.evaluatingTitle}>Evaluating...</Text>
+            </View>
+          </View>
+        )}
       </SafeAreaView>
-
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-
-      {/* Congratulations Animation Overlay */}
-      {showCongratulationsAnimation && (
-        <View style={styles.congratulationsOverlay}>
-          <LottieView
-            source={require('../../../../assets/animations/correct_move_to_next_sentence.json')}
-            autoPlay
-            loop={false}
-            style={styles.congratulationsAnimation}
-          />
-          <View style={styles.congratulationsTextContainer}>
-            <Text style={styles.congratulationsTitle}>Congratulations!!!</Text>
-            <Text style={styles.congratulationsSubtitle}>Move on to the next sentence</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Retry Animation Overlay */}
-      {showRetryAnimation && (
-        <View style={styles.retryOverlay}>
-          <LottieView
-            source={require('../../../../assets/animations/retry.json')}
-            autoPlay
-            loop={false}
-            style={styles.retryAnimation}
-          />
-          <View style={styles.retryTextContainer}>
-            <Text style={styles.retryTitle}>Kindly Try again</Text>
-            <Text style={styles.retrySubtitle}>the sentence</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Evaluating Animation Overlay */}
-      {showEvaluatingAnimation && (
-        <View style={styles.evaluatingOverlay}>
-          <LottieView
-            source={require('../../../../assets/animations/evaluating.json')}
-            autoPlay
-            loop={true}
-            style={styles.evaluatingAnimation}
-          />
-          <View style={styles.evaluatingTextContainer}>
-            <Text style={styles.evaluatingTitle}>Evaluating...</Text>
-          </View>
-        </View>
-      )}
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    width: '100%',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.2)',
+    justifyContent: 'space-evenly',
+    paddingVertical: 40,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  instructionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    marginBottom: 32,
-    marginHorizontal: 8,
-    width: '100%',
-  },
-  instructionText: {
-    fontSize: 16,
-    color: '#6C757D',
-    marginLeft: 12,
-    flex: 1,
-  },
-  phraseContainer: {
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 6,
-    marginHorizontal: 8,
-    minHeight: 200,
-    justifyContent: 'center',
-  },
-  phraseNumberText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#58D68D',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  phraseText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#fff',
+    marginTop: 20,
     textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  progressText: {
+    color: '#e0e0e0',
+    fontSize: 16,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  card: {
+    width: width * 0.85,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  phraseText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#222',
     marginBottom: 24,
+    textAlign: 'center',
+  },
+  playButton: {
+    marginBottom: 18,
+  },
+  playButtonGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#58D68D',
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  instructionText: {
+    color: '#888',
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  speakButton: {
+    width: width * 0.85,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginTop: 30,
+    shadowColor: '#45B7A8',
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  speakButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    borderRadius: 18,
+  },
+  speakButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   loadingText: {
     fontSize: 18,
     color: '#6C757D',
     textAlign: 'center',
   },
-  listenButton: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  listenButtonGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  speakButtonContainer: {
-    width: '100%',
-    paddingBottom: 32,
-  },
-  speakButton: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  speakButtonGradient: {
-    paddingVertical: 20,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  speakButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
-    marginTop: 16,
-    marginHorizontal: 8,
-    width: '100%',
-  },
   errorText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#FF6B6B',
-    marginLeft: 8,
-    flex: 1,
-  },
-  evaluationContainer: {
-    marginTop: 16,
-    marginHorizontal: 8,
-    width: '100%',
-  },
-  successContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-  },
-  successText: {
-    fontSize: 14,
-    color: '#58D68D',
-    marginLeft: 8,
-    flex: 1,
-    fontWeight: '600',
-  },
-  feedbackText: {
-    fontSize: 12,
-    color: '#58D68D',
-    marginLeft: 32,
-    marginTop: 4,
-  },
-  userText: {
-    fontSize: 12,
-    color: '#FF6B6B',
-    marginLeft: 32,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(88, 214, 141, 0.05)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(69, 183, 168, 0.03)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(88, 214, 141, 0.04)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.25,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(88, 214, 141, 0.3)',
-  },
-  progressContainer: {
-    marginTop: 16,
-    marginHorizontal: 8,
-    width: '100%',
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#6C757D',
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 12,
   },
-  progressBar: {
-    height: 4,
-    backgroundColor: 'rgba(88, 214, 141, 0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#58D68D',
-    borderRadius: 2,
-  },
-  particle2: {
-    position: 'absolute',
-    bottom: height * 0.4,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: 'rgba(69, 183, 168, 0.25)',
-  },
+  // Overlays and animation styles
   congratulationsOverlay: {
     position: 'absolute',
     top: 0,
@@ -999,7 +710,7 @@ const styles = StyleSheet.create({
   evaluatingAnimation: {
     width: width * 0.7,
     height: width * 0.7,
-    marginLeft: -width * 0.05, // Move animation slightly to the left
+    marginLeft: -width * 0.05,
   },
   evaluatingTextContainer: {
     position: 'absolute',
