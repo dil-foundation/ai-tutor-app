@@ -77,6 +77,7 @@ interface ConversationState {
     words: string[];
   } | null;
   currentWordIndex: number;
+  currentWordChunk: string;
   isDisplayingSentence: boolean;
   // New state for "you said" audio
   isPlayingYouSaid: boolean; // New state for tracking "you said" audio playing
@@ -118,6 +119,7 @@ export default function ConversationScreen() {
     isWordByWordSpeaking: false,
     currentSentence: null,
     currentWordIndex: 0,
+    currentWordChunk: '', 
     isDisplayingSentence: false,
     isPlayingYouSaid: false,
     isWaitingForRepeatPrompt: false,
@@ -499,6 +501,7 @@ export default function ConversationScreen() {
         setState(prev => ({
           ...prev,
           currentWordIndex: i,
+          currentWordChunk: wordChunk,
           currentMessageText: `Speaking: "${wordChunk}"`,
         }));
       
@@ -1922,7 +1925,7 @@ export default function ConversationScreen() {
                 Word {state.currentWordIndex + 1} of {state.currentSentence.words.length}
               </Text>
               <Text style={styles.currentWordText}>
-                "{state.currentSentence.words[state.currentWordIndex]}"
+                "{state.currentWordChunk || state.currentSentence.words[state.currentWordIndex]}"
               </Text>
             </View>
           </View>
