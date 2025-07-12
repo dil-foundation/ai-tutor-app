@@ -483,44 +483,46 @@ export default function ConversationScreen() {
       }
       // --- End of Fix ---
 
-      for (let i = 0; i < words.length; i++) {
-        // Check if screen is still focused and not manually cleaned up
+      for (let i = 0; i < words.length; i += 2) {
         if (!isScreenFocusedRef.current) {
           console.log('🎤 Word-by-word speaking interrupted - screen not focused');
           return;
         }
-
-        const word = words[i];
-        console.log(`🗣️ Speaking word ${i + 1}/${words.length}: "${word}"`);
-        
+      
+        const wordChunk =
+          i + 1 < words.length
+            ? `${words[i]} ${words[i + 1]}`
+            : words[i]; // last word if odd count
+      
+        console.log(`🗣️ Speaking words ${i + 1}-${Math.min(i + 2, words.length)}: "${wordChunk}"`);
+      
         setState(prev => ({
           ...prev,
           currentWordIndex: i,
-          currentMessageText: `Speaking: "${word}"`,
+          currentMessageText: `Speaking: "${wordChunk}"`,
         }));
-
-        // Speak the word using Expo Speech
-        Speech.speak(word, {
+      
+        Speech.speak(wordChunk, {
           language: 'en-US',
           rate: 0.5,
           pitch: 1.0,
         });
-
-        // Wait for the word to finish with focus check
-        for (let j = 0; j < 20; j++) { // 20 * 100ms = 2000ms (increased from 1200ms)
+      
+        // Wait for the chunk to finish
+        for (let j = 0; j < 10; j++) { // 10 * 100ms = 1000ms
           await new Promise(resolve => setTimeout(resolve, 100));
-          // Check focus every 100ms to allow for quick interruption
           if (!isScreenFocusedRef.current) {
             console.log('🎤 Word-by-word speaking interrupted during word playback');
             return;
           }
         }
-        
-        // Additional pause between words (except for the last word)
-        if (i < words.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500)); // 500ms pause between words
+      
+        // Short pause between chunks (except after last chunk)
+        if (i + 2 < words.length) {
+          await new Promise(resolve => setTimeout(resolve, 300)); // shorter pause
         }
       }
+      
 
               // Only complete if screen is still focused
         if (isScreenFocusedRef.current) {
