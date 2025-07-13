@@ -117,28 +117,32 @@ export default function LearnScreen() {
             </View>
             <Text style={styles.headerTitle}>Speak to Translate</Text>
             <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
-            {/* Toggle for English Immersion Mode - redesigned to match screenshot */}
-            <View style={styles.toggleBoxRedesigned}>
-              <View style={styles.toggleIconCircle}>
-                <Ionicons
-                  name="school"
-                  size={22}
-                  color={mode === 'english' ? '#58D68D' : '#6C757D'}
-                />
-              </View>
-              <View style={styles.toggleTextArea}>
-                <Text style={styles.toggleLabelRedesigned}>English Immersion Mode</Text>
-                <Text style={styles.toggleSubtextRedesigned}>
-                  {mode === 'english' ? 'Active - Full English experience' : 'Inactive - Urdu to English'}
-                </Text>
-              </View>
-              <Switch
-                value={mode === 'english'}
-                onValueChange={v => setMode(v ? 'english' : 'urdu')}
-                thumbColor={mode === 'english' ? '#fff' : '#eee'}
-                trackColor={{ false: '#E0F7EF', true: '#58D68D' }}
-                style={styles.toggleSwitchRedesigned}
-              />
+            {/* Custom Segmented Toggle for Language Mode */}
+            <View style={styles.segmentedToggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  mode === 'urdu' ? styles.toggleActive : styles.toggleInactive,
+                  { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
+                ]}
+                onPress={() => setMode('urdu')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="globe" size={18} color={mode === 'urdu' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
+                <Text style={[styles.toggleOptionText, { color: mode === 'urdu' ? '#fff' : '#58D68D' }]}>Urdu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  mode === 'english' ? styles.toggleActive : styles.toggleInactive,
+                  { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
+                ]}
+                onPress={() => setMode('english')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="language" size={18} color={mode === 'english' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
+                <Text style={[styles.toggleOptionText, { color: mode === 'english' ? '#fff' : '#58D68D' }]}>English</Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
@@ -534,51 +538,32 @@ const styles = StyleSheet.create({
     opacity: 0.25,
   },
   // Redesigned Toggle Box Styles
-  toggleBoxRedesigned: {
+  segmentedToggleContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 28,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    alignSelf: 'center',
+    backgroundColor: '#181A20',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#22242A',
     marginTop: 18,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 18,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(88, 214, 141, 0.10)',
+    overflow: 'hidden',
   },
-  toggleIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(88, 214, 141, 0.10)',
-    justifyContent: 'center',
+  toggleOption: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 30,
   },
-  toggleTextArea: {
-    flex: 1,
-    justifyContent: 'center',
+  toggleActive: {
+    backgroundColor: '#58D68D',
   },
-  toggleLabelRedesigned: {
-    color: '#000',
-    fontSize: 17,
+  toggleInactive: {
+    backgroundColor: 'transparent',
+  },
+  toggleOptionText: {
     fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  toggleSubtextRedesigned: {
-    color: '#6C757D',
-    fontSize: 13,
-    opacity: 0.8,
-    lineHeight: 16,
-  },
-  toggleSwitchRedesigned: {
-    marginLeft: 12,
-    transform: [{ scale: 1.05 }],
+    fontSize: 15,
   },
 }); 
