@@ -14,7 +14,9 @@ import {
   View,
   ScrollView,
   SafeAreaView,
+  Switch,
 } from 'react-native';
+import { useLanguageMode } from '../../context/LanguageModeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,6 +26,7 @@ export default function LearnScreen() {
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [pulseAnim] = useState(new Animated.Value(1));
+  const { mode, setMode } = useLanguageMode();
 
   useEffect(() => {
     // Animate elements on mount
@@ -92,6 +95,17 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
+        {/* Toggle for English Immersion Mode */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <Ionicons name="school" size={20} color="#222" style={{ marginRight: 8 }} />
+          <Text style={{ fontWeight: 'bold', fontSize: 16, marginRight: 8 }}>English Immersion Mode</Text>
+          <Switch
+            value={mode === 'english'}
+            onValueChange={v => setMode(v ? 'english' : 'urdu')}
+            thumbColor={mode === 'english' ? '#58D68D' : '#ccc'}
+            trackColor={{ false: '#ccc', true: '#45B7A8' }}
+          />
+        </View>
         {/* Header Section */}
         <View style={styles.header}>
           <Animated.View
