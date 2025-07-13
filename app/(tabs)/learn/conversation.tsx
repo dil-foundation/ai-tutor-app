@@ -2148,7 +2148,10 @@ export default function ConversationScreen() {
               />
             </LinearGradient>
           </TouchableOpacity>
-          {/* All text labels below mic button are now hidden for better UX */}
+          {/* Show "Tap to speak" text only when no speech is detected */}
+          {state.currentStep === 'waiting' && state.lastStopWasSilence && (
+            <Text style={styles.tapToSpeakLabel}>{t('Tap to speak', 'بولنے کے لیے ٹیپ کریں')}</Text>
+          )}
         </Animated.View>
         )}
       </View>
