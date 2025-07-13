@@ -2028,7 +2028,11 @@ export default function ConversationScreen() {
               source={currentAnimation.animation}
               autoPlay
               loop
-              style={styles.processingAnimation}
+              style={
+                currentAnimation.animation === require('../../../assets/animations/ai_speaking_v2.json')
+                  ? [styles.processingAnimation, { width: 320, height: 320 }]
+                  : styles.processingAnimation
+              }
             />
             <Text style={styles.processingText}>{currentAnimation.text}</Text>
           </>
