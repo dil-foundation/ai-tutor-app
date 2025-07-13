@@ -1711,42 +1711,42 @@ export default function ConversationScreen() {
     }
     if (state.isAISpeaking && !state.isProcessingAudio) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
     }
     if (state.isPlayingIntro) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
     }
     if (state.isContinuingConversation) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
     }
     if (state.isPlayingRetry) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
     }
     if (state.isPlayingFeedback) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
     }
     if (state.isPlayingYouSaid) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
@@ -1785,7 +1785,7 @@ export default function ConversationScreen() {
     }
     if (state.isEnglishInputEdgeCase) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '', // Hide text
         showMessage: false
       };
