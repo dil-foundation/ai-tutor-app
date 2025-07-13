@@ -1668,7 +1668,7 @@ export default function ConversationScreen() {
     if (state.isProcessingAudio) {
       return {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
-        text: t('Audio is processing...', 'آڈیو پروسیسنگ ہو رہی ہے...'),
+        text: '', // Hide text below animation
         showMessage: false  // ✅ Hide feedback text during audio processing
       };
     }
@@ -1676,7 +1676,7 @@ export default function ConversationScreen() {
     if (state.isFirstRecordingPreparation) {
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+        text: '', // Hide text below animation
         showMessage: true
       };
     }
@@ -1684,7 +1684,7 @@ export default function ConversationScreen() {
     if (state.isListening) {
       return {
         animation: require('../../../assets/animations/listening.json'),
-        text: t('Listening', 'سن رہے ہیں'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1692,7 +1692,7 @@ export default function ConversationScreen() {
     if (state.isVoiceDetected) {
       return {
         animation: require('../../../assets/animations/voice_detected.json'),
-        text: t('Voice detecting', 'آواز کی شناخت ہو رہی ہے'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1701,7 +1701,7 @@ export default function ConversationScreen() {
     if (state.isAISpeaking && !state.isProcessingAudio) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('AI Speaking', 'AI بول رہا ہے'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1709,7 +1709,7 @@ export default function ConversationScreen() {
     if (state.isPlayingIntro) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('Playing Introduction', 'تعارف چل رہا ہے'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1717,7 +1717,7 @@ export default function ConversationScreen() {
     if (state.isContinuingConversation) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('Continuing conversation', 'گفتگو جاری ہے'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1725,7 +1725,7 @@ export default function ConversationScreen() {
     if (state.isPlayingRetry) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('AI Speaking', 'درخواست کی تلاش کریں۔'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1733,7 +1733,7 @@ export default function ConversationScreen() {
     if (state.isPlayingFeedback) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('AI Speaking', 'درخواست کی تلاش کریں۔'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1741,7 +1741,7 @@ export default function ConversationScreen() {
     if (state.isPlayingYouSaid) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('You Said...', 'آپ نے کہا...'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1749,7 +1749,7 @@ export default function ConversationScreen() {
     if (state.isNoSpeechDetected) {
       return {
         animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
-        text: t('No Speech Detected', 'کوئی آواز نہیں ملی'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1769,7 +1769,7 @@ export default function ConversationScreen() {
       // Before word-by-word starts, show loading animation instead of sentence display
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
+        text: '', // Hide text below animation
         showMessage: false,
         isSentenceDisplay: false, // Don't show sentence display, just loading
         hideAnimation: false
@@ -1782,7 +1782,7 @@ export default function ConversationScreen() {
     if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
+        text: '', // Hide text below animation
         showMessage: true // Always show message when we have fullSentenceText
       };
     }
@@ -1791,7 +1791,7 @@ export default function ConversationScreen() {
     if (state.isEnglishInputEdgeCase) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: t('English Input Detected', 'انگریزی ان پٹ ملی'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
@@ -1802,7 +1802,7 @@ export default function ConversationScreen() {
       const messageToShow = state.fullSentenceText || state.currentMessageText;
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
+        text: '', // Hide text below animation
         showMessage: !!messageToShow
       };
     }
@@ -1810,7 +1810,7 @@ export default function ConversationScreen() {
     // Fallback for any other state - show loading animation
     return {
       animation: require('../../../assets/animations/loading.json'),
-      text: t('Loading', 'لوڈ ہو رہا ہے...'),
+      text: '', // Hide text below animation
       showMessage: false
     };
   };
@@ -2038,7 +2038,7 @@ export default function ConversationScreen() {
               loop
               style={styles.processingAnimation}
             />
-            <Text style={styles.processingText}>{currentAnimation.text}</Text>
+            {/* Text below animation is now hidden for better UX */}
           </>
         )}
       </View>
@@ -2064,7 +2064,7 @@ export default function ConversationScreen() {
             <View style={styles.wrongButtonShadow} />
           </View>
           {/* Exit label */}
-          <Text style={styles.exitLabel}>{t('Exit', 'خارج کریں')}</Text>
+          {/* <Text style={styles.exitLabel}>{t('Exit', 'خارج کریں')}</Text> */}
         </TouchableOpacity>
         {/* Center mic/stop button - Hide during word-by-word and sentence display */}
         {/* Note: Wrong button (X) is always accessible regardless of state */}
@@ -2148,37 +2148,9 @@ export default function ConversationScreen() {
               />
             </LinearGradient>
           </TouchableOpacity>
+          {/* Show "Tap to speak" text only when no speech is detected */}
           {state.currentStep === 'waiting' && state.lastStopWasSilence && (
-            <Text style={styles.silenceInfoLabel}>
-              {t('No speech detected.', 'بے صدا کی تلاش کریں۔')}
-            </Text>
-          )}
-          {state.currentStep === 'waiting' && !state.lastStopWasSilence && (
-            <Text style={styles.tapToSpeakLabel}>{t('Tap to speak', 'بے صدا کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_intro' && (
-            <Text style={styles.introLabel}>{t('Playing Introduction...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_await_next' && (
-            <Text style={styles.awaitNextLabel}>{t('Continuing Conversation...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_retry' && (
-            <Text style={styles.retryLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_feedback' && state.isProcessingAudio && (
-            <Text style={styles.processingLabel}>{t('Processing...', 'تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_feedback' && !state.isProcessingAudio && (
-            <Text style={styles.feedbackLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'word_by_word' && (
-            <Text style={styles.wordByWordLabel}>{t('Speaking word by word...', 'بے صدا کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_you_said' && (
-            <Text style={styles.youSaidLabel}>{t('You Said...', 'آپ کی بولیں۔')}</Text>
-          )}
-          {state.isWaitingForRepeatPrompt && (
-            <Text style={styles.waitingLabel}>{t('Waiting for next step...', 'درخواست کی تلاش کریں۔')}</Text>
+            <Text style={styles.tapToSpeakLabel}>{t('Tap to speak', 'بولنے کے لیے ٹیپ کریں')}</Text>
           )}
         </Animated.View>
         )}
