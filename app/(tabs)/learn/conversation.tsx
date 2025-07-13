@@ -90,6 +90,7 @@ interface ConversationState {
   isLoadingAfterWordByWord: boolean; // New state for loading animation after word-by-word
   // New state for English input edge case
   isEnglishInputEdgeCase: boolean; // New state for tracking English input edge case
+  isFirstRecordingPreparation: boolean; // New state for first recording preparation
 }
 
 // A tiny, silent audio file as a base64 string to prime the audio session on iOS
@@ -130,6 +131,7 @@ export default function ConversationScreen() {
     fullSentenceText: '',
     isLoadingAfterWordByWord: false,
     isEnglishInputEdgeCase: false,
+    isFirstRecordingPreparation: false, // New state for first recording preparation
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -152,11 +154,13 @@ export default function ConversationScreen() {
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
   const isStoppingRef = useRef(false);
+  const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
 
   // Voice Activity Detection threshold (in dB)
   const VAD_THRESHOLD = Platform.OS === 'ios' ? -70 : -45; // More sensitive for iOS
   const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500; // iOS needs more time for silence detection
   const MIN_SPEECH_DURATION = 200; // Minimum 500ms of speech to be valid
+  const FIRST_RECORDING_DELAY = 1500; // 1.5 second delay for first recording to clear buffers
 
   // --- iOS Silence Detection Calibration ---
   // This will store the highest metering value detected during the first second of recording
@@ -251,6 +255,46 @@ export default function ConversationScreen() {
     } catch (error) {
       console.error('Failed to initialize audio:', error);
       Alert.alert('Error', 'Failed to initialize audio permissions');
+    }
+  };
+
+  // Function to clear audio buffers and warm up audio session
+  const clearAudioBuffersAndWarmUp = async () => {
+    console.log('🔧 Clearing audio buffers and warming up audio session...');
+    
+    try {
+      // Stop any existing recording
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (e) {
+          console.log('No active recording to stop');
+        }
+        recordingRef.current = null;
+      }
+
+      // Set audio mode to clear any cached state
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+      });
+
+      // Create a brief silent recording to clear buffers
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        () => {}, // No status callback for buffer clearing
+        100 // Very short duration
+      );
+      
+      // Stop immediately to clear buffers
+      await recording.stopAndUnloadAsync();
+      
+      console.log('✅ Audio buffers cleared and session warmed up');
+    } catch (error) {
+      console.warn('Warning: Could not clear audio buffers:', error);
     }
   };
 
@@ -1090,6 +1134,33 @@ export default function ConversationScreen() {
       return;
     }
 
+    // Handle first recording session - clear buffers and add delay
+    if (isFirstRecordingRef.current) {
+      console.log('🎤 First recording session detected - clearing buffers and adding delay...');
+      
+      // Show preparation state to user
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isFirstRecordingPreparation: true,
+        currentMessageText: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+      }));
+      
+      // Clear audio buffers and warm up session
+      await clearAudioBuffersAndWarmUp();
+      
+      // Add delay for first recording to ensure clean start
+      await new Promise(resolve => setTimeout(resolve, FIRST_RECORDING_DELAY));
+      
+      // Double-check screen focus after delay
+      if (!isScreenFocusedRef.current) {
+        console.log('Screen lost focus during first recording delay');
+        return;
+      }
+      
+      console.log('✅ First recording session prepared');
+    }
+
     // Stop and unload any previous recording before starting a new one
     if (recordingRef.current) {
       try {
@@ -1131,6 +1202,7 @@ export default function ConversationScreen() {
         fullSentenceText: prev.fullSentenceText || '', // Keep the full sentence text for display
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
+        isFirstRecordingPreparation: false, // Clear preparation state
       }));
 
       console.log('DEBUG: Recording started. Resetting speech start time.');
@@ -1235,6 +1307,12 @@ export default function ConversationScreen() {
       );
       recordingRef.current = recording;
       resetSilenceTimer(); // Start timer in case no voice at all
+      
+      // Mark first recording as complete after successful start
+      if (isFirstRecordingRef.current) {
+        isFirstRecordingRef.current = false;
+        console.log('✅ First recording session completed successfully');
+      }
     } catch (error) {
       console.error('Failed to start recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -1464,12 +1542,14 @@ export default function ConversationScreen() {
       isDisplayingSentence: false,
       lastStopWasSilence: false,
       isLoadingAfterWordByWord: false,
+      isFirstRecordingPreparation: false, // Reset preparation state
     }));
     
     // Reset refs
     speechStartTimeRef.current = null;
     setIsTalking(false);
     isWordByWordActiveRef.current = false;
+    isFirstRecordingRef.current = true; // Reset first recording flag for next session
     
     console.log('✅ Cleanup completed');
   };
@@ -1562,11 +1642,13 @@ export default function ConversationScreen() {
       isDisplayingSentence: false,
       lastStopWasSilence: false,
       isLoadingAfterWordByWord: false,
+      isFirstRecordingPreparation: false, // Reset preparation state
     }));
     
     // Reset refs immediately
     speechStartTimeRef.current = null;
     setIsTalking(false);
+    isFirstRecordingRef.current = true; // Reset first recording flag for next session
     
     // Stop all audio asynchronously
     stopAllAudio();
@@ -1588,6 +1670,14 @@ export default function ConversationScreen() {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
         text: t('Audio is processing...', 'آڈیو پروسیسنگ ہو رہی ہے...'),
         showMessage: false  // ✅ Hide feedback text during audio processing
+      };
+    }
+    
+    if (state.isFirstRecordingPreparation) {
+      return {
+        animation: require('../../../assets/animations/loading.json'),
+        text: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+        showMessage: true
       };
     }
     
