@@ -1376,8 +1376,7 @@ export default function ConversationScreen() {
             isNoSpeechDetected: true,
             isProcessingAudio: false,
             isLoadingAfterWordByWord: false,
-            // currentMessageText: t('No Speech Detected.', 'بے صدا کی تلاش کریں۔'),
-            currentMessageText: '',
+            currentMessageText: t('No speech detected.', 'بے صدا کی تلاش کریں۔'),
           }));
         } else {
           console.log('Recording stopped manually, but was too short.');
@@ -1665,142 +1664,153 @@ export default function ConversationScreen() {
     isSentenceDisplay?: boolean;
     hideAnimation?: boolean;
   } => {
-    // List of technical/status texts to hide
-    const hiddenTexts = [
-      'Audio is processing...',
-      'Preparing audio system...',
-      'Listening',
-      'Voice detecting',
-      'AI Speaking',
-      'Playing Introduction',
-      'Loading...',
-      'Loading',
-      'Processing...',
-      'Processing',
-      'English Input Detected',
-      'English Input Detected...'
-    ];
     // Priority order for animations (most specific first)
     if (state.isProcessingAudio) {
       return {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
-        text: '', // Hide text
-        showMessage: false
+        text: '', // Hide text below animation
+        showMessage: false  // ✅ Hide feedback text during audio processing
       };
     }
+    
     if (state.isFirstRecordingPreparation) {
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: '', // Hide text
-        showMessage: false
+        text: '', // Hide text below animation
+        showMessage: true
       };
     }
+    
     if (state.isListening) {
       return {
         animation: require('../../../assets/animations/listening.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isVoiceDetected) {
-      return {
-        animation: require('../../../assets/animations/voice_detected.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isAISpeaking && !state.isProcessingAudio) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isPlayingIntro) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isContinuingConversation) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isPlayingRetry) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isPlayingFeedback) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isPlayingYouSaid) {
-      return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
-      };
-    }
-    if (state.isNoSpeechDetected) {
-      return {
-        animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
-        text: t('No Speech Detected', 'کوئی آواز نہیں ملی'),
+        text: '', // Hide text below animation
         showMessage: !!state.currentMessageText
       };
     }
+    
+    if (state.isVoiceDetected) {
+      return {
+        animation: require('../../../assets/animations/voice_detected.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    // AI Speaking animation only when actually speaking (not during processing)
+    if (state.isAISpeaking && !state.isProcessingAudio) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isPlayingIntro) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isContinuingConversation) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isPlayingRetry) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isPlayingFeedback) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isPlayingYouSaid) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isNoSpeechDetected) {
+      return {
+        animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
     if (state.isDisplayingSentence) {
+      // During word-by-word speaking, don't show any animation overlay
       if (state.isWordByWordSpeaking) {
         return {
-          animation: null,
+          animation: null, // No animation during word-by-word speaking
           text: '',
           showMessage: false,
           isSentenceDisplay: true,
-          hideAnimation: true
+          hideAnimation: true // Flag to hide animation overlay
         };
       }
+      
+      // Before word-by-word starts, show loading animation instead of sentence display
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: '', // Hide text
+        text: '', // Hide text below animation
         showMessage: false,
-        isSentenceDisplay: false,
+        isSentenceDisplay: false, // Don't show sentence display, just loading
         hideAnimation: false
       };
     }
+    
+    // Loading animation after word-by-word completion (removed - now handled by waiting state with fullSentenceText)
+    
+    // ✅ NEW: Show loading animation when in waiting state with fullSentenceText (higher priority)
     if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: '', // Hide text
-        showMessage: false
+        text: '', // Hide text below animation
+        showMessage: true // Always show message when we have fullSentenceText
       };
     }
+    
+    // English input edge case animation
     if (state.isEnglishInputEdgeCase) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
-        text: '', // Hide text
-        showMessage: false
+        animation: require('../../../assets/animations/ai_speaking.json'),
+        text: '', // Hide text below animation
+        showMessage: !!state.currentMessageText
       };
     }
+    
+    // ✅ Show loading animation when in waiting state and there's a message to display
     if (state.currentStep === 'waiting') {
+      // If we have fullSentenceText, show it as the message during loading
       const messageToShow = state.fullSentenceText || state.currentMessageText;
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: '', // Hide text
-        showMessage: false
+        text: '', // Hide text below animation
+        showMessage: !!messageToShow
       };
     }
+    
+    // Fallback for any other state - show loading animation
     return {
       animation: require('../../../assets/animations/loading.json'),
-      text: '', // Hide text
+      text: '', // Hide text below animation
       showMessage: false
     };
   };
@@ -1954,7 +1964,6 @@ export default function ConversationScreen() {
   return (
     <View style={styles.container}>
       {/* Header Section */}
-      {/*
       <View style={styles.header}>
         <LinearGradient
           colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
@@ -1980,7 +1989,6 @@ export default function ConversationScreen() {
           </View>
         </LinearGradient>
       </View>
-      */}
 
       {/* Unified Animation Overlay - Always show something */}
       <View style={currentAnimation.isSentenceDisplay ? styles.sentenceOverlay : styles.processingOverlay} pointerEvents="box-none">
@@ -2028,13 +2036,9 @@ export default function ConversationScreen() {
               source={currentAnimation.animation}
               autoPlay
               loop
-              style={
-                currentAnimation.animation === require('../../../assets/animations/ai_speaking_v2.json')
-                  ? [styles.processingAnimation, { width: 320, height: 320 }]
-                  : styles.processingAnimation
-              }
+              style={styles.processingAnimation}
             />
-            <Text style={styles.processingText}>{currentAnimation.text}</Text>
+            {/* Text below animation is now hidden for better UX */}
           </>
         )}
       </View>
@@ -2144,43 +2148,7 @@ export default function ConversationScreen() {
               />
             </LinearGradient>
           </TouchableOpacity>
-          {state.currentStep === 'waiting' && state.lastStopWasSilence && (
-            <Text style={styles.silenceInfoLabel}>
-              {/* {t('No speech detected.', 'بے صدا کی تلاش کریں۔')} */}
-              {t('Tap to speak', 'بے صدا کی تلاش کریں۔')}
-              {/* {t('No speech detected.', 'بے صدا کی تلاش کریں۔')} */}
-            </Text>
-          )}
-          {false && state.currentStep === 'waiting' && !state.lastStopWasSilence && (
-            <Text style={styles.tapToSpeakLabel}>{t('Tap to speak', 'بے صدا کی تلاش کریں۔')}</Text>
-          )}
-          {/* Hide all technical/status texts below the mic button */}
-          {/*
-          {state.currentStep === 'playing_intro' && (
-            <Text style={styles.introLabel}>{t('Playing Introduction...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_await_next' && (
-            <Text style={styles.awaitNextLabel}>{t('Continuing Conversation...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_retry' && (
-            <Text style={styles.retryLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_feedback' && state.isProcessingAudio && (
-            <Text style={styles.processingLabel}>{t('Processing...', 'تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_feedback' && !state.isProcessingAudio && (
-            <Text style={styles.feedbackLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'word_by_word' && (
-            <Text style={styles.wordByWordLabel}>{t('Speaking word by word...', 'بے صدا کی تلاش کریں۔')}</Text>
-          )}
-          {state.currentStep === 'playing_you_said' && (
-            <Text style={styles.youSaidLabel}>{t('You Said...', 'آپ کی بولیں۔')}</Text>
-          )}
-          {state.isWaitingForRepeatPrompt && (
-            <Text style={styles.waitingLabel}>{t('Waiting for next step...', 'درخواست کی تلاش کریں۔')}</Text>
-          )}
-          */}
+          {/* All text labels below mic button are now hidden for better UX */}
         </Animated.View>
         )}
       </View>
