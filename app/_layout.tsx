@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { getAuthData } from './utils/authStorage';
+import { LanguageModeProvider } from './context/LanguageModeContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -79,9 +80,11 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={DefaultTheme}>
-      <StatusBar style="light" />
-      <RootLayoutNav />
-    </ThemeProvider>
+    <LanguageModeProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <StatusBar style="light" />
+        <RootLayoutNav />
+      </ThemeProvider>
+    </LanguageModeProvider>
   );
 }

@@ -37,6 +37,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
+import { useLanguageMode } from '../../context/LanguageModeContext';
 
 
 const { width, height } = Dimensions.get('window');
@@ -89,6 +90,7 @@ interface ConversationState {
   isLoadingAfterWordByWord: boolean; // New state for loading animation after word-by-word
   // New state for English input edge case
   isEnglishInputEdgeCase: boolean; // New state for tracking English input edge case
+  isFirstRecordingPreparation: boolean; // New state for first recording preparation
 }
 
 // A tiny, silent audio file as a base64 string to prime the audio session on iOS
@@ -97,6 +99,9 @@ const SILENT_AUDIO_CLIP = 'data:audio/mp4;base64,AAAAHGZ0eXBNNEEgAAACAE00QSAgAAA
 export default function ConversationScreen() {
   const { autoStart } = useLocalSearchParams();
   const router = useRouter();
+  const { mode } = useLanguageMode();
+  // Define t() immediately after mode is available
+  const t = (en: string, ur: string) => (mode === 'english' ? en : ur);
   const [state, setState] = useState<ConversationState>({
     messages: [],
     currentStep: 'waiting',
@@ -126,6 +131,7 @@ export default function ConversationScreen() {
     fullSentenceText: '',
     isLoadingAfterWordByWord: false,
     isEnglishInputEdgeCase: false,
+    isFirstRecordingPreparation: false, // New state for first recording preparation
   });
 
   const previousStepRef = useRef<ConversationState["currentStep"]>('waiting');
@@ -148,11 +154,13 @@ export default function ConversationScreen() {
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
   const isStoppingRef = useRef(false);
+  const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
 
   // Voice Activity Detection threshold (in dB)
   const VAD_THRESHOLD = Platform.OS === 'ios' ? -70 : -45; // More sensitive for iOS
   const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500; // iOS needs more time for silence detection
   const MIN_SPEECH_DURATION = 200; // Minimum 500ms of speech to be valid
+  const FIRST_RECORDING_DELAY = 1500; // 1.5 second delay for first recording to clear buffers
 
   // --- iOS Silence Detection Calibration ---
   // This will store the highest metering value detected during the first second of recording
@@ -250,6 +258,46 @@ export default function ConversationScreen() {
     }
   };
 
+  // Function to clear audio buffers and warm up audio session
+  const clearAudioBuffersAndWarmUp = async () => {
+    console.log('🔧 Clearing audio buffers and warming up audio session...');
+    
+    try {
+      // Stop any existing recording
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (e) {
+          console.log('No active recording to stop');
+        }
+        recordingRef.current = null;
+      }
+
+      // Set audio mode to clear any cached state
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+      });
+
+      // Create a brief silent recording to clear buffers
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        () => {}, // No status callback for buffer clearing
+        100 // Very short duration
+      );
+      
+      // Stop immediately to clear buffers
+      await recording.stopAndUnloadAsync();
+      
+      console.log('✅ Audio buffers cleared and session warmed up');
+    } catch (error) {
+      console.warn('Warning: Could not clear audio buffers:', error);
+    }
+  };
+
   const playIntroAudio = async () => {
     // Check if screen is focused before playing audio
     if (!isScreenFocusedRef.current) {
@@ -264,7 +312,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_intro',
         isIntroAudioPlaying: true,
         isPlayingIntro: true,
-        currentMessageText: 'Welcome to your AI tutor conversation!',
+        currentMessageText: t('Welcome to your AI tutor conversation!', 'اپنے AI ٹیوٹر گفتگو میں خوش آمدید!'),
       }));
 
       // Unload any previous intro sound
@@ -339,7 +387,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_retry',
         isRetryPlaying: true,
         isPlayingRetry: true,
-        currentMessageText: 'Try again. Please repeat the sentence.',
+        currentMessageText: t('Try again. Please repeat the sentence.', 'دوبارہ کوشش کریں۔ براہ کرم جملہ دہرائیں۔'),
       }));
 
       // Unload any previous retry sound
@@ -502,7 +550,7 @@ export default function ConversationScreen() {
           ...prev,
           currentWordIndex: i,
           currentWordChunk: wordChunk,
-          currentMessageText: `Speaking: "${wordChunk}"`,
+          currentMessageText: t(`Speaking: "${wordChunk}"`, `"${wordChunk}" بول رہے ہیں`),
         }));
       
         Speech.speak(wordChunk, {
@@ -546,7 +594,8 @@ export default function ConversationScreen() {
             console.log('🔄 Sending word-by-word completion signal to backend...');
             sendLearnMessage(JSON.stringify({
               type: 'word_by_word_complete',
-              sentence: state.currentSentence?.english || ''
+              sentence: state.currentSentence?.english || '',
+              language_mode: mode,
             }));
           }
         }, 500); // Reduced from 2 seconds to 500ms for faster response
@@ -702,7 +751,7 @@ export default function ConversationScreen() {
         isProcessingAudio: false, // Stop processing animation
         isWaitingForRepeatPrompt: false, // Clear the waiting flag
         // currentMessageText: 'Repeat after me:',
-        currentMessageText: 'میرے بعد دہرائیں۔',
+        currentMessageText: t('Repeat after me.', 'میرے بعد دہرائیں۔'),
       }));
 
       // Start word-by-word speaking immediately for faster response
@@ -727,7 +776,7 @@ export default function ConversationScreen() {
         currentSentence: sentenceInfo,
         isDisplayingSentence: true,
         isProcessingAudio: false,
-        currentMessageText: 'میرے بعد دہرائیں۔',
+        currentMessageText: t('میرے بعد دہرائیں۔', 'Repeat after me.'),
       }));
     
       setTimeout(() => {
@@ -935,7 +984,8 @@ export default function ConversationScreen() {
               setTimeout(() => {
                 if (isScreenFocusedRef.current) {
                   sendLearnMessage(JSON.stringify({
-                    type: 'feedback_complete'
+                    type: 'feedback_complete',
+                    language_mode: mode,
                   }));
                 }
               }, 500);
@@ -958,7 +1008,8 @@ export default function ConversationScreen() {
                 if (isScreenFocusedRef.current) {
                   console.log('🔄 Sending "you said" completion signal to backend...');
                   sendLearnMessage(JSON.stringify({
-                    type: 'you_said_complete'
+                    type: 'you_said_complete',
+                    language_mode: mode,
                   }));
                 }
               }, 500);
@@ -1083,6 +1134,33 @@ export default function ConversationScreen() {
       return;
     }
 
+    // Handle first recording session - clear buffers and add delay
+    if (isFirstRecordingRef.current) {
+      console.log('🎤 First recording session detected - clearing buffers and adding delay...');
+      
+      // Show preparation state to user
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isFirstRecordingPreparation: true,
+        currentMessageText: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+      }));
+      
+      // Clear audio buffers and warm up session
+      await clearAudioBuffersAndWarmUp();
+      
+      // Add delay for first recording to ensure clean start
+      await new Promise(resolve => setTimeout(resolve, FIRST_RECORDING_DELAY));
+      
+      // Double-check screen focus after delay
+      if (!isScreenFocusedRef.current) {
+        console.log('Screen lost focus during first recording delay');
+        return;
+      }
+      
+      console.log('✅ First recording session prepared');
+    }
+
     // Stop and unload any previous recording before starting a new one
     if (recordingRef.current) {
       try {
@@ -1124,6 +1202,7 @@ export default function ConversationScreen() {
         fullSentenceText: prev.fullSentenceText || '', // Keep the full sentence text for display
         isNoSpeechDetected: false,
         lastStopWasSilence: false,
+        isFirstRecordingPreparation: false, // Clear preparation state
       }));
 
       console.log('DEBUG: Recording started. Resetting speech start time.');
@@ -1228,6 +1307,12 @@ export default function ConversationScreen() {
       );
       recordingRef.current = recording;
       resetSilenceTimer(); // Start timer in case no voice at all
+      
+      // Mark first recording as complete after successful start
+      if (isFirstRecordingRef.current) {
+        isFirstRecordingRef.current = false;
+        console.log('✅ First recording session completed successfully');
+      }
     } catch (error) {
       console.error('Failed to start recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -1291,7 +1376,7 @@ export default function ConversationScreen() {
             isNoSpeechDetected: true,
             isProcessingAudio: false,
             isLoadingAfterWordByWord: false,
-            currentMessageText: 'No speech detected. Tap the mic to try again.',
+            currentMessageText: t('No speech detected.', 'بے صدا کی تلاش کریں۔'),
           }));
         } else {
           console.log('Recording stopped manually, but was too short.');
@@ -1324,6 +1409,7 @@ export default function ConversationScreen() {
       const messagePayload = {
         audio_base64: base64Audio,
         filename: `recording-${Date.now()}.wav`,
+        language_mode: mode,
       };
   
       // Send JSON stringified base64 payload via WebSocket
@@ -1456,12 +1542,14 @@ export default function ConversationScreen() {
       isDisplayingSentence: false,
       lastStopWasSilence: false,
       isLoadingAfterWordByWord: false,
+      isFirstRecordingPreparation: false, // Reset preparation state
     }));
     
     // Reset refs
     speechStartTimeRef.current = null;
     setIsTalking(false);
     isWordByWordActiveRef.current = false;
+    isFirstRecordingRef.current = true; // Reset first recording flag for next session
     
     console.log('✅ Cleanup completed');
   };
@@ -1554,11 +1642,13 @@ export default function ConversationScreen() {
       isDisplayingSentence: false,
       lastStopWasSilence: false,
       isLoadingAfterWordByWord: false,
+      isFirstRecordingPreparation: false, // Reset preparation state
     }));
     
     // Reset refs immediately
     speechStartTimeRef.current = null;
     setIsTalking(false);
+    isFirstRecordingRef.current = true; // Reset first recording flag for next session
     
     // Stop all audio asynchronously
     stopAllAudio();
@@ -1578,15 +1668,23 @@ export default function ConversationScreen() {
     if (state.isProcessingAudio) {
       return {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
-        text: 'Audio is processing...',
+        text: t('Audio is processing...', 'آڈیو پروسیسنگ ہو رہی ہے...'),
         showMessage: false  // ✅ Hide feedback text during audio processing
+      };
+    }
+    
+    if (state.isFirstRecordingPreparation) {
+      return {
+        animation: require('../../../assets/animations/loading.json'),
+        text: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+        showMessage: true
       };
     }
     
     if (state.isListening) {
       return {
         animation: require('../../../assets/animations/listening.json'),
-        text: 'Listening',
+        text: t('Listening', 'سن رہے ہیں'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1594,7 +1692,7 @@ export default function ConversationScreen() {
     if (state.isVoiceDetected) {
       return {
         animation: require('../../../assets/animations/voice_detected.json'),
-        text: 'Voice detecting',
+        text: t('Voice detecting', 'آواز کی شناخت ہو رہی ہے'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1603,7 +1701,7 @@ export default function ConversationScreen() {
     if (state.isAISpeaking && !state.isProcessingAudio) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'AI Speaking',
+        text: t('AI Speaking', 'AI بول رہا ہے'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1611,7 +1709,7 @@ export default function ConversationScreen() {
     if (state.isPlayingIntro) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'Playing Introduction',
+        text: t('Playing Introduction', 'تعارف چل رہا ہے'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1619,7 +1717,7 @@ export default function ConversationScreen() {
     if (state.isContinuingConversation) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'Continuing conversation',
+        text: t('Continuing conversation', 'گفتگو جاری ہے'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1627,7 +1725,7 @@ export default function ConversationScreen() {
     if (state.isPlayingRetry) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'AI Speaking',
+        text: t('AI Speaking', 'درخواست کی تلاش کریں۔'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1635,7 +1733,7 @@ export default function ConversationScreen() {
     if (state.isPlayingFeedback) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'AI Speaking',
+        text: t('AI Speaking', 'درخواست کی تلاش کریں۔'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1643,7 +1741,7 @@ export default function ConversationScreen() {
     if (state.isPlayingYouSaid) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'You Said...',
+        text: t('You Said...', 'آپ نے کہا...'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1651,7 +1749,7 @@ export default function ConversationScreen() {
     if (state.isNoSpeechDetected) {
       return {
         animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
-        text: 'No Speech Detected',
+        text: t('No Speech Detected', 'کوئی آواز نہیں ملی'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1671,7 +1769,7 @@ export default function ConversationScreen() {
       // Before word-by-word starts, show loading animation instead of sentence display
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: 'Loading...',
+        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
         showMessage: false,
         isSentenceDisplay: false, // Don't show sentence display, just loading
         hideAnimation: false
@@ -1684,7 +1782,7 @@ export default function ConversationScreen() {
     if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: 'Loading...',
+        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
         showMessage: true // Always show message when we have fullSentenceText
       };
     }
@@ -1693,7 +1791,7 @@ export default function ConversationScreen() {
     if (state.isEnglishInputEdgeCase) {
       return {
         animation: require('../../../assets/animations/ai_speaking.json'),
-        text: 'English Input Detected',
+        text: t('English Input Detected', 'انگریزی ان پٹ ملی'),
         showMessage: !!state.currentMessageText
       };
     }
@@ -1704,7 +1802,7 @@ export default function ConversationScreen() {
       const messageToShow = state.fullSentenceText || state.currentMessageText;
       return {
         animation: require('../../../assets/animations/loading.json'),
-        text: 'Loading...',
+        text: t('Loading...', 'لوڈ ہو رہا ہے...'),
         showMessage: !!messageToShow
       };
     }
@@ -1712,7 +1810,7 @@ export default function ConversationScreen() {
     // Fallback for any other state - show loading animation
     return {
       animation: require('../../../assets/animations/loading.json'),
-      text: 'Loading',
+      text: t('Loading', 'لوڈ ہو رہا ہے...'),
       showMessage: false
     };
   };
@@ -1752,21 +1850,21 @@ export default function ConversationScreen() {
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="volume-high" size={20} color="#007AFF" />
-            <Text style={styles.statusText}>Playing Introduction...</Text>
+            <Text style={styles.statusText}>{t('Playing Introduction...', 'درخواست کی تلاش کریں۔')}</Text>
           </View>
         );
       case 'playing_await_next':
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="volume-high" size={20} color="#007AFF" />
-            <Text style={styles.statusText}>Continuing Conversation...</Text>
+            <Text style={styles.statusText}>{t('Continuing Conversation...', 'درخواست کی تلاش کریں۔')}</Text>
           </View>
         );
       case 'playing_retry':
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="volume-high" size={20} color="#007AFF" />
-            <Text style={styles.statusText}>AI Speaking...</Text>
+            <Text style={styles.statusText}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
           </View>
         );
       case 'listening':
@@ -1774,7 +1872,7 @@ export default function ConversationScreen() {
           <View style={styles.statusContainer}>
             <ActivityIndicator size="small" color="#007AFF" />
             <Text style={styles.statusText}>
-              {isTalking ? 'Voice Detected' : 'Listening...'}
+              {isTalking ? t('Voice Detected', 'آواز کی شناخت ہو رہی ہے') : t('Listening...', 'سن رہے ہیں')}
             </Text>
           </View>
         );
@@ -1782,28 +1880,28 @@ export default function ConversationScreen() {
         return (
           <View style={styles.statusContainer}>
             <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={styles.statusText}>Processing...</Text>
+            <Text style={styles.statusText}>{t('Processing...', 'پروسیسنگ ہو رہی ہے...')}</Text>
           </View>
         );
       case 'speaking':
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="volume-high" size={20} color="#007AFF" />
-            <Text style={styles.statusText}>AI Speaking...</Text>
+            <Text style={styles.statusText}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
           </View>
         );
       case 'error':
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="warning" size={20} color="#FF3B30" />
-            <Text style={styles.statusText}>Connection Error</Text>
+            <Text style={styles.statusText}>{t('Connection Error', 'کنکشن میں خرابی')}</Text>
           </View>
         );
       case 'english_input_edge_case':
         return (
           <View style={styles.statusContainer}>
             <Ionicons name="volume-high" size={20} color="#007AFF" />
-            <Text style={styles.statusText}>English Input Detected...</Text>
+            <Text style={styles.statusText}>{t('English Input Detected...', 'انگریزی ان پٹ ملی')}</Text>
           </View>
         );
       default:
@@ -1905,24 +2003,24 @@ export default function ConversationScreen() {
         {currentAnimation.isSentenceDisplay && state.currentSentence && state.isWordByWordSpeaking ? (
           <View style={styles.sentenceDisplayContainer}>
             {/* Repeat after me */}
-            <Text style={styles.sentenceTitle}>میرے بعد دہرائیں۔</Text>
+            <Text style={styles.sentenceTitle}>{t('Repeat after me.', 'میرے بعد دہرائیں۔')}</Text>
             
             {/* English Sentence */}
             <View style={styles.sentenceBox}>
-              <Text style={styles.sentenceLabel}>English:</Text>
+              <Text style={styles.sentenceLabel}>{t('English:', 'English:')}</Text>
               <Text style={styles.sentenceText}>{state.currentSentence.english}</Text>
             </View>
             
             {/* Urdu Sentence */}
             <View style={styles.sentenceBox}>
-              <Text style={styles.sentenceLabel}>Urdu:</Text>
+              <Text style={styles.sentenceLabel}>{t('Urdu:', 'اردو:')}</Text>
               <Text style={styles.sentenceText}>{state.currentSentence.urdu}</Text>
             </View>
             
             {/* Word-by-word progress */}
             <View style={styles.wordProgressContainer}>
               <Text style={styles.wordProgressText}>
-                Word {state.currentWordIndex + 1} of {state.currentSentence.words.length}
+                {t('Word', 'Word')} {state.currentWordIndex + 1} of {state.currentSentence.words.length}
               </Text>
               <Text style={styles.currentWordText}>
                 "{state.currentWordChunk || state.currentSentence.words[state.currentWordIndex]}"
@@ -1966,7 +2064,7 @@ export default function ConversationScreen() {
             <View style={styles.wrongButtonShadow} />
           </View>
           {/* Exit label */}
-          <Text style={styles.exitLabel}>Exit</Text>
+          <Text style={styles.exitLabel}>{t('Exit', 'خارج کریں')}</Text>
         </TouchableOpacity>
         {/* Center mic/stop button - Hide during word-by-word and sentence display */}
         {/* Note: Wrong button (X) is always accessible regardless of state */}
@@ -2052,35 +2150,35 @@ export default function ConversationScreen() {
           </TouchableOpacity>
           {state.currentStep === 'waiting' && state.lastStopWasSilence && (
             <Text style={styles.silenceInfoLabel}>
-              No speech detected{"\n"}Tap the mic to try again.
+              {t('No speech detected.', 'بے صدا کی تلاش کریں۔')}
             </Text>
           )}
           {state.currentStep === 'waiting' && !state.lastStopWasSilence && (
-            <Text style={styles.tapToSpeakLabel}>Tap to speak</Text>
+            <Text style={styles.tapToSpeakLabel}>{t('Tap to speak', 'بے صدا کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_intro' && (
-            <Text style={styles.introLabel}>Playing Introduction...</Text>
+            <Text style={styles.introLabel}>{t('Playing Introduction...', 'درخواست کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_await_next' && (
-            <Text style={styles.awaitNextLabel}>Continuing Conversation...</Text>
+            <Text style={styles.awaitNextLabel}>{t('Continuing Conversation...', 'درخواست کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_retry' && (
-            <Text style={styles.retryLabel}>AI Speaking...</Text>
+            <Text style={styles.retryLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_feedback' && state.isProcessingAudio && (
-            <Text style={styles.processingLabel}>Processing...</Text>
+            <Text style={styles.processingLabel}>{t('Processing...', 'تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_feedback' && !state.isProcessingAudio && (
-            <Text style={styles.feedbackLabel}>AI Speaking...</Text>
+            <Text style={styles.feedbackLabel}>{t('AI Speaking...', 'درخواست کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'word_by_word' && (
-            <Text style={styles.wordByWordLabel}>Speaking word by word...</Text>
+            <Text style={styles.wordByWordLabel}>{t('Speaking word by word...', 'بے صدا کی تلاش کریں۔')}</Text>
           )}
           {state.currentStep === 'playing_you_said' && (
-            <Text style={styles.youSaidLabel}>You Said...</Text>
+            <Text style={styles.youSaidLabel}>{t('You Said...', 'آپ کی بولیں۔')}</Text>
           )}
           {state.isWaitingForRepeatPrompt && (
-            <Text style={styles.waitingLabel}>Waiting for next step...</Text>
+            <Text style={styles.waitingLabel}>{t('Waiting for next step...', 'درخواست کی تلاش کریں۔')}</Text>
           )}
         </Animated.View>
         )}

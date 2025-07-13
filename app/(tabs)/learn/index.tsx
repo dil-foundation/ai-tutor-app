@@ -14,7 +14,10 @@ import {
   View,
   ScrollView,
   SafeAreaView,
+  Switch,
+  Platform,
 } from 'react-native';
+import { useLanguageMode } from '../../context/LanguageModeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,6 +27,7 @@ export default function LearnScreen() {
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [pulseAnim] = useState(new Animated.Value(1));
+  const { mode, setMode } = useLanguageMode();
 
   useEffect(() => {
     // Animate elements on mount
@@ -113,6 +117,29 @@ export default function LearnScreen() {
             </View>
             <Text style={styles.headerTitle}>Speak to Translate</Text>
             <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
+            {/* Toggle for English Immersion Mode - redesigned to match screenshot */}
+            <View style={styles.toggleBoxRedesigned}>
+              <View style={styles.toggleIconCircle}>
+                <Ionicons
+                  name="school"
+                  size={22}
+                  color={mode === 'english' ? '#58D68D' : '#6C757D'}
+                />
+              </View>
+              <View style={styles.toggleTextArea}>
+                <Text style={styles.toggleLabelRedesigned}>English Immersion Mode</Text>
+                <Text style={styles.toggleSubtextRedesigned}>
+                  {mode === 'english' ? 'Active - Full English experience' : 'Inactive - Urdu to English'}
+                </Text>
+              </View>
+              <Switch
+                value={mode === 'english'}
+                onValueChange={v => setMode(v ? 'english' : 'urdu')}
+                thumbColor={mode === 'english' ? '#fff' : '#eee'}
+                trackColor={{ false: '#E0F7EF', true: '#58D68D' }}
+                style={styles.toggleSwitchRedesigned}
+              />
+            </View>
           </Animated.View>
         </View>
 
@@ -274,6 +301,58 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  toggleBox: {
+    width: '100%',
+    marginTop: 18,
+    marginBottom: 8,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  toggleGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  toggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  toggleTextContainer: {
+    flex: 1,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.2,
+    marginBottom: 2,
+  },
+  toggleSubtext: {
+    fontSize: 12,
+    opacity: 0.7,
+    lineHeight: 16,
+  },
+  switchContainer: {
+    marginLeft: 12,
+  },
+  switch: {
+    transform: [{ scale: 0.9 }],
   },
   contentContainer: {
     paddingHorizontal: 24,
@@ -453,5 +532,53 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#CED4DA',
     opacity: 0.25,
+  },
+  // Redesigned Toggle Box Styles
+  toggleBoxRedesigned: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 28,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginTop: 18,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.10)',
+  },
+  toggleIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(88, 214, 141, 0.10)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  toggleTextArea: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  toggleLabelRedesigned: {
+    color: '#000',
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  toggleSubtextRedesigned: {
+    color: '#6C757D',
+    fontSize: 13,
+    opacity: 0.8,
+    lineHeight: 16,
+  },
+  toggleSwitchRedesigned: {
+    marginLeft: 12,
+    transform: [{ scale: 1.05 }],
   },
 }); 
