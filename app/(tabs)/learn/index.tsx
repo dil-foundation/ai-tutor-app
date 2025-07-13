@@ -276,7 +276,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: 16,
+    paddingTop: 25,
+    marginBottom: 28,
   },
   iconGradient: {
     width: 80,

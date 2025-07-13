@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, usePathname } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -9,7 +9,11 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const pathname = usePathname();
   console.log('[TabLayout] colorScheme:', colorScheme);
+  
+  // Check if we're on the conversation screen to hide tab bar
+  const isConversationScreen = pathname.includes('/conversation');
 
   return (
     <Tabs
@@ -30,6 +34,8 @@ export default function TabLayout() {
           shadowOpacity: 0.1,
           shadowRadius: 12,
           elevation: 16,
+          // Hide tab bar when on conversation screen
+          display: isConversationScreen ? 'none' : 'flex',
         },
         tabBarItemStyle: {
           paddingVertical: 8,
