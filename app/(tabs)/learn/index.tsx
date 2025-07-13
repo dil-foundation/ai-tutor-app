@@ -541,10 +541,10 @@ const styles = StyleSheet.create({
   segmentedToggleContainer: {
     flexDirection: 'row',
     alignSelf: 'center',
-    backgroundColor: '#181A20',
+    backgroundColor: '#fff',
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: '#22242A',
+    borderColor: 'rgba(88, 214, 141, 0.10)',
     marginTop: 18,
     marginBottom: 8,
     overflow: 'hidden',
