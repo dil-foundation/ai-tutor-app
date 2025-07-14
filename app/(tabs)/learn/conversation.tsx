@@ -1666,6 +1666,15 @@ export default function ConversationScreen() {
   } => {
     // Priority order for animations (most specific first)
     if (state.isProcessingAudio) {
+      // Special case: If we're in playing_feedback, do NOT show animation, only feedback text
+      if (state.currentStep === 'playing_feedback') {
+        return {
+          animation: null,
+          text: '',
+          showMessage: !!state.currentMessageText,
+          hideAnimation: true,
+        };
+      }
       return {
         animation: require('../../../assets/animations/sent_audio_for_processing.json'),
         text: '', // Hide text below animation
