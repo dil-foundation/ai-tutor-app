@@ -90,107 +90,97 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-      >
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Animated.View
-            style={[
-              styles.headerContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="mic" size={32} color="#000000" />
-              </LinearGradient>
-            </View>
-            <Text style={styles.headerTitle}>Speak to Translate</Text>
-            <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
-            {/* Custom Segmented Toggle for Language Mode */}
-            <View style={styles.segmentedToggleContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleOption,
-                  mode === 'urdu' ? styles.toggleActive : styles.toggleInactive,
-                  { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
-                ]}
-                onPress={() => setMode('urdu')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="globe" size={18} color={mode === 'urdu' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
-                <Text style={[styles.toggleOptionText, { color: mode === 'urdu' ? '#fff' : '#58D68D' }]}>Urdu</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleOption,
-                  mode === 'english' ? styles.toggleActive : styles.toggleInactive,
-                  { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
-                ]}
-                onPress={() => setMode('english')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="language" size={18} color={mode === 'english' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
-                <Text style={[styles.toggleOptionText, { color: mode === 'english' ? '#fff' : '#58D68D' }]}>English</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-
-        {/* Main Content */}
-        <View style={[styles.contentContainer, { justifyContent: 'center', flex: 1, minHeight: height * 0.45 }]}> 
-          {/* Action Button Only (centered) */}
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: pulseAnim }
-                ],
-                alignSelf: 'center',
-                width: '100%',
-              },
-            ]}
-          >
-            <TouchableOpacity 
-              onPress={handleConversationPress}
-              style={styles.buttonWrapper}
+      <View style={styles.centeredContainer}>
+        <Animated.View
+          style={[
+            styles.headerContent,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <View style={styles.iconContainer}>
+            <LinearGradient
+              colors={['#58D68D', '#45B7A8']}
+              style={styles.iconGradient}
+            >
+              <Ionicons name="mic" size={32} color="#000000" />
+            </LinearGradient>
+          </View>
+          <Text style={styles.headerTitle}>Speak to Translate</Text>
+          <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
+          {/* Custom Segmented Toggle for Language Mode */}
+          <View style={styles.segmentedToggleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.toggleOption,
+                mode === 'urdu' ? styles.toggleActive : styles.toggleInactive,
+                { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
+              ]}
+              onPress={() => setMode('urdu')}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.buttonGradient}
-              >
-                <View style={styles.buttonContent}>
-                  <View style={styles.buttonIconContainer}>
-                    <Ionicons name="chatbubbles" size={24} color="#000000" />
-                  </View>
-                  <View style={styles.buttonTextContainer}>
-                    <Text style={styles.buttonText}>Press to Start Real-time Conversation</Text>
-                    <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
-                  </View>
-                  <View style={styles.arrowContainer}>
-                    <Ionicons name="arrow-forward" size={20} color="#000000" />
-                  </View>
-                </View>
-              </LinearGradient>
+              <Ionicons name="globe" size={18} color={mode === 'urdu' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
+              <Text style={[styles.toggleOptionText, { color: mode === 'urdu' ? '#fff' : '#58D68D' }]}>Urdu</Text>
             </TouchableOpacity>
-          </Animated.View>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.toggleOption,
+                mode === 'english' ? styles.toggleActive : styles.toggleInactive,
+                { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
+              ]}
+              onPress={() => setMode('english')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="language" size={18} color={mode === 'english' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
+              <Text style={[styles.toggleOptionText, { color: mode === 'english' ? '#fff' : '#58D68D' }]}>English</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            {
+              opacity: fadeAnim,
+              transform: [
+                { translateY: slideAnim },
+                { scale: pulseAnim }
+              ],
+              alignSelf: 'center',
+              width: '100%',
+              marginTop: 40,
+            },
+          ]}
+        >
+          <TouchableOpacity 
+            onPress={handleConversationPress}
+            style={styles.buttonWrapper}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#58D68D', '#45B7A8', '#58D68D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonGradient}
+            >
+              <View style={styles.buttonContent}>
+                <View style={styles.buttonIconContainer}>
+                  <Ionicons name="chatbubbles" size={24} color="#000000" />
+                </View>
+                <View style={styles.buttonTextContainer}>
+                  <Text style={styles.buttonText}>Press to Start Real-time Conversation</Text>
+                  <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
+                </View>
+                <View style={styles.arrowContainer}>
+                  <Ionicons name="arrow-forward" size={20} color="#000000" />
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
 
         {/* Decorative Elements */}
         <View style={styles.decorativeCircle1} />
@@ -202,7 +192,6 @@ export default function LearnScreen() {
         <View style={styles.particle1} />
         <View style={styles.particle2} />
         <View style={styles.particle3} />
-      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -524,4 +513,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
+  centeredContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, backgroundColor: '#fff' },
 }); 
