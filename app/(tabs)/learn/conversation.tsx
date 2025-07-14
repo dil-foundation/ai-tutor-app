@@ -387,7 +387,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_retry',
         isRetryPlaying: true,
         isPlayingRetry: true,
-        currentMessageText: t('Try again. Please repeat the sentence.', 'دوبارہ کوشش کریں۔ براہ کرم جملہ دہرائیں۔'),
+        currentMessageText: t('Try again. Please repeat the sentence.', 'دوبارہ کوشش کریں۔ براہ کرم دہرائیں۔'),
       }));
 
       // Unload any previous retry sound
