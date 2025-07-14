@@ -148,33 +148,8 @@ export default function LearnScreen() {
         </View>
 
         {/* Main Content */}
-        <View style={styles.contentContainer}>
-          <Animated.View
-            style={[
-              styles.mainCard,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: scaleAnim }
-                ],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-              style={styles.cardGradient}
-            >
-              {/* Main Text */}
-              <View style={styles.textSection}>
-                <Text style={styles.mainText}>
-                  Press the button and speak in urdu to get started
-                </Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          {/* Action Button */}
+        <View style={[styles.contentContainer, { justifyContent: 'center', flex: 1, minHeight: height * 0.45 }]}> 
+          {/* Action Button Only (centered) */}
           <Animated.View
             style={[
               styles.buttonContainer,
@@ -184,6 +159,8 @@ export default function LearnScreen() {
                   { translateY: slideAnim },
                   { scale: pulseAnim }
                 ],
+                alignSelf: 'center',
+                width: '100%',
               },
             ]}
           >
@@ -203,7 +180,7 @@ export default function LearnScreen() {
                     <Ionicons name="chatbubbles" size={24} color="#000000" />
                   </View>
                   <View style={styles.buttonTextContainer}>
-                    <Text style={styles.buttonText}>Start Real-time Conversation</Text>
+                    <Text style={styles.buttonText}>Press to Start Real-time Conversation</Text>
                     <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
                   </View>
                   <View style={styles.arrowContainer}>
@@ -212,26 +189,6 @@ export default function LearnScreen() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
-
-          {/* Additional Info Cards */}
-          <Animated.View
-            style={[
-              styles.infoContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.infoCard}>
-              <Ionicons name="bulb" size={24} color="#58D68D" />
-              <Text style={styles.infoText}>Perfect for daily conversations</Text>
-            </View>
-            <View style={styles.infoCard}>
-              <Ionicons name="time" size={24} color="#58D68D" />
-              <Text style={styles.infoText}>Learn at your own pace</Text>
-            </View>
           </Animated.View>
         </View>
 
