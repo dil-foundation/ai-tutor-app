@@ -10,11 +10,11 @@ import {
   Image,
   Alert,
   Animated,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { clearAuthData, getAuthData } from '../../utils/authStorage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,9 +39,6 @@ export default function ProfileScreen() {
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
   useEffect(() => {
-    // Load user data from storage/API
-    loadUserData();
-    
     // Animate elements on mount
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -61,34 +58,6 @@ export default function ProfileScreen() {
       }),
     ]).start();
   }, []);
-
-  const loadUserData = async () => {
-    try {
-      const authData = await getAuthData();
-      // Load user profile data from API using authData.userId
-      // For now, using mock data
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await clearAuthData();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]
-    );
-  };
 
   const handleEditProfile = () => {
     // Navigate to edit profile screen
@@ -243,28 +212,6 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
-        {/* Logout Button */}
-        <Animated.View
-          style={[
-            styles.logoutContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-            <LinearGradient
-              colors={['#FF6B6B', '#FF5252']}
-              style={styles.logoutGradient}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {/* Decorative Elements */}
@@ -443,45 +390,49 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   settingsCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0, 0, 0, 0.1)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  settingIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    borderBottomColor: '#F0F0F0',
   },
   settingContent: {
     flex: 1,
+    marginLeft: 16,
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
+    color: '#333333',
   },
   settingSubtitle: {
     fontSize: 14,
     color: '#6C757D',
+    marginTop: 2,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoutContainer: {
     marginTop: 20,
