@@ -113,30 +113,68 @@ export default function LearnScreen() {
           <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
           {/* Custom Segmented Toggle for Language Mode */}
           <View style={styles.segmentedToggleContainer}>
-            <TouchableOpacity
-              style={[
-                styles.toggleOption,
-                mode === 'urdu' ? styles.toggleActive : styles.toggleInactive,
-                { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
-              ]}
-              onPress={() => setMode('urdu')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="globe" size={18} color={mode === 'urdu' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
-              <Text style={[styles.toggleOptionText, { color: mode === 'urdu' ? '#fff' : '#58D68D' }]}>Urdu</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toggleOption,
-                mode === 'english' ? styles.toggleActive : styles.toggleInactive,
-                { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
-              ]}
-              onPress={() => setMode('english')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="language" size={18} color={mode === 'english' ? '#fff' : '#58D68D'} style={{ marginRight: 6 }} />
-              <Text style={[styles.toggleOptionText, { color: mode === 'english' ? '#fff' : '#58D68D' }]}>English</Text>
-            </TouchableOpacity>
+            {/* Urdu Option */}
+            {mode === 'urdu' ? (
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.toggleOption, styles.toggleActive, { borderTopRightRadius: 0, borderBottomRightRadius: 0 }]}
+              >
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => setMode('urdu')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="globe" size={18} color={'#fff'} style={{ marginRight: 6 }} />
+                  <Text style={[styles.toggleOptionText, { color: '#fff' }]}>Urdu</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  styles.toggleInactive,
+                  { borderTopRightRadius: 0, borderBottomRightRadius: 0, borderWidth: 1, borderColor: '#E0E0E0' }
+                ]}
+                onPress={() => setMode('urdu')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="globe" size={18} color={'#58D68D'} style={{ marginRight: 6 }} />
+                <Text style={[styles.toggleOptionText, { color: '#58D68D' }]}>Urdu</Text>
+              </TouchableOpacity>
+            )}
+            {/* English Option */}
+            {mode === 'english' ? (
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.toggleOption, styles.toggleActive, { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
+              >
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => setMode('english')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="language" size={18} color={'#fff'} style={{ marginRight: 6 }} />
+                  <Text style={[styles.toggleOptionText, { color: '#fff' }]}>English</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  styles.toggleInactive,
+                  { borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderWidth: 1, borderColor: '#E0E0E0' }
+                ]}
+                onPress={() => setMode('english')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="language" size={18} color={'#58D68D'} style={{ marginRight: 6 }} />
+                <Text style={[styles.toggleOptionText, { color: '#58D68D' }]}>English</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
         <Animated.View
