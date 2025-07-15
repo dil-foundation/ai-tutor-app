@@ -201,104 +201,102 @@ export default function GreetingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.mainContainer}>
+      <View style={styles.centeredContainer}>
         {/* Welcome Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Text style={styles.iconText}>🎯</Text>
-              </LinearGradient>
-            </View>
-            <Text style={styles.welcomeText}>Welcome to Your Learning Journey</Text>
-            <Text style={styles.subtitleText}>Let's begin your English speaking adventure</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.iconContainer}>
+            <LinearGradient
+              colors={['#58D68D', '#45B7A8']}
+              style={styles.iconGradient}
+            >
+              <Text style={styles.iconText}>🎯</Text>
+            </LinearGradient>
           </View>
+          <Text style={styles.welcomeText}>Welcome to Your Learning Journey</Text>
+          <Text style={styles.subtitleText}>Let's begin your English speaking adventure</Text>
         </View>
 
         {/* Main Content Area */}
-        <View style={styles.contentContainer}>
-          {/* Lines with Modern Cards */}
-          <View style={styles.linesCardOuter}>
-            <LinearGradient
-              colors={["#e0f7ef", "#f8fffc"]}
-              style={styles.linesCardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {visibleLines.map((line, index) => (
-                <View key={index} style={styles.linesCardInner}>
-                  <Text style={styles.urduText}>{line.urdu}</Text>
-                  <Text style={styles.englishText}>{line.english}</Text>
-                </View>
-              ))}
-            </LinearGradient>
-          </View>
-
-          {/* Spacer to push button to bottom */}
-          <View style={{ flex: 1 }} />
-
-          {/* Continue Button */}
-          {showContinue && isAudioFinished && (
-            <View style={styles.fixedButtonContainer}>
-              <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue} activeOpacity={0.85}>
-                <LinearGradient
-                  colors={["#58D68D", "#45B7A8", "#58D68D"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.buttonGradient}
-                >
-                  <View style={styles.buttonContent}>
-                    <View style={styles.buttonIconContainer}>
-                      <Text style={styles.buttonIcon}>🎯</Text>
-                    </View>
-                    <View style={styles.buttonTextContainer}>
-                      <Text style={styles.buttonText}>Continue to Learning</Text>
-                      <Text style={styles.buttonSubtext}>Start your journey →</Text>
-                    </View>
-                    <View style={styles.arrowContainer}>
-                      <Text style={styles.arrowIcon}>→</Text>
-                    </View>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
+        <View style={styles.linesCardOuter}>
+          <LinearGradient
+            colors={["#e0f7ef", "#f8fffc"]}
+            style={styles.linesCardGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {visibleLines.map((line, index) => (
+              <View key={index} style={styles.linesCardInner}>
+                <Text style={styles.urduText}>{line.urdu}</Text>
+                <Text style={styles.englishText}>{line.english}</Text>
+              </View>
+            ))}
+          </LinearGradient>
         </View>
 
-        {/* Decorative Elements */}
-        <View style={styles.decorativeCircle1} />
-        <View style={styles.decorativeCircle2} />
-        <View style={styles.decorativeCircle3} />
-        <View style={styles.decorativeCircle4} />
-        
-        {/* Floating Particles */}
-        <View style={styles.particle1} />
-        <View style={styles.particle2} />
-        <View style={styles.particle3} />
+        {/* Continue Button */}
+        {showContinue && isAudioFinished && (
+          <TouchableOpacity style={styles.buttonWrapper} onPress={handleContinue} activeOpacity={0.85}>
+            <LinearGradient
+              colors={["#58D68D", "#45B7A8", "#58D68D"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonGradient}
+            >
+              <View style={styles.buttonContent}>
+                <View style={styles.buttonIconContainer}>
+                  <Text style={styles.buttonIcon}>🎯</Text>
+                </View>
+                <View style={styles.buttonTextContainer}>
+                  <Text style={styles.buttonText}>Continue to Learning</Text>
+                  <Text style={styles.buttonSubtext}>Start your journey →</Text>
+                </View>
+                <View style={styles.arrowContainer}>
+                  <Text style={styles.arrowIcon}>→</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Decorative Elements */}
+      <View style={styles.decorativeCircle1} />
+      <View style={styles.decorativeCircle2} />
+      <View style={styles.decorativeCircle3} />
+      <View style={styles.decorativeCircle4} />
+      {/* Floating Particles */}
+      <View style={styles.particle1} />
+      <View style={styles.particle2} />
+      <View style={styles.particle3} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    width: '100%',
+  },
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: 0,
     marginBottom: 20,
-    paddingTop: 60,
+    paddingTop: 0,
   },
   headerContent: {
     alignItems: 'center',
   },
   iconContainer: {
     marginBottom: 16,
+    paddingTop: 25,
   },
   iconGradient: {
     width: 80,
@@ -334,10 +332,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     width: '100%',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
     paddingTop: 0,
     paddingBottom: 0,
-    alignItems: 'center',
   },
   linesCardOuter: {
     width: '100%',
@@ -383,18 +382,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     fontFamily: 'System',
   },
-
-
-  buttonContainer: {
-    marginTop: 20,
-    width: '100%',
-    marginBottom: 30,
-  },
   fixedButtonContainer: {
     width: '100%',
-    marginBottom: 18,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    marginBottom: 18,
     zIndex: 2,
   },
   buttonWrapper: {
@@ -408,6 +400,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minWidth: 0,
     maxWidth: 420,
+    alignSelf: 'center',
   },
   buttonGradient: {
     paddingHorizontal: 32,
@@ -432,17 +425,20 @@ const styles = StyleSheet.create({
   buttonTextContainer: {
     flex: 1,
     marginLeft: 16,
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#000000',
     fontWeight: 'bold',
     fontSize: 18,
     marginBottom: 4,
+    textAlign: 'center',
   },
   buttonSubtext: {
     color: '#000000',
     fontSize: 14,
     opacity: 0.8,
+    textAlign: 'center',
   },
   arrowContainer: {
     width: 32,
@@ -532,15 +528,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000000',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
   },
 });
   
