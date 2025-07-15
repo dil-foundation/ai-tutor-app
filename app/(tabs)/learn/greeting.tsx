@@ -12,7 +12,6 @@ import {
   ScrollView,
   SafeAreaView,
 } from 'react-native';
-import { getAuthData } from '../../utils/authStorage';
 import audioManager from '../../utils/audioManager';
 
 const { width, height } = Dimensions.get('window');
@@ -31,8 +30,6 @@ export default function GreetingScreen() {
   const [isAudioFinished, setIsAudioFinished] = useState(false);
   const [visibleLines, setVisibleLines] = useState<Array<{urdu: string, english: string}>>([]);
   const [showContinue, setShowContinue] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasStartedGreeting, setHasStartedGreeting] = useState(false);
   
   // Add sound reference to properly manage audio
@@ -123,40 +120,21 @@ export default function GreetingScreen() {
 
     const initializeGreeting = async () => {
       try {
-        // First check if user is authenticated
-        const { token } = await getAuthData();
-        if (!token) {
-          // User is not authenticated, redirect to login
-          router.replace('/(auth)/login');
-          return;
-        }
-        
-        // User is authenticated
-        setIsAuthenticated(true);
-        
-        // Check if user has already visited this screen
         const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
         if (hasVisitedLearn === 'true') {
-          // User has already visited, skip to main learn screen
           router.replace('/(tabs)/learn');
           return;
         }
-
-        // User is authenticated and hasn't visited, start the greeting
-        // Add a small delay to ensure component is fully mounted
-        setTimeout(() => {
-          if (isComponentMounted) {
-            playGreeting();
-          }
-        }, 100);
       } catch (error) {
-        console.log('Error checking AsyncStorage:', error);
-        // If there's an error checking authentication, redirect to login
-        router.replace('/(auth)/login');
-        return;
-      } finally {
-        setIsLoading(false);
+        console.log('Error checking AsyncStorage, proceeding with greeting:', error);
       }
+
+      // If not visited or error, start the greeting
+      setTimeout(() => {
+        if (isComponentMounted) {
+          playGreeting();
+        }
+      }, 100);
     };
 
     // Start everything immediately
@@ -182,22 +160,6 @@ export default function GreetingScreen() {
     }
     router.replace('/(tabs)/learn');
   };
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Don't render anything if not authenticated (will redirect to login)
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
