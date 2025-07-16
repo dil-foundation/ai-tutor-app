@@ -9,7 +9,6 @@ import { Platform } from 'react-native';
  * Key principles:
  * - More generous initial silence time to allow users to think and start speaking
  * - Longer post-speech silence to allow for natural pauses and thinking
- * - Maximum recording duration to prevent overly long recordings
  * - Natural pause after AI finishes speaking before starting to listen
  * - Grace period after user finishes speaking before processing
  */
@@ -21,15 +20,11 @@ export const CHATGPT_TIMING_CONFIG = {
   
   // Silence duration after user stops speaking (allows for natural pauses)
   // This accounts for natural speech patterns, thinking pauses, and sentence endings
-  POST_SPEECH_SILENCE_DURATION: Platform.OS === 'ios' ? 4000 : 3000, // 4s iOS, 3s Android
-  
-  // Maximum recording duration (generous for longer responses)
-  // Prevents overly long recordings while allowing for detailed responses
-  MAX_RECORDING_DURATION: 30000, // 30 seconds max
+  POST_SPEECH_SILENCE_DURATION: Platform.OS === 'ios' ? 3000 : 2000, // 4s iOS, 3s Android
   
   // Minimum speech duration to be considered valid
   // Ensures we don't process very short audio clips
-  MIN_SPEECH_DURATION: 500, // 500ms minimum speech
+  MIN_SPEECH_DURATION: 200, // 500ms minimum speech
   
   // Grace period after AI finishes speaking before starting to listen
   // This mimics the natural pause in human conversation
@@ -43,7 +38,7 @@ export const CHATGPT_TIMING_CONFIG = {
   VAD_THRESHOLD: Platform.OS === 'ios' ? -70 : -45, // More sensitive for iOS
   
   // First recording preparation delay (for audio system warm-up)
-  FIRST_RECORDING_DELAY: 1500, // 1.5 second delay for first recording to clear buffers
+  FIRST_RECORDING_DELAY: 2000, // 2 second delay for first recording to clear buffers
 } as const;
 
 /**
@@ -58,7 +53,7 @@ export const getSilenceDuration = (hasStartedSpeaking: boolean): number => {
 /**
  * Helper function to log timing information for debugging
  */
-export const logTimingInfo = (context: string, duration: number, type: 'initial' | 'post-speech' | 'max-duration' | 'ai-delay' | 'user-delay') => {
+export const logTimingInfo = (context: string, duration: number, type: 'initial' | 'post-speech' | 'ai-delay' | 'user-delay') => {
   console.log(`🎯 [${context}] ${type} timer: ${duration}ms`);
 };
 
