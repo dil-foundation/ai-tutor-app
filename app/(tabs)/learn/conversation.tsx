@@ -38,6 +38,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { closeLearnSocket, connectLearnSocket, isSocketConnected, sendLearnMessage } from '../../utils/websocket';
 import { useLanguageMode } from '../../context/LanguageModeContext';
+import CHATGPT_TIMING_CONFIG, { getSilenceDuration, logTimingInfo } from '../../../utils/chatgptTimingConfig';
 
 
 const { width, height } = Dimensions.get('window');
@@ -149,6 +150,7 @@ export default function ConversationScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [isTalking, setIsTalking] = useState(false); // True voice activity detection
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // ChatGPT max duration timer
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
@@ -156,11 +158,13 @@ export default function ConversationScreen() {
   const isStoppingRef = useRef(false);
   const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
 
-  // Voice Activity Detection threshold (in dB)
-  const VAD_THRESHOLD = Platform.OS === 'ios' ? -70 : -45; // More sensitive for iOS
-  const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500; // iOS needs more time for silence detection
-  const MIN_SPEECH_DURATION = 200; // Minimum 500ms of speech to be valid
-  const FIRST_RECORDING_DELAY = 1500; // 1.5 second delay for first recording to clear buffers
+  // Voice Activity Detection threshold (in dB) - from ChatGPT timing config
+  const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
+  
+  // Use ChatGPT-optimized timing constants
+  const SILENCE_DURATION = CHATGPT_TIMING_CONFIG.POST_SPEECH_SILENCE_DURATION;
+  const MIN_SPEECH_DURATION = CHATGPT_TIMING_CONFIG.MIN_SPEECH_DURATION;
+  const FIRST_RECORDING_DELAY = CHATGPT_TIMING_CONFIG.FIRST_RECORDING_DELAY;
 
   // --- iOS Silence Detection Calibration ---
   // This will store the highest metering value detected during the first second of recording
@@ -236,7 +240,7 @@ export default function ConversationScreen() {
           if (isScreenFocusedRef.current) { // Double-check focus before starting
             startRecording();
           }
-        }, 600);
+        }, CHATGPT_TIMING_CONFIG.POST_AI_SPEECH_DELAY); // Use ChatGPT's natural pause timing
       }
     }
     // Update previousStepRef after every state change
@@ -1208,20 +1212,27 @@ export default function ConversationScreen() {
       console.log('DEBUG: Recording started. Resetting speech start time.');
       speechStartTimeRef.current = null; // Reset for the new recording session.
 
-      // Helper to clear and set silence timer
+      // Helper to clear and set silence timer with ChatGPT-optimized timing
       const resetSilenceTimer = () => {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        
+        // Use helper function to get appropriate silence duration
+        const silenceTimeout = getSilenceDuration(!!speechStartTimeRef.current);
+        const timingType = speechStartTimeRef.current ? 'post-speech' : 'initial';
+        
+        logTimingInfo('Conversation', silenceTimeout, timingType);
+        
         silenceTimerRef.current = setTimeout(() => {
           // Use a callback to get current state
           setState(prevState => {
             if (prevState.currentStep === 'listening') {
               setIsTalking(false);
-              console.log('SILENCE DETECTED: Timer triggered, stopping recording.');
+              console.log(`🎯 SILENCE DETECTED: Timer triggered after ${silenceTimeout}ms, stopping recording.`);
               stopRecording(true); // pass true to indicate silence
             }
             return prevState;
           });
-        }, SILENCE_DURATION);
+        }, silenceTimeout);
       };
 
       // Enable metering in options
@@ -1307,6 +1318,15 @@ export default function ConversationScreen() {
       );
       recordingRef.current = recording;
       resetSilenceTimer(); // Start timer in case no voice at all
+      
+      // 🎯 Start ChatGPT max duration timer
+      if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = setTimeout(() => {
+        console.log(`🎯 MAX DURATION REACHED: ${CHATGPT_TIMING_CONFIG.MAX_RECORDING_DURATION}ms, stopping recording.`);
+        if (isScreenFocusedRef.current && recordingRef.current) {
+          stopRecording(false); // Not silence, but max duration
+        }
+      }, CHATGPT_TIMING_CONFIG.MAX_RECORDING_DURATION);
       
       // Mark first recording as complete after successful start
       if (isFirstRecordingRef.current) {

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Platform, Alert } from 'react-native';
+import CHATGPT_TIMING_CONFIG, { getSilenceDuration, logTimingInfo } from '../utils/chatgptTimingConfig';
 
 interface AudioRecorderState {
   isRecording: boolean;
@@ -43,10 +44,12 @@ export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audio
   const isAutoStoppingRef = useRef(false);
   const isRecordingRef = useRef(false);
   
-  // Voice Activity Detection settings
-  const VAD_THRESHOLD = Platform.OS === 'ios' ? -70 : -45;
-  const SILENCE_DURATION = Platform.OS === 'ios' ? 3000 : 1500;
-  const MIN_SPEECH_DURATION = 500; // Minimum 500ms of speech to be valid
+  // Voice Activity Detection settings - from ChatGPT timing config
+  const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
+  
+  // Use ChatGPT-optimized timing constants
+  const SILENCE_DURATION = CHATGPT_TIMING_CONFIG.POST_SPEECH_SILENCE_DURATION;
+  const MIN_SPEECH_DURATION = CHATGPT_TIMING_CONFIG.MIN_SPEECH_DURATION;
 
   const resetRecording = useCallback(() => {
     setState({
@@ -150,12 +153,19 @@ export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audio
                 }));
               }
 
-              // Reset silence timer
+              // Reset silence timer with ChatGPT-optimized timing
               if (silenceTimerRef.current) {
                 clearTimeout(silenceTimerRef.current);
               }
+              
+              // Use helper function to get appropriate silence duration
+              const silenceTimeout = getSilenceDuration(!!speechStartTimeRef.current);
+              const timingType = speechStartTimeRef.current ? 'post-speech' : 'initial';
+              
+              logTimingInfo('AudioRecorder', silenceTimeout, timingType);
+              
               silenceTimerRef.current = setTimeout(() => {
-                console.log('⏰ Voice activity silence timer fired!', {
+                console.log(`🎯 Voice activity silence timer fired after ${silenceTimeout}ms!`, {
                   isRecordingRef: isRecordingRef.current,
                   isAutoStoppingRef: isAutoStoppingRef.current
                 });
@@ -169,7 +179,7 @@ export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audio
                 } else {
                   console.log('⚠️ Voice activity silence timer fired but conditions not met for auto-stop');
                 }
-              }, SILENCE_DURATION);
+              }, silenceTimeout);
             } else {
               // No voice detected
               if (state.isVoiceDetected) {
@@ -214,12 +224,15 @@ export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audio
         }
       }, maxDuration);
 
-      // Start initial silence timer
+      // Start initial silence timer with ChatGPT timing
+      const initialSilenceDuration = CHATGPT_TIMING_CONFIG.INITIAL_SILENCE_DURATION;
+      logTimingInfo('AudioRecorder', initialSilenceDuration, 'initial');
+      
       silenceTimerRef.current = setTimeout(() => {
-        console.log('⏰ Initial silence timer fired!', {
+        console.log(`🎯 Initial silence timer fired after ${initialSilenceDuration}ms!`, {
           isRecordingRef: isRecordingRef.current,
           isAutoStoppingRef: isAutoStoppingRef.current,
-          silenceDuration: SILENCE_DURATION
+          silenceDuration: initialSilenceDuration
         });
         if (isRecordingRef.current && !isAutoStoppingRef.current) {
           console.log('🔄 Auto-stopping recording due to initial silence...');
@@ -231,7 +244,7 @@ export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audio
         } else {
           console.log('⚠️ Initial silence timer fired but conditions not met for auto-stop');
         }
-      }, SILENCE_DURATION);
+      }, CHATGPT_TIMING_CONFIG.INITIAL_SILENCE_DURATION);
 
     } catch (error) {
       console.error('Error starting recording:', error);
