@@ -152,11 +152,13 @@ export default function ConversationScreen() {
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current; // For the new pulsating effect
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
   const isStoppingRef = useRef(false);
   const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
+
+  // --- UI Animations for Listening State ---
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   // Voice Activity Detection threshold (in dB) - from ChatGPT timing config
   const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
@@ -208,31 +210,6 @@ export default function ConversationScreen() {
       };
     }, [autoStart])
   );
-
-  // Pulsating animation for the listening state
-  useEffect(() => {
-    if (state.currentStep === 'listening') {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 1500,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1500,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.ease),
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(1); // Reset scale
-    }
-  }, [state.currentStep]);
 
   // Additional cleanup on component unmount (fallback)
   useEffect(() => {
@@ -1983,6 +1960,22 @@ export default function ConversationScreen() {
   }, [state.currentStep, isTalking]);
 
   useEffect(() => {
+    if (state.currentStep === 'listening') {
+      Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(0);
+    }
+  }, [state.currentStep]);
+
+  useEffect(() => {
     console.log('Current step:', state.currentStep);
   }, [state.currentStep]);
 
@@ -2095,15 +2088,6 @@ export default function ConversationScreen() {
           {/* Exit label */}
           {/* <Text style={styles.exitLabel}>{t('Exit', 'خارج کریں')}</Text> */}
         </TouchableOpacity>
-        {/* Pulsating background for listening state */}
-        {state.currentStep === 'listening' && (
-          <Animated.View 
-            style={[
-              styles.pulseCircle, 
-              { transform: [{ scale: pulseAnim }] }
-            ]} 
-          />
-        )}
         {/* Center mic/stop button - Hide during word-by-word and sentence display */}
         {/* Note: Wrong button (X) is always accessible regardless of state */}
         {!state.isWordByWordSpeaking && !state.isDisplayingSentence && (
@@ -2114,14 +2098,26 @@ export default function ConversationScreen() {
             left: 0, right: 0, bottom: 40,
             transform: [{ scale: micAnim }],
           }}>
+            {/* Pulsing ring for listening state */}
+            {state.currentStep === 'listening' && (
+              <Animated.View
+                style={[
+                  styles.pulsingRing,
+                  {
+                    transform: [{
+                      scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] })
+                    }],
+                    opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] })
+                  }
+                ]}
+              />
+            )}
             <TouchableOpacity
               style={[
                 styles.centerMicButton,
-                state.currentStep === 'listening' && isTalking
-                  ? styles.centerMicButtonTalking
-                  : state.currentStep === 'listening'
-                    ? styles.centerMicButtonActive
-                    : state.currentStep === 'playing_intro'
+                state.currentStep === 'listening'
+                  ? styles.centerMicButtonActive
+                  : state.currentStep === 'playing_intro'
                       ? styles.centerMicButtonIntro
                       : state.currentStep === 'playing_await_next'
                         ? styles.centerMicButtonAwaitNext
@@ -2144,11 +2140,19 @@ export default function ConversationScreen() {
             >
             <LinearGradient
               colors={
-                state.currentStep === 'listening' && isTalking
-                  ? ['#FF6B6B', '#FF4747'] // Red when talking
-                  : state.currentStep === 'listening'
-                    ? ['#FF4747', '#FF1C1C'] // Red when listening
-                    : ['#58D68D', '#45B7A8'] // Default green
+                state.currentStep === 'listening'
+                  ? ['#D32F2F', '#B71C1C']
+                  : state.currentStep === 'playing_intro'
+                      ? ['#58D68D', '#45B7A8']
+                      : state.currentStep === 'playing_await_next'
+                        ? ['#58D68D', '#45B7A8']
+                        : state.currentStep === 'playing_retry'
+                          ? ['#58D68D', '#45B7A8']
+                          : state.currentStep === 'playing_feedback'
+                            ? ['#58D68D', '#45B7A8']
+                            : state.currentStep === 'word_by_word'
+                              ? ['#58D68D', '#45B7A8']
+                              : ['#58D68D', '#45B7A8']
               }
               style={[
                 styles.micButtonGradient,
@@ -2379,6 +2383,11 @@ const styles = StyleSheet.create({
   },
   centerMicButtonActive: {
     backgroundColor: 'transparent',
+    shadowColor: '#D32F2F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 12,
   },
   centerMicButtonTalking: {
     backgroundColor: 'transparent',
@@ -2465,14 +2474,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: -160, // Move everything up by 140 pixels
-  },
-  pulseCircle: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 59, 48, 0.2)',
-    zIndex: 0,
   },
   // Special overlay for sentence display - move content down
   sentenceOverlay: {
@@ -2697,5 +2698,14 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  pulsingRing: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderColor: '#D32F2F',
+    borderWidth: 4,
+    backgroundColor: 'rgba(211, 47, 47, 0.2)',
   },
 }); 
