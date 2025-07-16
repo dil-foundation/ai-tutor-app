@@ -150,13 +150,15 @@ export default function ConversationScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [isTalking, setIsTalking] = useState(false); // True voice activity detection
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // ChatGPT max duration timer
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
   const isStoppingRef = useRef(false);
   const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
+
+  // --- UI Animations for Listening State ---
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   // Voice Activity Detection threshold (in dB) - from ChatGPT timing config
   const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
@@ -303,6 +305,32 @@ export default function ConversationScreen() {
   };
 
   const playIntroAudio = async () => {
+    // Handle first recording session - clear buffers and warm up before playing intro
+    if (isFirstRecordingRef.current) {
+      console.log('🎤 First recording session detected - clearing buffers and warming up audio session...');
+      
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isFirstRecordingPreparation: true,
+        currentMessageText: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
+      }));
+      
+      // Clear audio buffers and warm up session
+      await clearAudioBuffersAndWarmUp();
+      
+      // Add a brief delay to allow the UI to update
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      // Double-check screen focus after delay
+      if (!isScreenFocusedRef.current) {
+        console.log('Screen lost focus during first recording preparation');
+        return;
+      }
+      
+      console.log('✅ First recording session prepared');
+    }
+
     // Check if screen is focused before playing audio
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping intro audio');
@@ -316,6 +344,7 @@ export default function ConversationScreen() {
         currentStep: 'playing_intro',
         isIntroAudioPlaying: true,
         isPlayingIntro: true,
+        isFirstRecordingPreparation: false, // Clear preparation state
         currentMessageText: t('Welcome to your AI tutor conversation!', 'اپنے AI ٹیوٹر گفتگو میں خوش آمدید!'),
       }));
 
@@ -345,16 +374,15 @@ export default function ConversationScreen() {
           console.log('Intro audio finished, starting conversation...');
           setState(prev => ({ 
             ...prev, 
-            currentStep: 'waiting',
+            currentStep: 'listening',
             isIntroAudioPlaying: false,
             isPlayingIntro: false,
+            isListening: true,
             currentMessageText: '', // Clear the message when intro ends
           }));
           
-          // Start the conversation flow after intro audio
-          setTimeout(() => {
-            startRecording();
-          }, 1000);
+          // Start the conversation flow immediately after intro audio
+          startRecording();
         }
       });
 
@@ -364,14 +392,13 @@ export default function ConversationScreen() {
       // If intro audio fails, start conversation anyway
       setState(prev => ({ 
         ...prev, 
-        currentStep: 'waiting',
+        currentStep: 'listening',
         isIntroAudioPlaying: false,
         isPlayingIntro: false,
+        isListening: true,
         currentMessageText: '', // Clear the message when intro ends
       }));
-      setTimeout(() => {
-        startRecording();
-      }, 1000);
+      startRecording();
     }
   };
 
@@ -602,7 +629,7 @@ export default function ConversationScreen() {
               language_mode: mode,
             }));
           }
-        }, 500); // Reduced from 2 seconds to 500ms for faster response
+        }, 200); // Reduced from 2 seconds to 200ms for faster response
       }
     } catch (error) {
       console.error('Failed to play word-by-word:', error);
@@ -996,10 +1023,10 @@ export default function ConversationScreen() {
               
               return {
                 ...prev, 
-                currentStep: 'listening', // Immediately show listening state
+                currentStep: 'word_by_word', // Immediately show listening state
                 isAISpeaking: false,
                 isPlayingFeedback: false,
-                isListening: true, // Show listening animation immediately
+                isWordByWordSpeaking: true, // Show listening animation immediately
                 currentMessageText: '', // Clear the message when feedback ends
                 fullSentenceText: '', // Clear the full sentence text
               };
@@ -1136,33 +1163,6 @@ export default function ConversationScreen() {
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping recording start');
       return;
-    }
-
-    // Handle first recording session - clear buffers and add delay
-    if (isFirstRecordingRef.current) {
-      console.log('🎤 First recording session detected - clearing buffers and adding delay...');
-      
-      // Show preparation state to user
-      setState(prev => ({ 
-        ...prev, 
-        currentStep: 'waiting',
-        isFirstRecordingPreparation: true,
-        currentMessageText: t('Preparing audio system...', 'آڈیو سسٹم تیار کر رہے ہیں...'),
-      }));
-      
-      // Clear audio buffers and warm up session
-      await clearAudioBuffersAndWarmUp();
-      
-      // Add delay for first recording to ensure clean start
-      await new Promise(resolve => setTimeout(resolve, FIRST_RECORDING_DELAY));
-      
-      // Double-check screen focus after delay
-      if (!isScreenFocusedRef.current) {
-        console.log('Screen lost focus during first recording delay');
-        return;
-      }
-      
-      console.log('✅ First recording session prepared');
     }
 
     // Stop and unload any previous recording before starting a new one
@@ -1318,21 +1318,6 @@ export default function ConversationScreen() {
       );
       recordingRef.current = recording;
       resetSilenceTimer(); // Start timer in case no voice at all
-      
-      // 🎯 Start ChatGPT max duration timer
-      if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
-      maxDurationTimerRef.current = setTimeout(() => {
-        console.log(`🎯 MAX DURATION REACHED: ${CHATGPT_TIMING_CONFIG.MAX_RECORDING_DURATION}ms, stopping recording.`);
-        if (isScreenFocusedRef.current && recordingRef.current) {
-          stopRecording(false); // Not silence, but max duration
-        }
-      }, CHATGPT_TIMING_CONFIG.MAX_RECORDING_DURATION);
-      
-      // Mark first recording as complete after successful start
-      if (isFirstRecordingRef.current) {
-        isFirstRecordingRef.current = false;
-        console.log('✅ First recording session completed successfully');
-      }
     } catch (error) {
       console.error('Failed to start recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -1369,8 +1354,6 @@ export default function ConversationScreen() {
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
 
-      // --- Start of Logic Fix ---
-
       const speechStartedAt = speechStartTimeRef.current;
       const speechEndedAt = Date.now();
       const duration = speechStartedAt ? speechEndedAt - speechStartedAt : 0;
@@ -1379,12 +1362,10 @@ export default function ConversationScreen() {
       console.log(`DEBUG: Stop recording details - Start: ${speechStartedAt}, End: ${speechEndedAt}, Duration: ${duration}ms`);
       console.log(`Stopping recording. Reason: ${stoppedBySilence ? 'silence' : 'manual'}. Speech duration: ${duration}ms, valid: ${hadValidSpeech}`);
 
-      // Corrected Logic: Upload if speech is valid, otherwise handle UI.
       if (uri && hadValidSpeech) {
         console.log("Valid speech detected. Uploading audio...");
         await uploadAudioAndSendMessage(uri);
       } else {
-        // Handle UI for invalid speech (too short or actual silence)
         if (stoppedBySilence) {
           console.log('Recording stopped by silence timer, but speech was too short or invalid.');
           setState(prev => ({
@@ -1408,8 +1389,6 @@ export default function ConversationScreen() {
           }));
         }
       }
-      
-      // --- End of Logic Fix ---
       
       // Reset speech tracking
       speechStartTimeRef.current = null;
@@ -1805,8 +1784,6 @@ export default function ConversationScreen() {
       };
     }
     
-    // Loading animation after word-by-word completion (removed - now handled by waiting state with fullSentenceText)
-    
     // ✅ NEW: Show loading animation when in waiting state with fullSentenceText (higher priority)
     if (state.currentStep === 'waiting' && state.fullSentenceText) {
       return {
@@ -1983,6 +1960,22 @@ export default function ConversationScreen() {
   }, [state.currentStep, isTalking]);
 
   useEffect(() => {
+    if (state.currentStep === 'listening') {
+      Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(0);
+    }
+  }, [state.currentStep]);
+
+  useEffect(() => {
     console.log('Current step:', state.currentStep);
   }, [state.currentStep]);
 
@@ -2105,14 +2098,26 @@ export default function ConversationScreen() {
             left: 0, right: 0, bottom: 40,
             transform: [{ scale: micAnim }],
           }}>
+            {/* Pulsing ring for listening state */}
+            {state.currentStep === 'listening' && (
+              <Animated.View
+                style={[
+                  styles.pulsingRing,
+                  {
+                    transform: [{
+                      scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] })
+                    }],
+                    opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] })
+                  }
+                ]}
+              />
+            )}
             <TouchableOpacity
               style={[
                 styles.centerMicButton,
-                state.currentStep === 'listening' && isTalking
-                  ? styles.centerMicButtonTalking
-                  : state.currentStep === 'listening'
-                    ? styles.centerMicButtonActive
-                    : state.currentStep === 'playing_intro'
+                state.currentStep === 'listening'
+                  ? styles.centerMicButtonActive
+                  : state.currentStep === 'playing_intro'
                       ? styles.centerMicButtonIntro
                       : state.currentStep === 'playing_await_next'
                         ? styles.centerMicButtonAwaitNext
@@ -2135,11 +2140,9 @@ export default function ConversationScreen() {
             >
             <LinearGradient
               colors={
-                state.currentStep === 'listening' && isTalking
-                  ? ['#00C853', '#4CAF50']
-                  : state.currentStep === 'listening'
-                    ? ['#58D68D', '#45B7A8']
-                    : state.currentStep === 'playing_intro'
+                state.currentStep === 'listening'
+                  ? ['#D32F2F', '#B71C1C']
+                  : state.currentStep === 'playing_intro'
                       ? ['#58D68D', '#45B7A8']
                       : state.currentStep === 'playing_await_next'
                         ? ['#58D68D', '#45B7A8']
@@ -2380,6 +2383,11 @@ const styles = StyleSheet.create({
   },
   centerMicButtonActive: {
     backgroundColor: 'transparent',
+    shadowColor: '#D32F2F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 12,
   },
   centerMicButtonTalking: {
     backgroundColor: 'transparent',
@@ -2690,5 +2698,14 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  pulsingRing: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderColor: '#D32F2F',
+    borderWidth: 4,
+    backgroundColor: 'rgba(211, 47, 47, 0.2)',
   },
 }); 
