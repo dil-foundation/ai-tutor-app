@@ -629,7 +629,7 @@ export default function ConversationScreen() {
               language_mode: mode,
             }));
           }
-        }, 500); // Reduced from 2 seconds to 500ms for faster response
+        }, 200); // Reduced from 2 seconds to 200ms for faster response
       }
     } catch (error) {
       console.error('Failed to play word-by-word:', error);
@@ -1023,10 +1023,10 @@ export default function ConversationScreen() {
               
               return {
                 ...prev, 
-                currentStep: 'listening', // Immediately show listening state
+                currentStep: 'word_by_word', // Immediately show listening state
                 isAISpeaking: false,
                 isPlayingFeedback: false,
-                isListening: true, // Show listening animation immediately
+                isWordByWordSpeaking: true, // Show listening animation immediately
                 currentMessageText: '', // Clear the message when feedback ends
                 fullSentenceText: '', // Clear the full sentence text
               };
