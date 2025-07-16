@@ -152,6 +152,7 @@ export default function ConversationScreen() {
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current; // For the new pulsating effect
   const isScreenFocusedRef = useRef<boolean>(false); // Track if screen is focused
   const isWordByWordActiveRef = useRef<boolean>(false); // Track if word-by-word is active
   const isStoppingRef = useRef(false);
@@ -207,6 +208,31 @@ export default function ConversationScreen() {
       };
     }, [autoStart])
   );
+
+  // Pulsating animation for the listening state
+  useEffect(() => {
+    if (state.currentStep === 'listening') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1500,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1); // Reset scale
+    }
+  }, [state.currentStep]);
 
   // Additional cleanup on component unmount (fallback)
   useEffect(() => {
@@ -2069,6 +2095,15 @@ export default function ConversationScreen() {
           {/* Exit label */}
           {/* <Text style={styles.exitLabel}>{t('Exit', 'خارج کریں')}</Text> */}
         </TouchableOpacity>
+        {/* Pulsating background for listening state */}
+        {state.currentStep === 'listening' && (
+          <Animated.View 
+            style={[
+              styles.pulseCircle, 
+              { transform: [{ scale: pulseAnim }] }
+            ]} 
+          />
+        )}
         {/* Center mic/stop button - Hide during word-by-word and sentence display */}
         {/* Note: Wrong button (X) is always accessible regardless of state */}
         {!state.isWordByWordSpeaking && !state.isDisplayingSentence && (
@@ -2110,20 +2145,10 @@ export default function ConversationScreen() {
             <LinearGradient
               colors={
                 state.currentStep === 'listening' && isTalking
-                  ? ['#00C853', '#4CAF50']
+                  ? ['#FF6B6B', '#FF4747'] // Red when talking
                   : state.currentStep === 'listening'
-                    ? ['#58D68D', '#45B7A8']
-                    : state.currentStep === 'playing_intro'
-                      ? ['#58D68D', '#45B7A8']
-                      : state.currentStep === 'playing_await_next'
-                        ? ['#58D68D', '#45B7A8']
-                        : state.currentStep === 'playing_retry'
-                          ? ['#58D68D', '#45B7A8']
-                          : state.currentStep === 'playing_feedback'
-                            ? ['#58D68D', '#45B7A8']
-                            : state.currentStep === 'word_by_word'
-                              ? ['#58D68D', '#45B7A8']
-                              : ['#58D68D', '#45B7A8']
+                    ? ['#FF4747', '#FF1C1C'] // Red when listening
+                    : ['#58D68D', '#45B7A8'] // Default green
               }
               style={[
                 styles.micButtonGradient,
@@ -2440,6 +2465,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: -160, // Move everything up by 140 pixels
+  },
+  pulseCircle: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 59, 48, 0.2)',
+    zIndex: 0,
   },
   // Special overlay for sentence display - move content down
   sentenceOverlay: {
