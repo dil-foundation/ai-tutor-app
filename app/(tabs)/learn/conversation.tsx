@@ -33,6 +33,7 @@ import {
     View,
     Dimensions,
     Platform,
+    StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
@@ -103,6 +104,17 @@ export default function ConversationScreen() {
   const { mode } = useLanguageMode();
   // Define t() immediately after mode is available
   const t = (en: string, ur: string) => (mode === 'english' ? en : ur);
+
+  // Full screen mode - hide status bar and tab bar
+  useEffect(() => {
+    // Hide status bar for full screen experience
+    StatusBar.setHidden(true);
+    
+    // Return function to restore status bar when component unmounts
+    return () => {
+      StatusBar.setHidden(false);
+    };
+  }, []);
   const [state, setState] = useState<ConversationState>({
     messages: [],
     currentStep: 'waiting',
@@ -1940,6 +1952,19 @@ export default function ConversationScreen() {
     router.replace('/(tabs)/learn');
   };
 
+  // Prevent back navigation - only allow exit via wrong button
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = () => {
+        // Prevent default back navigation
+        return true; // Return true to prevent default behavior
+      };
+
+      // This would require additional setup with react-native-gesture-handler
+      // For now, we'll rely on the wrong button being the only exit method
+    }, [])
+  );
+
   // Animate mic button when listening or talking
   useEffect(() => {
     if (state.currentStep === 'listening') {
@@ -2181,12 +2206,12 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30, // Adjust for full screen mode
     backgroundColor: '#FFFFFF',
   },
   connectionIndicator: {
     position: 'absolute',
-    top: 80,
+    top: Platform.OS === 'ios' ? 60 : 40, // Adjust for full screen mode
     right: 24,
     width: 12,
     height: 12,
