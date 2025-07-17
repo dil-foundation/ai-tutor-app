@@ -11,7 +11,8 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,23 +20,24 @@ import { useAuth } from '../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
-// Mock user data - replace with actual API calls
-const mockUserData = {
-  name: "Ahmed Khan",
-  email: "ahmed.khan@example.com",
+// Default user data - will be populated from authenticated user
+const defaultUserData = {
+  name: "User",
+  email: "",
   avatar: require('../../../assets/images/user_avatar.png'),
-  currentLevel: "A2 Elementary",
-  memberSince: "January 2025",
-  learningGoals: "Improve conversational English for work",
-  preferredTime: "Evening",
-  difficultyLevel: "Medium",
+  currentLevel: "Beginner",
+  memberSince: "Recently",
+  learningGoals: "Improve conversational English",
+  preferredTime: "Flexible",
+  difficultyLevel: "Beginner",
   practiceDuration: "30 minutes"
 };
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const [userData, setUserData] = useState(mockUserData);
+  const [userData, setUserData] = useState(defaultUserData);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
@@ -61,6 +63,26 @@ export default function ProfileScreen() {
     ]).start();
   }, []);
 
+  // Update user data when authenticated user changes
+  useEffect(() => {
+    if (user) {
+      const userMetadata = user.user_metadata || {};
+      const firstName = userMetadata.first_name || '';
+      const lastName = userMetadata.last_name || '';
+      const fullName = `${firstName} ${lastName}`.trim() || 'User';
+      
+      setUserData({
+        ...defaultUserData,
+        name: fullName,
+        email: user.email || '',
+        memberSince: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long' 
+        }) : 'Recently'
+      });
+    }
+  }, [user]);
+
   const handleEditProfile = () => {
     // Navigate to edit profile screen
     // router.push('/(tabs)/profile/edit');
@@ -69,7 +91,7 @@ export default function ProfileScreen() {
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
-      'Are you sure you want to sign out?',
+      'Are you sure you want to sign out? You will need to sign in again to access your account.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -77,10 +99,37 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              setIsSigningOut(true);
+              console.log('🔐 Signing out user:', user?.email);
+              
               await signOut();
-              // Navigation will be handled by auth state change
+              
+              // Show success message before navigation
+              Alert.alert(
+                'Signed Out',
+                'You have been successfully signed out.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Navigation will be handled by auth state change in AuthContext
+                      console.log('🔐 Sign out completed, redirecting to auth');
+                    }
+                  }
+                ]
+              );
             } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              console.error('🔐 Sign out error:', error);
+              Alert.alert(
+                'Sign Out Failed', 
+                'There was an error signing you out. Please try again.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => setIsSigningOut(false)
+                  }
+                ]
+              );
             }
           }
         }
@@ -182,26 +231,29 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.infoCard}>
-           <View style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>Ram</Text>
+              <Text style={styles.infoValue}>{userData.name}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Email</Text>
               <Text style={styles.infoValue}>{userData.email}</Text>
             </View>
-            
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Preferred Language</Text>
-              <Text style={styles.infoValue}>Urdu</Text>
+              <Text style={styles.infoLabel}>Grade</Text>
+              <Text style={styles.infoValue}>
+                {user?.user_metadata?.grade ? `Grade ${user.user_metadata.grade}` : 'Not set'}
+              </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Current Stage</Text>
-              <Text style={styles.infoValue}>Stage 2</Text>
+              <Text style={styles.infoLabel}>Role</Text>
+              <Text style={styles.infoValue}>
+                {user?.user_metadata?.role ? user.user_metadata.role.charAt(0).toUpperCase() + user.user_metadata.role.slice(1) : 'Student'}
+              </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Fluency Level</Text>
-              <Text style={styles.infoValue}>75/100</Text>
+              <Text style={styles.infoLabel}>Member Since</Text>
+              <Text style={styles.infoValue}>{userData.memberSince}</Text>
             </View>
           </View>
         </Animated.View>
@@ -246,16 +298,26 @@ export default function ProfileScreen() {
             ]}
           >
             <TouchableOpacity
-              style={styles.logoutButton}
+              style={[styles.logoutButton, isSigningOut && styles.logoutButtonDisabled]}
               onPress={handleSignOut}
               activeOpacity={0.8}
+              disabled={isSigningOut}
             >
               <LinearGradient
                 colors={['#FF6B6B', '#FF5252']}
                 style={styles.logoutGradient}
               >
-                <Ionicons name="log-out" size={20} color="#FFFFFF" />
-                <Text style={styles.logoutButtonText}>Sign Out</Text>
+                {isSigningOut ? (
+                  <>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text style={styles.logoutButtonText}>Signing Out...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="log-out" size={20} color="#FFFFFF" />
+                    <Text style={styles.logoutButtonText}>Sign Out</Text>
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -494,6 +556,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
+  },
+  logoutButtonDisabled: {
+    opacity: 0.7,
   },
   logoutGradient: {
     flexDirection: 'row',
