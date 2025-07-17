@@ -1985,32 +1985,11 @@ export default function ConversationScreen() {
   // UI for real-time conversation mode
   return (
     <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="chatbubbles" size={24} color="#000000" />
-              </LinearGradient>
-            </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>AI Tutor Conversation</Text>
-              <Text style={styles.subtitle}>Real-time learning experience</Text>
-            </View>
-            <View style={[
-              styles.connectionIndicator,
-              { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
-            ]} />
-          </View>
-        </LinearGradient>
-      </View>
+      {/* Connection Indicator Dot - Top Right */}
+      <View style={[
+        styles.connectionIndicator,
+        { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
+      ]} />
 
       {/* Unified Animation Overlay - Always show something */}
       <View style={currentAnimation.isSentenceDisplay ? styles.sentenceOverlay : styles.processingOverlay} pointerEvents="box-none">
@@ -2205,58 +2184,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  headerGradient: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconContainer: {
-    marginRight: 16,
-  },
-  iconGradient: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E9ECEF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6C757D',
-    fontWeight: '500',
-  },
   connectionIndicator: {
+    position: 'absolute',
+    top: 80,
+    right: 24,
     width: 12,
     height: 12,
     borderRadius: 6,
@@ -2265,6 +2196,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+    zIndex: 1000,
   },
   messagesContainer: {
     flex: 1,
