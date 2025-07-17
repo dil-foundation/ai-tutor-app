@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +34,7 @@ const mockUserData = {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [userData, setUserData] = useState(mockUserData);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
@@ -62,6 +64,28 @@ export default function ProfileScreen() {
   const handleEditProfile = () => {
     // Navigate to edit profile screen
     // router.push('/(tabs)/profile/edit');
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              // Navigation will be handled by auth state change
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderSettingItem = (icon: string, title: string, subtitle: string, onPress: () => void) => (
@@ -210,6 +234,31 @@ export default function ProfileScreen() {
             {renderSettingItem("shield-checkmark", "Privacy", "Privacy and data settings", () => {})}
             {renderSettingItem("download", "Export Data", "Download your progress data", () => {})}
           </View>
+
+          {/* Sign Out Button */}
+          <Animated.View
+            style={[
+              styles.logoutContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleSignOut}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#FF6B6B', '#FF5252']}
+                style={styles.logoutGradient}
+              >
+                <Ionicons name="log-out" size={20} color="#FFFFFF" />
+                <Text style={styles.logoutButtonText}>Sign Out</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </Animated.View>
 
       </ScrollView>

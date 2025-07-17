@@ -118,27 +118,12 @@ export default function GreetingScreen() {
       }
     };
 
-    const initializeGreeting = async () => {
-      try {
-        const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
-        if (hasVisitedLearn === 'true') {
-          router.replace('/(tabs)/learn');
-          return;
-        }
-      } catch (error) {
-        console.log('Error checking AsyncStorage, proceeding with greeting:', error);
+    // Start the greeting immediately
+    setTimeout(() => {
+      if (isComponentMounted) {
+        playGreeting();
       }
-
-      // If not visited or error, start the greeting
-      setTimeout(() => {
-        if (isComponentMounted) {
-          playGreeting();
-        }
-      }, 100);
-    };
-
-    // Start everything immediately
-    initializeGreeting();
+    }, 100);
 
     return () => {
       isComponentMounted = false;
@@ -158,7 +143,7 @@ export default function GreetingScreen() {
     if (audioManager.isAudioPlaying(GREETING_AUDIO_ID)) {
       audioManager.stopCurrentAudio();
     }
-    router.replace('/(tabs)/learn');
+    router.push('/(tabs)/learn');
   };
 
   return (
