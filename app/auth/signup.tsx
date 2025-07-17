@@ -67,8 +67,9 @@ export default function SignupScreen() {
   
   // Animation values
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(30));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [slideAnim] = useState(new Animated.Value(50));
+  const [scaleAnim] = useState(new Animated.Value(0.9));
+  const [pulseAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
     // Animate elements on mount
@@ -89,6 +90,23 @@ export default function SignupScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Start pulse animation for the signup button
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.02,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
   }, []);
 
   // Validation functions
@@ -301,20 +319,23 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <KeyboardAvoidingView 
+      
+      <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          {/* Header with back button */}
+          {/* Header Section */}
           <Animated.View
             style={[
-              styles.header,
+              styles.headerSection,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
@@ -327,112 +348,111 @@ export default function SignupScreen() {
             >
               <Ionicons name="arrow-back" size={24} color="#58D68D" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Create Account</Text>
-            <View style={styles.placeholder} />
-          </Animated.View>
-
-          {/* Main Content */}
-          <Animated.View
-            style={[
-              styles.mainContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            {/* App Icon */}
-            <Animated.View
-              style={[
-                styles.iconContainer,
-                {
-                  transform: [{ scale: scaleAnim }],
-                },
-              ]}
-            >
+            
+            <View style={styles.iconContainer}>
               <LinearGradient
                 colors={['#58D68D', '#45B7A8']}
                 style={styles.iconGradient}
               >
-                <Ionicons name="school" size={48} color="#FFFFFF" />
+                <Ionicons name="school" size={32} color="#FFFFFF" />
               </LinearGradient>
-            </Animated.View>
-
-            {/* Welcome Text */}
-            <Text style={styles.welcomeTitle}>Join DIL Tutor</Text>
-            <Text style={styles.welcomeSubtitle}>
+            </View>
+            <Text style={styles.mainTitle}>Join DIL Tutor</Text>
+            <Text style={styles.subtitle}>
               Start your English learning journey with personalized AI tutoring
             </Text>
+          </Animated.View>
 
-            {/* Signup Form Card */}
-            <Animated.View
-              style={[
-                styles.formCard,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
+          {/* Signup Form Card */}
+          <Animated.View
+            style={[
+              styles.formCard,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: scaleAnim }
+                ],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(88, 214, 141, 0.05)', 'rgba(69, 183, 168, 0.02)']}
+              style={styles.cardGradient}
             >
-              <Text style={styles.formTitle}>Sign Up</Text>
-              <Text style={styles.formSubtitle}>Create your account to get started</Text>
+              <Text style={styles.formTitle}>Create Account</Text>
+              <Text style={styles.formSubtitle}>Fill in your details to get started</Text>
 
               {/* Name Inputs */}
               <View style={styles.nameContainer}>
                 <View style={[styles.inputContainer, styles.halfInput]}>
-                  <TextInput
-                    style={[styles.input, firstNameError ? styles.inputError : null]}
-                    placeholder="First Name"
-                    placeholderTextColor="#9CA3AF"
-                    value={firstName}
-                    onChangeText={(text) => {
-                      setFirstName(text);
-                      if (firstNameError) setFirstNameError('');
-                    }}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
+                  <Text style={styles.inputLabel}>First Name</Text>
+                  <View style={[styles.inputWrapper, firstNameError ? styles.inputError : null]}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter first name"
+                      placeholderTextColor="#9CA3AF"
+                      value={firstName}
+                      onChangeText={(text) => {
+                        setFirstName(text);
+                        if (firstNameError) setFirstNameError('');
+                      }}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                    <Ionicons name="person-outline" size={20} color="#58D68D" />
+                  </View>
                   {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
                 </View>
+                
                 <View style={[styles.inputContainer, styles.halfInput]}>
-                  <TextInput
-                    style={[styles.input, lastNameError ? styles.inputError : null]}
-                    placeholder="Last Name"
-                    placeholderTextColor="#9CA3AF"
-                    value={lastName}
-                    onChangeText={(text) => {
-                      setLastName(text);
-                      if (lastNameError) setLastNameError('');
-                    }}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
+                  <Text style={styles.inputLabel}>Last Name</Text>
+                  <View style={[styles.inputWrapper, lastNameError ? styles.inputError : null]}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter last name"
+                      placeholderTextColor="#9CA3AF"
+                      value={lastName}
+                      onChangeText={(text) => {
+                        setLastName(text);
+                        if (lastNameError) setLastNameError('');
+                      }}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                    <Ionicons name="person-outline" size={20} color="#58D68D" />
+                  </View>
                   {lastNameError ? <Text style={styles.errorText}>{lastNameError}</Text> : null}
                 </View>
               </View>
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
-                <TextInput
-                  style={[styles.input, emailError ? styles.inputError : null]}
-                  placeholder="Email Address"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (emailError) setEmailError('');
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <View style={[styles.inputWrapper, emailError ? styles.inputError : null]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    placeholderTextColor="#9CA3AF"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (emailError) setEmailError('');
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <Ionicons name="mail-outline" size={20} color="#58D68D" />
+                </View>
                 {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               </View>
 
               {/* Grade Dropdown */}
               <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Grade Level</Text>
                 <TouchableOpacity
-                  style={[styles.input, styles.dropdownInput, gradeError ? styles.inputError : null]}
+                  style={[styles.inputWrapper, styles.dropdownInput, gradeError ? styles.inputError : null]}
                   onPress={() => setShowGradeDropdown(true)}
                 >
                   <Text style={[styles.dropdownText, !grade ? styles.placeholderText : null]}>
@@ -445,95 +465,113 @@ export default function SignupScreen() {
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <TextInput
-                  style={[styles.input, passwordError ? styles.inputError : null]}
-                  placeholder="Password"
-                  placeholderTextColor="#9CA3AF"
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (passwordError) setPasswordError('');
-                    // Re-validate confirm password if it exists
-                    if (confirmPassword) {
-                      const confirmValidation = validateConfirmPassword(confirmPassword);
-                      setConfirmPasswordError(confirmValidation);
-                    }
-                  }}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={styles.passwordToggle}
-                  onPress={togglePasswordVisibility}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={20}
-                    color="#58D68D"
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={[styles.inputWrapper, passwordError ? styles.inputError : null]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your password"
+                    placeholderTextColor="#9CA3AF"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (passwordError) setPasswordError('');
+                      // Re-validate confirm password if it exists
+                      if (confirmPassword) {
+                        const confirmValidation = validateConfirmPassword(confirmPassword);
+                        setConfirmPasswordError(confirmValidation);
+                      }
+                    }}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={togglePasswordVisibility}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#58D68D"
+                    />
+                  </TouchableOpacity>
+                </View>
                 {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
               </View>
 
               {/* Confirm Password Input */}
               <View style={styles.inputContainer}>
-                <TextInput
-                  style={[styles.input, confirmPasswordError ? styles.inputError : null]}
-                  placeholder="Confirm Password"
-                  placeholderTextColor="#9CA3AF"
-                  value={confirmPassword}
-                  onChangeText={(text) => {
-                    setConfirmPassword(text);
-                    if (confirmPasswordError) setConfirmPasswordError('');
-                  }}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={styles.passwordToggle}
-                  onPress={toggleConfirmPasswordVisibility}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? "eye-off" : "eye"}
-                    size={20}
-                    color="#58D68D"
+                <Text style={styles.inputLabel}>Confirm Password</Text>
+                <View style={[styles.inputWrapper, confirmPasswordError ? styles.inputError : null]}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Confirm your password"
+                    placeholderTextColor="#9CA3AF"
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      if (confirmPasswordError) setConfirmPasswordError('');
+                    }}
+                    secureTextEntry={!showConfirmPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={toggleConfirmPasswordVisibility}
+                  >
+                    <Ionicons
+                      name={showConfirmPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#58D68D"
+                    />
+                  </TouchableOpacity>
+                </View>
                 {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
               </View>
 
               {/* Sign Up Button */}
-              <TouchableOpacity
-                style={[styles.signUpButton, (isLoading || authLoading) && styles.signUpButtonDisabled]}
-                onPress={handleSignUp}
-                disabled={isLoading || authLoading}
-                activeOpacity={0.8}
+              <Animated.View
+                style={[
+                  styles.signUpButtonContainer,
+                  {
+                    transform: [{ scale: pulseAnim }],
+                  },
+                ]}
               >
-                <LinearGradient
-                  colors={['#58D68D', '#45B7A8']}
-                  style={styles.signUpGradient}
+                <TouchableOpacity 
+                  style={styles.signUpButtonWrapper}
+                  onPress={handleSignUp} 
+                  disabled={isLoading || authLoading}
+                  activeOpacity={0.8}
                 >
-                  {isLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <>
-                      <Text style={styles.signUpButtonText}>Sign Up</Text>
-                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={['#58D68D', '#45B7A8', '#58D68D']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.signUpButtonGradient}
+                  >
+                    <View style={styles.signUpButtonContent}>
+                      {isLoading || authLoading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <>
+                          <Ionicons name="person-add" size={20} color="#FFFFFF" />
+                          <Text style={styles.signUpText}>Create Account</Text>
+                        </>
+                      )}
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
 
               {/* Sign In Link */}
-              <View style={styles.signInContainer}>
-                <Text style={styles.signInText}>Already have an account? </Text>
-                <TouchableOpacity onPress={handleSignIn}>
-                  <Text style={styles.signInLink}>Sign In</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
+              <TouchableOpacity onPress={handleSignIn} style={styles.signInLinkContainer}>
+                <Text style={styles.signInText}>
+                  Already have an account? <Text style={styles.signInLink}>Sign In</Text>
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -587,7 +625,7 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
@@ -596,86 +634,91 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
+    paddingHorizontal: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    marginBottom: 20,
+    paddingBottom: 20,
+    paddingTop: 30,
+    justifyContent: 'center',
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: 15,
+    marginTop: 5,
+    width: '100%',
   },
   backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  placeholder: {
-    width: 40,
-  },
-  mainContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 40,
+    zIndex: 1,
   },
   iconContainer: {
-    marginBottom: 30,
+    marginBottom: 15,
+    marginTop: 20,
   },
   iconGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#58D68D',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 12,
   },
-  welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
+  mainTitle: {
+    fontSize: Math.min(width * 0.08, 32),
+    fontFamily: 'Lexend-Bold',
+    color: '#000000',
+    marginBottom: 12,
     textAlign: 'center',
-    marginBottom: 10,
+    textShadowColor: 'rgba(88, 214, 141, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+  subtitle: {
+    fontSize: Math.min(width * 0.04, 16),
+    color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 40,
+    fontFamily: 'Lexend-Regular',
     paddingHorizontal: 20,
   },
   formCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 20,
-    padding: 30,
     width: '100%',
     maxWidth: 400,
+    marginBottom: 10,
+  },
+  cardGradient: {
+    borderRadius: 24,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#F8F9FA',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowRadius: 24,
+    elevation: 16,
+    position: 'relative',
+    overflow: 'hidden',
   },
   formTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontFamily: 'Lexend-Bold',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 8,
   },
   formSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#6C757D',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 24,
+    fontFamily: 'Lexend-Regular',
   },
   nameContainer: {
     flexDirection: 'row',
@@ -683,28 +726,49 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputContainer: {
-    position: 'relative',
     marginBottom: 20,
   },
   halfInput: {
     flex: 1,
   },
-  input: {
+  inputLabel: {
+    fontSize: 16,
+    fontFamily: 'Lexend-Medium',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: '#111827',
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputError: {
     borderColor: '#EF4444',
+    shadowColor: '#EF4444',
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#111827',
+    fontFamily: 'Lexend-Regular',
+  },
+  passwordToggle: {
+    padding: 4,
   },
   errorText: {
-    color: '#EF4444',
     fontSize: 12,
+    color: '#EF4444',
+    fontFamily: 'Lexend-Regular',
     marginTop: 4,
     marginLeft: 4,
   },
@@ -716,48 +780,51 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 16,
     color: '#111827',
+    fontFamily: 'Lexend-Regular',
   },
   placeholderText: {
     color: '#9CA3AF',
   },
-  passwordToggle: {
-    position: 'absolute',
-    right: 16,
-    top: 16,
-  },
-  signUpButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
+  signUpButtonContainer: {
+    width: '100%',
     marginBottom: 20,
   },
-  signUpButtonDisabled: {
-    opacity: 0.7,
+  signUpButtonWrapper: {
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 12,
   },
-  signUpGradient: {
+  signUpButtonGradient: {
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+  },
+  signUpButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
   },
-  signUpButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  signUpText: {
     color: '#FFFFFF',
-    marginRight: 8,
+    fontFamily: 'Lexend-Bold',
+    fontSize: 18,
+    marginLeft: 8,
   },
-  signInContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  signInLinkContainer: {
     alignItems: 'center',
+    marginTop: 10,
   },
   signInText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#6C757D',
+    fontFamily: 'Lexend-Regular',
   },
   signInLink: {
-    fontSize: 14,
     color: '#58D68D',
-    fontWeight: '600',
+    fontFamily: 'Lexend-Bold',
   },
   // Modal styles
   modalOverlay: {
