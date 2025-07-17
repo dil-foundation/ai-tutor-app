@@ -27,7 +27,6 @@ export default function LoginScreen() {
   const router = useRouter();
   const { signIn, loading: authLoading } = useAuth();
   const { resetPassword, isLoading: resetLoading } = usePasswordReset();
-  
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,6 +77,8 @@ export default function LoginScreen() {
       ])
     );
     pulseAnimation.start();
+
+
   }, []);
 
 
@@ -140,6 +141,8 @@ export default function LoginScreen() {
     setShowPassword(!showPassword);
   };
 
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -147,15 +150,12 @@ export default function LoginScreen() {
 
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={styles.contentContainer}
-          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          bounces={false}
         >
           {/* Header Section */}
           <Animated.View
@@ -307,48 +307,11 @@ export default function LoginScreen() {
             </LinearGradient>
           </Animated.View>
 
-          {/* Feature Highlights */}
-          <Animated.View
-            style={[
-              styles.featuresContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="mic" size={20} color="#58D68D" />
-              </View>
-              <Text style={styles.featureText}>Voice Learning</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="chatbubbles" size={20} color="#58D68D" />
-              </View>
-              <Text style={styles.featureText}>AI Conversations</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="trending-up" size={20} color="#58D68D" />
-              </View>
-              <Text style={styles.featureText}>Progress Tracking</Text>
-            </View>
-          </Animated.View>
+
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Decorative Elements */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
-      <View style={styles.decorativeCircle4} />
-      
-      {/* Floating Particles */}
-      <View style={styles.particle1} />
-      <View style={styles.particle2} />
-      <View style={styles.particle3} />
+
     </SafeAreaView>
   );
 }
@@ -358,21 +321,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-
-  contentContainer: {
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
     alignItems: 'center',
-    paddingBottom: 40,
-    paddingTop: 20,
+    paddingBottom: -20,
+    paddingTop: 30,
+    justifyContent: 'center',
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 20,
+    marginBottom: 15,
+    marginTop: 5,
   },
   iconContainer: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
   iconGradient: {
     width: 80,
@@ -407,7 +373,7 @@ const styles = StyleSheet.create({
   formCard: {
     width: '100%',
     maxWidth: 400,
-    marginBottom: 30,
+    marginBottom: 10,
   },
   cardGradient: {
     borderRadius: 24,
@@ -533,96 +499,5 @@ const styles = StyleSheet.create({
   registerLink: {
     color: '#58D68D',
     fontFamily: 'Lexend-Bold',
-  },
-  featuresContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
-  featureItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  featureText: {
-    fontSize: 12,
-    color: '#58D68D',
-    textAlign: 'center',
-    fontFamily: 'Lexend-Medium',
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.015)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.1,
-    right: width * 0.2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.025)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
   },
 }); 
