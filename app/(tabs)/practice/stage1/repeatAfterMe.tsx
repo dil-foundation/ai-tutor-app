@@ -8,6 +8,8 @@ import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
 import BASE_API_URL from '../../../../config/api';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
+import { useAuth } from '../../../../context/AuthContext';
+import { progressTracker, ProgressHelpers } from '../../../../utils/progressTracker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,10 +25,13 @@ interface EvaluationResult {
   evaluation?: any;
   error?: string;
   message?: string;
+  progress_recorded?: boolean;
+  unlocked_content?: string[];
 }
 
 const RepeatAfterMeScreen = () => {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.9));
@@ -42,12 +47,17 @@ const RepeatAfterMeScreen = () => {
   const [showRetryAnimation, setShowRetryAnimation] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
 
+  // Progress tracking state
+  const [userProgress, setUserProgress] = useState<any>(null);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
+
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
   const audioRecorder = useAudioRecorder(5000, async (audioUri) => {
     // This callback is called when recording automatically stops
-    console.log('🔄 Auto-stop callback triggered!');
-    console.log('📊 Auto-stop details:', {
+    console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
+    console.log('📊 [AUTO-STOP] Auto-stop details:', {
       audioUri: audioUri ? 'Present' : 'None',
       uriLength: audioUri?.length || 0,
       currentPhrase: currentPhrase?.phrase || 'None',
@@ -55,11 +65,11 @@ const RepeatAfterMeScreen = () => {
     });
     
     if (audioUri) {
-      console.log('✅ Valid audio URI received, starting automatic evaluation...');
+      console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
       // Automatically process the recording
       await processRecording(audioUri);
     } else {
-      console.log('⚠️ No valid audio URI from auto-stop');
+      console.log('⚠️ [AUTO-STOP] No valid audio URI from auto-stop');
       setEvaluationResult({
         success: false,
         expected_phrase: currentPhrase?.phrase || '',
@@ -70,7 +80,68 @@ const RepeatAfterMeScreen = () => {
     }
   }); // 5 seconds max duration
 
+  // Initialize progress tracking when user is authenticated
   useEffect(() => {
+    console.log('🔄 [SCREEN] useEffect triggered - user auth check');
+    console.log('📊 [SCREEN] Auth state:', { user: !!user, loading: authLoading, isProgressInitialized });
+    
+    if (user && !isProgressInitialized) {
+      console.log('🔄 [SCREEN] User authenticated, initializing progress tracking...');
+      initializeProgressTracking();
+    } else if (!user) {
+      console.log('ℹ️ [SCREEN] User not authenticated');
+    } else {
+      console.log('ℹ️ [SCREEN] Progress already initialized');
+    }
+  }, [user, isProgressInitialized]);
+
+  const initializeProgressTracking = async () => {
+    console.log('🔄 [SCREEN] initializeProgressTracking called');
+    try {
+      console.log('🔄 [SCREEN] Initializing progress tracking for user:', user?.id);
+      
+      // Update progress tracker with current user
+      console.log('🔄 [SCREEN] Updating progress tracker with current user...');
+      await progressTracker.updateCurrentUser();
+      
+      // Initialize user progress if needed
+      console.log('🔄 [SCREEN] Initializing user progress...');
+      const initResult = await ProgressHelpers.initializeProgressForNewUser();
+      console.log('📊 [SCREEN] Progress initialization result:', initResult);
+      
+      if (initResult.success) {
+        console.log('✅ [SCREEN] Progress initialized successfully');
+        setIsProgressInitialized(true);
+        
+        // Load current progress
+        console.log('🔄 [SCREEN] Loading current user progress...');
+        await loadUserProgress();
+      } else {
+        console.log('⚠️ [SCREEN] Progress initialization failed:', initResult.error);
+      }
+    } catch (error) {
+      console.error('❌ [SCREEN] Error initializing progress tracking:', error);
+    }
+  };
+
+  const loadUserProgress = async () => {
+    console.log('🔄 [SCREEN] loadUserProgress called');
+    try {
+      console.log('🔄 [SCREEN] Getting repeat after me progress...');
+      const progress = await ProgressHelpers.getRepeatAfterMeProgress();
+      if (progress) {
+        console.log('📊 [SCREEN] Loaded user progress:', progress);
+        setUserProgress(progress);
+      } else {
+        console.log('ℹ️ [SCREEN] No progress data found');
+      }
+    } catch (error) {
+      console.error('❌ [SCREEN] Error loading user progress:', error);
+    }
+  };
+
+  useEffect(() => {
+    console.log('🔄 [SCREEN] useEffect triggered - component mount');
     // Animate elements on mount
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -92,6 +163,7 @@ const RepeatAfterMeScreen = () => {
 
     // Cleanup on unmount
     return () => {
+      console.log('🔄 [SCREEN] Component unmounting, cleaning up...');
       audioPlayer.unloadAudio();
       audioRecorder.resetRecording();
     };
@@ -100,42 +172,43 @@ const RepeatAfterMeScreen = () => {
   // Separate useEffect to load phrase when currentPhraseId changes
   // This ensures that when currentPhraseId updates, the new phrase is loaded automatically
   useEffect(() => {
-    console.log('🔄 useEffect triggered - currentPhraseId changed to:', currentPhraseId);
+    console.log('🔄 [SCREEN] useEffect triggered - currentPhraseId changed to:', currentPhraseId);
     loadPhrase();
   }, [currentPhraseId]);
 
   const loadPhrase = async () => {
+    console.log('🔄 [SCREEN] loadPhrase called');
     try {
-      console.log('🔄 Starting to load phrase...');
-      console.log('📡 Base API URL:', BASE_API_URL);
-      console.log('📝 Loading phrase ID:', currentPhraseId);
+      console.log('🔄 [SCREEN] Starting to load phrase...');
+      console.log('📡 [SCREEN] Base API URL:', BASE_API_URL);
+      console.log('📝 [SCREEN] Loading phrase ID:', currentPhraseId);
       setIsLoading(true);
       setError(null);
       
       const apiUrl = `${BASE_API_URL}/api/phrases/${currentPhraseId}`;
-      console.log('📡 API URL for phrase:', apiUrl);
+      console.log('📡 [SCREEN] API URL for phrase:', apiUrl);
       
       const response = await fetch(apiUrl);
-      console.log('📥 Response status:', response.status);
+      console.log('📥 [SCREEN] Response status:', response.status);
       
       if (!response.ok) {
         if (response.status === 404) {
           // We've reached the end of phrases
-          console.log('🎉 Congratulations! You have completed all phrases!');
+          console.log('🎉 [SCREEN] Congratulations! You have completed all phrases!');
           setCurrentPhrase(null);
           setError('Congratulations! You have completed all phrases. Great job!');
           return;
         }
-        console.error('❌ API Error - Status:', response.status);
+        console.error('❌ [SCREEN] API Error - Status:', response.status);
         throw new Error(`Failed to load phrase: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('✅ Phrase data received:', data);
+      console.log('✅ [SCREEN] Phrase data received:', data);
       setCurrentPhrase({ id: data.id, phrase: data.phrase });
       setEvaluationResult(null); // Clear previous evaluation
     } catch (error) {
-      console.error('❌ Error loading phrase:', error);
+      console.error('❌ [SCREEN] Error loading phrase:', error);
       setError('Failed to load phrase. Please try again.');
     } finally {
       setIsLoading(false);
@@ -143,18 +216,20 @@ const RepeatAfterMeScreen = () => {
   };
 
   const playPhraseAudio = async () => {
+    console.log('🔄 [SCREEN] playPhraseAudio called');
     if (!currentPhrase || audioPlayer.state.isPlaying) {
-      console.log('⚠️ Cannot play audio - conditions not met');
+      console.log('⚠️ [SCREEN] Cannot play audio - conditions not met');
+      console.log('📊 [SCREEN] Conditions:', { hasCurrentPhrase: !!currentPhrase, isPlaying: audioPlayer.state.isPlaying });
       return;
     }
 
     try {
-      console.log('🔄 Starting to play phrase audio...');
+      console.log('🔄 [SCREEN] Starting to play phrase audio...');
       setError(null);
 
       // Simple approach: Fetch audio and convert to base64 data URI
       const apiUrl = `${BASE_API_URL}/api/repeat-after-me/${currentPhrase.id}`;
-      console.log('📡 API URL for audio:', apiUrl);
+      console.log('📡 [SCREEN] API URL for audio:', apiUrl);
       
       // Fetch audio with POST method
       const response = await fetch(apiUrl, {
@@ -165,13 +240,13 @@ const RepeatAfterMeScreen = () => {
       });
       
       if (!response.ok) {
-        console.error('❌ Audio API Error - Status:', response.status);
+        console.error('❌ [SCREEN] Audio API Error - Status:', response.status);
         throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
       }
       
       // Get the audio as JSON response with base64
       const responseData = await response.json();
-      console.log('✅ Audio response received:', {
+      console.log('✅ [SCREEN] Audio response received:', {
         hasAudioBase64: !!responseData.audio_base64,
         base64Length: responseData.audio_base64?.length || 0
       });
@@ -183,26 +258,27 @@ const RepeatAfterMeScreen = () => {
       // Create data URI for audio playback
       const audioUri = `data:audio/mpeg;base64,${responseData.audio_base64}`;
       
-      console.log('✅ Audio URI created (base64):', audioUri.substring(0, 50) + '...');
+      console.log('✅ [SCREEN] Audio URI created (base64):', audioUri.substring(0, 50) + '...');
 
       // Load and play audio using the hook
-      console.log('🔄 Loading audio into player...');
+      console.log('🔄 [SCREEN] Loading audio into player...');
       await audioPlayer.loadAudio(audioUri);
-      console.log('✅ Audio loaded successfully');
+      console.log('✅ [SCREEN] Audio loaded successfully');
       
-      console.log('🔄 Playing audio...');
+      console.log('🔄 [SCREEN] Playing audio...');
       await audioPlayer.playAudio();
-      console.log('✅ Audio playback started');
+      console.log('✅ [SCREEN] Audio playback started');
 
     } catch (error) {
-      console.error('❌ Error playing audio:', error);
+      console.error('❌ [SCREEN] Error playing audio:', error);
       setError('Failed to play audio. Please try again.');
     }
   };
 
   const handleStartRecording = async () => {
+    console.log('🔄 [SCREEN] handleStartRecording called');
     if (audioRecorder.state.isRecording || audioPlayer.state.isPlaying) {
-      console.log('⚠️ Cannot start recording - conditions not met:', {
+      console.log('⚠️ [SCREEN] Cannot start recording - conditions not met:', {
         isRecording: audioRecorder.state.isRecording,
         isPlaying: audioPlayer.state.isPlaying
       });
@@ -210,23 +286,28 @@ const RepeatAfterMeScreen = () => {
     }
 
     try {
-      console.log('🔄 Starting recording...');
-      console.log('📝 Recording context:', {
+      console.log('🔄 [SCREEN] Starting recording...');
+      console.log('📝 [SCREEN] Recording context:', {
         phraseId: currentPhrase?.id,
         phraseText: currentPhrase?.phrase,
         maxDuration: 5000 // 5 seconds
       });
-      console.log('⏰ Setting up 5-second auto-stop timer...');
+      console.log('⏰ [SCREEN] Setting up 5-second auto-stop timer...');
       
       setError(null);
       setEvaluationResult(null);
       
+      // Record start time for progress tracking
+      const startTime = Date.now();
+      setRecordingStartTime(startTime);
+      console.log('⏱️ [SCREEN] Recording start time recorded:', startTime);
+      
       await audioRecorder.startRecording();
-      console.log('✅ Recording started successfully with auto-stop in 5 seconds');
+      console.log('✅ [SCREEN] Recording started successfully with auto-stop in 5 seconds');
       
     } catch (error) {
-      console.error('❌ Error starting recording:', error);
-      console.error('❌ Recording error details:', {
+      console.error('❌ [SCREEN] Error starting recording:', error);
+      console.error('❌ [SCREEN] Recording error details:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : 'Unknown'
@@ -236,24 +317,28 @@ const RepeatAfterMeScreen = () => {
   };
 
   const handleStopRecording = async () => {
-    if (!audioRecorder.state.isRecording) return;
+    console.log('🔄 [SCREEN] handleStopRecording called');
+    if (!audioRecorder.state.isRecording) {
+      console.log('⚠️ [SCREEN] Cannot stop recording - not currently recording');
+      return;
+    }
 
     try {
-      console.log('🔄 Manually stopping recording...');
+      console.log('🔄 [SCREEN] Manually stopping recording...');
       setIsProcessing(true);
       setError(null);
       setEvaluationResult(null);
       
-      console.log('📝 Current phrase context:', {
+      console.log('📝 [SCREEN] Current phrase context:', {
         phraseId: currentPhrase?.id,
         phraseText: currentPhrase?.phrase
       });
       
       const audioUri = await audioRecorder.stopRecording();
-      console.log('🎤 Recording stopped, audio URI:', audioUri);
+      console.log('🎤 [SCREEN] Recording stopped, audio URI:', audioUri);
 
       if (!audioUri) {
-        console.log('⚠️ No audio URI received from recorder');
+        console.log('⚠️ [SCREEN] No audio URI received from recorder');
         setEvaluationResult({
           success: false,
           expected_phrase: currentPhrase?.phrase || '',
@@ -265,11 +350,12 @@ const RepeatAfterMeScreen = () => {
       }
 
       // Process the recording using the shared function
+      console.log('🔄 [SCREEN] Processing recording...');
       await processRecording(audioUri);
 
     } catch (error) {
-      console.error('❌ Error during manual recording stop:', error);
-      console.error('❌ Error details:', {
+      console.error('❌ [SCREEN] Error during manual recording stop:', error);
+      console.error('❌ [SCREEN] Error details:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : 'Unknown'
@@ -280,8 +366,8 @@ const RepeatAfterMeScreen = () => {
   };
 
   const processRecording = async (audioUri: string) => {
-    console.log('🔄 Starting processRecording with audio URI:', audioUri);
-    console.log('📊 Processing context:', {
+    console.log('🔄 [SCREEN] processRecording called');
+    console.log('📊 [SCREEN] Processing context:', {
       isProcessing: isProcessing,
       hasCurrentPhrase: !!currentPhrase,
       phraseText: currentPhrase?.phrase || 'None'
@@ -292,27 +378,40 @@ const RepeatAfterMeScreen = () => {
     
     try {
       // Convert audio to base64
-      console.log('🔄 Converting audio to base64...');
+      console.log('🔄 [SCREEN] Converting audio to base64...');
       const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      console.log('✅ Audio converted to base64, length:', base64Audio.length);
+      console.log('✅ [SCREEN] Audio converted to base64, length:', base64Audio.length);
 
-      // Prepare evaluation request
+      // Calculate time spent (fix the calculation)
+      const timeSpentSeconds = Math.max(1, Math.floor((Date.now() - recordingStartTime) / 1000));
+      console.log('⏱️ [SCREEN] Time spent recording:', timeSpentSeconds, 'seconds');
+      console.log('⏱️ [SCREEN] Recording start time:', recordingStartTime);
+      console.log('⏱️ [SCREEN] Current time:', Date.now());
+      console.log('⏱️ [SCREEN] Time difference:', Date.now() - recordingStartTime);
+
+      // Prepare evaluation request with progress tracking data
       const evaluationRequest = {
         audio_base64: base64Audio,
         phrase_id: currentPhrase?.id || 1,
         filename: `recording-${Date.now()}.mp3`,
+        user_id: user?.id || '',
+        time_spent_seconds: timeSpentSeconds,
+        urdu_used: false // TODO: Implement Urdu usage detection
       };
-      console.log('📤 Evaluation request prepared:', {
+      console.log('📤 [SCREEN] Evaluation request prepared:', {
         phraseId: evaluationRequest.phrase_id,
         filename: evaluationRequest.filename,
-        audioLength: evaluationRequest.audio_base64.length
+        audioLength: evaluationRequest.audio_base64.length,
+        userId: evaluationRequest.user_id,
+        timeSpent: evaluationRequest.time_spent_seconds,
+        urduUsed: evaluationRequest.urdu_used
       });
 
       // Send to backend for evaluation
       const evaluationUrl = `${BASE_API_URL}/api/evaluate-audio`;
-      console.log('📡 Sending evaluation request to:', evaluationUrl);
+      console.log('📡 [SCREEN] Sending evaluation request to:', evaluationUrl);
       
       const evaluationResponse = await fetch(evaluationUrl, {
         method: 'POST',
@@ -322,12 +421,12 @@ const RepeatAfterMeScreen = () => {
         body: JSON.stringify(evaluationRequest),
       });
 
-      console.log('📥 Evaluation response status:', evaluationResponse.status);
-      console.log('📥 Evaluation response headers:', Object.fromEntries(evaluationResponse.headers.entries()));
+      console.log('📥 [SCREEN] Evaluation response status:', evaluationResponse.status);
+      console.log('📥 [SCREEN] Evaluation response headers:', Object.fromEntries(evaluationResponse.headers.entries()));
 
       if (!evaluationResponse.ok) {
         const errorText = await evaluationResponse.text();
-        console.error('❌ Evaluation request failed:', {
+        console.error('❌ [SCREEN] Evaluation request failed:', {
           status: evaluationResponse.status,
           statusText: evaluationResponse.statusText,
           errorText: errorText
@@ -336,27 +435,29 @@ const RepeatAfterMeScreen = () => {
       }
 
       const result: EvaluationResult = await evaluationResponse.json();
-      console.log('✅ Evaluation result received:', {
+      console.log('✅ [SCREEN] Evaluation result received:', {
         success: result.success,
         expectedPhrase: result.expected_phrase,
         userText: result.user_text,
         error: result.error,
         message: result.message,
-        hasEvaluation: !!result.evaluation
+        hasEvaluation: !!result.evaluation,
+        progressRecorded: result.progress_recorded,
+        unlockedContent: result.unlocked_content
       });
 
       if (result.evaluation) {
-        console.log('📊 Detailed evaluation:', result.evaluation);
+        console.log('📊 [SCREEN] Detailed evaluation:', result.evaluation);
       }
 
       // Hide evaluating animation
       setShowEvaluatingAnimation(false);
       
       setEvaluationResult(result);
-      console.log('✅ Evaluation result set in state');
+      console.log('✅ [SCREEN] Evaluation result set in state');
       
       // Log UI state for debugging
-      console.log('🎨 UI State Update:', {
+      console.log('🎨 [SCREEN] UI State Update:', {
         isProcessing: false,
         hasEvaluationResult: true,
         evaluationSuccess: result.success,
@@ -365,34 +466,44 @@ const RepeatAfterMeScreen = () => {
 
       // Check if the evaluation was successful and move to next phrase
       if (result.success && result.evaluation && result.evaluation.is_correct) {
-        console.log('🎉 Correct answer! Showing congratulations animation...');
+        console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
         setShowCongratulationsAnimation(true);
+        
+        // Show unlocked content notification if any
+        if (result.unlocked_content && result.unlocked_content.length > 0) {
+          console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
+          Alert.alert(
+            '🎉 New Content Unlocked!',
+            `You've unlocked: ${result.unlocked_content.join(', ')}`,
+            [{ text: 'OK' }]
+          );
+        }
         
         // Hide the animation after 4.5 seconds and move to next phrase
         setTimeout(() => {
+          console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
           setShowCongratulationsAnimation(false);
           setCurrentPhraseId(prevId => {
             const nextId = prevId + 1;
-            console.log('🔄 Moving from phrase', prevId, 'to phrase', nextId);
+            console.log('🔄 [SCREEN] Moving from phrase', prevId, 'to phrase', nextId);
             return nextId;
           });
           // loadPhrase() will be automatically called by useEffect when currentPhraseId changes
         }, 4500); // 4.5 second delay to show congratulations animation
       } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
-        console.log('❌ Incorrect answer! Showing retry animation...');
+        console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
         setShowRetryAnimation(true);
         
         // Hide the animation after 3 seconds and allow retry
         setTimeout(() => {
+          console.log('🔄 [SCREEN] Hiding retry animation after 3 seconds');
           setShowRetryAnimation(false);
         }, 3000); // 3 second delay to show retry animation
       }
 
-
-
     } catch (error) {
-      console.error('❌ Error during recording evaluation:', error);
-      console.error('❌ Error details:', {
+      console.error('❌ [SCREEN] Error during recording evaluation:', error);
+      console.error('❌ [SCREEN] Error details:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : 'Unknown'
@@ -401,7 +512,7 @@ const RepeatAfterMeScreen = () => {
       // Hide evaluating animation on error
       setShowEvaluatingAnimation(false);
     } finally {
-      console.log('🏁 Evaluation process completed');
+      console.log('🏁 [SCREEN] Evaluation process completed');
       setIsProcessing(false);
     }
   };
@@ -435,6 +546,44 @@ const RepeatAfterMeScreen = () => {
     return ['#58D68D', '#45B7A8'];
   };
 
+  // Show loading screen if auth is still loading
+  if (authLoading) {
+    console.log('🔄 [SCREEN] Showing loading screen - auth loading');
+    return (
+      <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.container}>
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    console.log('🔄 [SCREEN] Showing login prompt - user not authenticated');
+    return (
+      <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.container}>
+            <Text style={styles.headerTitle}>Repeat After Me</Text>
+            <Text style={styles.errorText}>Please log in to track your progress</Text>
+            <TouchableOpacity
+              style={styles.speakButton}
+              onPress={() => router.push('/auth/login')}
+            >
+              <LinearGradient colors={["#58D68D", "#45B7A8"]} style={styles.speakButtonGradient}>
+                <Text style={styles.speakButtonText}>Login</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  console.log('🔄 [SCREEN] Rendering main screen');
   return (
     <LinearGradient
       colors={["#8EC5FC", "#6E73F2"]}
@@ -445,6 +594,16 @@ const RepeatAfterMeScreen = () => {
           {/* Header */}
           <Text style={styles.headerTitle}>Repeat After Me</Text>
           <Text style={styles.progressText}>Progress: {currentPhraseId - 1} of 25 phrases completed</Text>
+          
+          {/* Progress Display */}
+          {userProgress && (
+            <View style={styles.progressCard}>
+              <Text style={styles.progressCardTitle}>Your Progress</Text>
+              <Text style={styles.progressCardText}>Average Score: {userProgress.average_score?.toFixed(1) || 0}%</Text>
+              <Text style={styles.progressCardText}>Attempts: {userProgress.attempts || 0}</Text>
+              <Text style={styles.progressCardText}>Time Spent: {Math.round(userProgress.time_spent_minutes || 0)} min</Text>
+            </View>
+          )}
 
           {/* Phrase Card */}
           <View style={styles.card}>
@@ -558,6 +717,30 @@ const styles = StyleSheet.create({
     color: '#e0e0e0',
     fontSize: 16,
     marginBottom: 10,
+    textAlign: 'center',
+  },
+  progressCard: {
+    width: width * 0.85,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  progressCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  progressCardText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
     textAlign: 'center',
   },
   card: {
