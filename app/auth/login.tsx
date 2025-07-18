@@ -13,12 +13,12 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
-import { usePasswordReset } from '../../hooks/usePasswordReset';
 import { StatusBar } from 'expo-status-bar';
 
 const { width, height } = Dimensions.get('window');
@@ -26,7 +26,7 @@ const { width, height } = Dimensions.get('window');
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, loading: authLoading } = useAuth();
-  const { resetPassword, isLoading: resetLoading } = usePasswordReset();
+  
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -125,12 +125,19 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address first');
-      return;
-    }
+    const forgotPasswordUrl = 'https://dil.lovable.app/forgot-password?role=student';
     
-    await resetPassword(email.trim());
+    try {
+      const supported = await Linking.canOpenURL(forgotPasswordUrl);
+      
+      if (supported) {
+        await Linking.openURL(forgotPasswordUrl);
+      } else {
+        Alert.alert('Error', 'Cannot open forgot password page. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open forgot password page. Please try again.');
+    }
   };
 
   const handleSignUp = () => {
