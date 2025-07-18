@@ -51,6 +51,8 @@ const RepeatAfterMeScreen = () => {
   const [userProgress, setUserProgress] = useState<any>(null);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
+  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
+  const [isExerciseCompleted, setIsExerciseCompleted] = useState<boolean>(false);
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
@@ -113,8 +115,9 @@ const RepeatAfterMeScreen = () => {
         console.log('✅ [SCREEN] Progress initialized successfully');
         setIsProgressInitialized(true);
         
-        // Load current progress
-        console.log('🔄 [SCREEN] Loading current user progress...');
+        // Load current topic and progress
+        console.log('🔄 [SCREEN] Loading current topic and progress...');
+        await loadCurrentTopic();
         await loadUserProgress();
       } else {
         console.log('⚠️ [SCREEN] Progress initialization failed:', initResult.error);
@@ -132,11 +135,56 @@ const RepeatAfterMeScreen = () => {
       if (progress) {
         console.log('📊 [SCREEN] Loaded user progress:', progress);
         setUserProgress(progress);
+        
+        // Check if exercise is completed
+        const completed = progress.completed_at !== null;
+        setIsExerciseCompleted(completed);
+        console.log('📊 [SCREEN] Exercise completed status:', completed);
+        
+        if (completed) {
+          console.log('🎉 [SCREEN] Exercise is already completed!');
+          setError('Congratulations! You have completed this exercise. Great job!');
+          return;
+        }
       } else {
         console.log('ℹ️ [SCREEN] No progress data found');
       }
     } catch (error) {
       console.error('❌ [SCREEN] Error loading user progress:', error);
+    }
+  };
+
+  const loadCurrentTopic = async () => {
+    console.log('🔄 [SCREEN] loadCurrentTopic called');
+    try {
+      console.log('🔄 [SCREEN] Getting current topic for exercise...');
+      const topicResult = await ProgressHelpers.getCurrentTopicForExercise(1, 1); // Stage 1, Exercise 1
+      
+      if (topicResult.success && topicResult.data) {
+        const { current_topic_id, is_completed } = topicResult.data;
+        console.log('📊 [SCREEN] Current topic data:', { current_topic_id, is_completed });
+        
+        setCurrentTopicId(current_topic_id);
+        setIsExerciseCompleted(is_completed);
+        
+        if (is_completed) {
+          console.log('🎉 [SCREEN] Exercise is already completed!');
+          setError('Congratulations! You have completed this exercise. Great job!');
+          return;
+        }
+        
+        // Load the phrase for the current topic
+        setCurrentPhraseId(current_topic_id);
+      } else {
+        console.log('⚠️ [SCREEN] Failed to get current topic, starting with topic 1');
+        setCurrentTopicId(1);
+        setCurrentPhraseId(1);
+      }
+    } catch (error) {
+      console.error('❌ [SCREEN] Error loading current topic:', error);
+      // Fallback to topic 1
+      setCurrentTopicId(1);
+      setCurrentPhraseId(1);
     }
   };
 
@@ -173,8 +221,10 @@ const RepeatAfterMeScreen = () => {
   // This ensures that when currentPhraseId updates, the new phrase is loaded automatically
   useEffect(() => {
     console.log('🔄 [SCREEN] useEffect triggered - currentPhraseId changed to:', currentPhraseId);
-    loadPhrase();
-  }, [currentPhraseId]);
+    if (!isExerciseCompleted) {
+      loadPhrase();
+    }
+  }, [currentPhraseId, isExerciseCompleted]);
 
   const loadPhrase = async () => {
     console.log('🔄 [SCREEN] loadPhrase called');
@@ -464,42 +514,48 @@ const RepeatAfterMeScreen = () => {
         hasError: !!error
       });
 
-      // Check if the evaluation was successful and move to next phrase
-      if (result.success && result.evaluation && result.evaluation.is_correct) {
-        console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
-        setShowCongratulationsAnimation(true);
-        
-        // Show unlocked content notification if any
-        if (result.unlocked_content && result.unlocked_content.length > 0) {
-          console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
-          Alert.alert(
-            '🎉 New Content Unlocked!',
-            `You've unlocked: ${result.unlocked_content.join(', ')}`,
-            [{ text: 'OK' }]
-          );
+              // Check if the evaluation was successful and move to next phrase
+        if (result.success && result.evaluation && result.evaluation.is_correct) {
+          console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
+          setShowCongratulationsAnimation(true);
+          
+          // Show unlocked content notification if any
+          if (result.unlocked_content && result.unlocked_content.length > 0) {
+            console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
+            Alert.alert(
+              '🎉 New Content Unlocked!',
+              `You've unlocked: ${result.unlocked_content.join(', ')}`,
+              [{ text: 'OK' }]
+            );
+          }
+          
+          // Check if this was the last topic (assuming 25 topics total)
+          const nextTopicId = currentPhraseId + 1;
+          if (nextTopicId > 25) {
+            console.log('🎉 [SCREEN] All topics completed! Exercise finished!');
+            setIsExerciseCompleted(true);
+            setError('Congratulations! You have completed all topics in this exercise. Great job!');
+          } else {
+            // Hide the animation after 4.5 seconds and move to next phrase
+            setTimeout(() => {
+              console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
+              setShowCongratulationsAnimation(false);
+              setCurrentPhraseId(nextTopicId);
+              setCurrentTopicId(nextTopicId);
+              console.log('🔄 [SCREEN] Moving from topic', currentPhraseId, 'to topic', nextTopicId);
+              // loadPhrase() will be automatically called by useEffect when currentPhraseId changes
+            }, 4500); // 4.5 second delay to show congratulations animation
+          }
+        } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
+          console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
+          setShowRetryAnimation(true);
+          
+          // Hide the animation after 3 seconds and allow retry
+          setTimeout(() => {
+            console.log('🔄 [SCREEN] Hiding retry animation after 3 seconds');
+            setShowRetryAnimation(false);
+          }, 3000); // 3 second delay to show retry animation
         }
-        
-        // Hide the animation after 4.5 seconds and move to next phrase
-        setTimeout(() => {
-          console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
-          setShowCongratulationsAnimation(false);
-          setCurrentPhraseId(prevId => {
-            const nextId = prevId + 1;
-            console.log('🔄 [SCREEN] Moving from phrase', prevId, 'to phrase', nextId);
-            return nextId;
-          });
-          // loadPhrase() will be automatically called by useEffect when currentPhraseId changes
-        }, 4500); // 4.5 second delay to show congratulations animation
-      } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
-        console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
-        setShowRetryAnimation(true);
-        
-        // Hide the animation after 3 seconds and allow retry
-        setTimeout(() => {
-          console.log('🔄 [SCREEN] Hiding retry animation after 3 seconds');
-          setShowRetryAnimation(false);
-        }, 3000); // 3 second delay to show retry animation
-      }
 
     } catch (error) {
       console.error('❌ [SCREEN] Error during recording evaluation:', error);
@@ -599,6 +655,7 @@ const RepeatAfterMeScreen = () => {
           {userProgress && (
             <View style={styles.progressCard}>
               <Text style={styles.progressCardTitle}>Your Progress</Text>
+              <Text style={styles.progressCardText}>Current Topic: {currentTopicId} of 25</Text>
               <Text style={styles.progressCardText}>Average Score: {userProgress.average_score?.toFixed(1) || 0}%</Text>
               <Text style={styles.progressCardText}>Attempts: {userProgress.attempts || 0}</Text>
               <Text style={styles.progressCardText}>Time Spent: {Math.round(userProgress.time_spent_minutes || 0)} min</Text>
@@ -607,7 +664,13 @@ const RepeatAfterMeScreen = () => {
 
           {/* Phrase Card */}
           <View style={styles.card}>
-            {isLoading ? (
+            {isExerciseCompleted ? (
+              <View style={styles.completedContainer}>
+                <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
+                <Text style={styles.completedText}>Congratulations! You have successfully completed all topics in this exercise.</Text>
+                <Text style={styles.completedText}>Great job on your progress!</Text>
+              </View>
+            ) : isLoading ? (
               <Text style={styles.loadingText}>Loading phrase...</Text>
             ) : currentPhrase ? (
               <>
@@ -635,7 +698,7 @@ const RepeatAfterMeScreen = () => {
           <TouchableOpacity
             style={styles.speakButton}
             onPress={audioRecorder.state.isRecording ? handleStopRecording : handleStartRecording}
-            disabled={isProcessing || audioPlayer.state.isPlaying || isLoading}
+            disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
           >
             <LinearGradient
               colors={["#58D68D", "#45B7A8"]}
@@ -905,6 +968,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
+  },
+  completedContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  completedTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#58D68D',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  completedText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
   },
 });
 

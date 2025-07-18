@@ -213,6 +213,60 @@ class ProgressTracker {
   }
 
   /**
+   * Get the current topic_id for a specific exercise
+   */
+  async getCurrentTopicForExercise(stageId: number, exerciseId: number): Promise<ProgressResponse> {
+    console.log('🔄 [FRONTEND] getCurrentTopicForExercise called');
+    console.log('📊 [FRONTEND] Exercise details:', { stage_id: stageId, exercise_id: exerciseId });
+    
+    try {
+      if (!this.currentUser?.id) {
+        console.log('❌ [FRONTEND] User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/get-current-topic`);
+
+      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: this.currentUser.id,
+          stage_id: stageId,
+          exercise_id: exerciseId
+        }),
+      });
+
+      console.log('📥 [FRONTEND] Response status:', response.status);
+      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const result = await response.json();
+      console.log('✅ [FRONTEND] Current topic result:', result);
+      
+      if (result.success) {
+        const data = result.data;
+        console.log('📊 [FRONTEND] Current topic data:');
+        console.log('   - Current topic_id:', data.current_topic_id);
+        console.log('   - Is new exercise:', data.is_new_exercise);
+        console.log('   - Is completed:', data.is_completed);
+      } else {
+        console.log('❌ [FRONTEND] Get current topic failed:', result.error);
+      }
+      
+      return result;
+
+    } catch (error) {
+      console.error('❌ [FRONTEND] Error getting current topic:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
    * Check if user should unlock new content based on progress
    */
   async checkContentUnlocks(): Promise<ProgressResponse> {
@@ -452,6 +506,16 @@ export const ProgressHelpers = {
     console.log('🔄 [HELPER] isRepeatAfterMeUnlocked called');
     const result = await progressTracker.isContentUnlocked(1, 1);
     console.log('✅ [HELPER] isRepeatAfterMeUnlocked completed:', result);
+    return result;
+  },
+
+  /**
+   * Get current topic for a specific exercise
+   */
+  async getCurrentTopicForExercise(stageId: number, exerciseId: number): Promise<ProgressResponse> {
+    console.log('🔄 [HELPER] getCurrentTopicForExercise called');
+    const result = await progressTracker.getCurrentTopicForExercise(stageId, exerciseId);
+    console.log('✅ [HELPER] getCurrentTopicForExercise completed:', result);
     return result;
   },
 
