@@ -12,7 +12,11 @@ import Animated, {
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoadingScreen() {
+interface LoadingScreenProps {
+  message?: string;
+}
+
+export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
@@ -55,7 +59,7 @@ export default function LoadingScreen() {
         </Animated.View>
       </LinearGradient>
       <Text style={styles.appName}>DIL Tutor</Text>
-      <Text style={styles.subtitle}>Loading...</Text>
+      <Text style={styles.subtitle}>{message}</Text>
     </View>
   );
 }

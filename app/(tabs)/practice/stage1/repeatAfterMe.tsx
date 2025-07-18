@@ -20,6 +20,7 @@ import BASE_API_URL from '../../../../config/api';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
 import { useAuth } from '../../../../context/AuthContext';
 import { progressTracker, ProgressHelpers } from '../../../../utils/progressTracker';
+import LoadingScreen from '../../../../components/LoadingScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -68,6 +69,7 @@ const RepeatAfterMeScreen = () => {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState<boolean>(false);
+  const [isTopicLoaded, setIsTopicLoaded] = useState<boolean>(false);
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
@@ -178,19 +180,25 @@ const RepeatAfterMeScreen = () => {
         if (is_completed) {
           console.log('🎉 [SCREEN] Exercise is already completed!');
           setError('Congratulations! You have completed this exercise. Great job!');
+          setIsTopicLoaded(true); // Mark as loaded even if completed
           return;
         }
         
+        // Set the current phrase ID but don't mark as loaded yet
+        // The phrase will be loaded in the useEffect when isTopicLoaded becomes true
         setCurrentPhraseId(current_topic_id);
+        setIsTopicLoaded(true); // Now mark as loaded so phrase can be loaded
       } else {
         console.log('⚠️ [SCREEN] Failed to get current topic, starting with topic 1');
         setCurrentTopicId(1);
         setCurrentPhraseId(1);
+        setIsTopicLoaded(true); // Mark as loaded even if starting with topic 1
       }
     } catch (error) {
       console.error('❌ [SCREEN] Error loading current topic:', error);
       setCurrentTopicId(1);
       setCurrentPhraseId(1);
+      setIsTopicLoaded(true); // Mark as loaded even on error
     }
   };
 
@@ -235,10 +243,11 @@ const RepeatAfterMeScreen = () => {
 
   useEffect(() => {
     console.log('🔄 [SCREEN] useEffect triggered - currentPhraseId changed to:', currentPhraseId);
-    if (!isExerciseCompleted) {
+    // Only load phrase if topic is loaded and exercise is not completed
+    if (isTopicLoaded && !isExerciseCompleted) {
       loadPhrase();
     }
-  }, [currentPhraseId, isExerciseCompleted]);
+  }, [currentPhraseId, isExerciseCompleted, isTopicLoaded]);
 
   const loadPhrase = async () => {
     console.log('🔄 [SCREEN] loadPhrase called');
@@ -521,18 +530,9 @@ const RepeatAfterMeScreen = () => {
     ]).start();
   };
 
-  // Show loading screen if auth is still loading
-  if (authLoading) {
-    return (
-      <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.container}>
-            <Text style={styles.loadingText}>Loading...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    );
+  // Show loading screen if auth is still loading or topic is not loaded yet
+  if (authLoading || !isTopicLoaded) {
+    return <LoadingScreen message="Loading your progress..." />;
   }
 
   // Show login prompt if user is not authenticated
