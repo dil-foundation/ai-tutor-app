@@ -14,6 +14,7 @@ import {
   StatusBar,
   Alert,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -428,9 +429,20 @@ export default function ProgressScreen() {
               style={styles.overviewGradient}
             >
               <View style={styles.overviewHeader}>
-                <Text style={styles.overviewTitle}>Current Stage</Text>
-                <Text style={styles.overviewStage}>{safeData.current_stage.name}</Text>
-                <Text style={styles.overviewSubtitle}>{safeData.current_stage.subtitle}</Text>
+                <View style={styles.overviewHeaderContent}>
+                  <View style={styles.overviewIconContainer}>
+                    <Image 
+                      source={require('../../../assets/icon_images/career_image.png')}
+                      style={styles.overviewIcon}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.overviewTextContent}>
+                    <Text style={styles.overviewTitle}>Current Stage</Text>
+                    <Text style={styles.overviewStage}>{safeData.current_stage.name}</Text>
+                    <Text style={styles.overviewSubtitle}>{safeData.current_stage.subtitle}</Text>
+                  </View>
+                </View>
               </View>
               
               <View style={styles.progressStats}>
@@ -857,6 +869,31 @@ const styles = StyleSheet.create({
   },
   overviewHeader: {
     marginBottom: 24,
+  },
+  overviewHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  overviewIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  overviewIcon: {
+    width: 50,
+    height: 50,
+  },
+  overviewTextContent: {
+    flex: 1,
   },
   overviewTitle: {
     fontSize: 18,
