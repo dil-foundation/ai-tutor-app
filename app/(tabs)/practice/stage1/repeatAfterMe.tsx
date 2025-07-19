@@ -568,10 +568,10 @@ const RepeatAfterMeScreen = () => {
   // Show login prompt if user is not authenticated
   if (!user) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.mainContainer}>
+          <View style={styles.container}>
             <Text style={styles.headerTitle}>Repeat After Me</Text>
             <Text style={styles.errorText}>Please log in to track your progress</Text>
             <TouchableOpacity
@@ -584,16 +584,16 @@ const RepeatAfterMeScreen = () => {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </View>
+      </LinearGradient>
     );
   }
 
   console.log('🔄 [SCREEN] Rendering main screen');
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+    <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.mainContainer}>
+        <View style={styles.container}>
           {/* Header */}
           <Animated.View
             style={[
@@ -636,7 +636,10 @@ const RepeatAfterMeScreen = () => {
                 },
               ]}
             >
-              <View style={styles.progressGradient}>
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                style={styles.progressGradient}
+              >
                 <View style={styles.progressContent}>
                   <Ionicons name="trending-up" size={24} color="#58D68D" />
                   <Text style={styles.progressTitle}>Your Progress</Text>
@@ -644,7 +647,7 @@ const RepeatAfterMeScreen = () => {
                   <Text style={styles.progressText}>Score: {userProgress.average_score?.toFixed(1) || 0}%</Text>
                   <Text style={styles.progressText}>Time: {Math.round(userProgress.time_spent_minutes || 0)} min</Text>
                 </View>
-              </View>
+              </LinearGradient>
             </Animated.View>
           )}
 
@@ -661,7 +664,10 @@ const RepeatAfterMeScreen = () => {
               },
             ]}
           >
-            <View style={styles.mainCardGradient}>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
+              style={styles.mainCardGradient}
+            >
               {isExerciseCompleted ? (
                 <View style={styles.completedContainer}>
                   <Ionicons name="trophy" size={64} color="#58D68D" />
@@ -707,7 +713,7 @@ const RepeatAfterMeScreen = () => {
                   <Text style={styles.errorText}>Failed to load phrase</Text>
                 </View>
               )}
-            </View>
+            </LinearGradient>
           </Animated.View>
 
           {/* Action Button */}
@@ -810,16 +816,15 @@ const RepeatAfterMeScreen = () => {
           </View>
         )}
       </SafeAreaView>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
-  mainContainer: {
+  container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -874,18 +879,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
-    textShadowColor: 'rgba(88, 214, 141, 0.2)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6C757D',
+    color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 24,
+    opacity: 0.9,
   },
   progressCard: {
     width: '100%',
@@ -895,8 +900,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
@@ -929,8 +933,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
@@ -1014,7 +1017,6 @@ const styles = StyleSheet.create({
     color: '#FF6B6B',
     textAlign: 'center',
     marginTop: 16,
-    fontWeight: '500',
   },
   buttonContainer: {
     width: '100%',
