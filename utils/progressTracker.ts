@@ -30,9 +30,11 @@ export interface ProgressResponse {
 class ProgressTracker {
   private static instance: ProgressTracker;
   private currentUser: any = null;
+  private isInitialized: boolean = false;
 
   private constructor() {
-    this.initializeUser();
+    // Don't initialize user in constructor - wait for explicit initialization
+    console.log('🔄 [FRONTEND] ProgressTracker instance created (lazy initialization)');
   }
 
   public static getInstance(): ProgressTracker {
@@ -48,10 +50,19 @@ class ProgressTracker {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
       this.currentUser = user;
+      this.isInitialized = true;
       console.log('👤 [FRONTEND] Progress tracker initialized for user:', user?.id);
       console.log('📧 [FRONTEND] User email:', user?.email);
     } catch (error) {
       console.error('❌ [FRONTEND] Error initializing progress tracker:', error);
+      this.isInitialized = false;
+      throw error;
+    }
+  }
+
+  private async ensureInitialized() {
+    if (!this.isInitialized) {
+      await this.initializeUser();
     }
   }
 
@@ -61,6 +72,8 @@ class ProgressTracker {
   async initializeUserProgress(): Promise<ProgressResponse> {
     console.log('🔄 [FRONTEND] initializeUserProgress called');
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -119,6 +132,8 @@ class ProgressTracker {
     });
     
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -169,6 +184,8 @@ class ProgressTracker {
   async getUserProgress(): Promise<ProgressResponse> {
     console.log('🔄 [FRONTEND] getUserProgress called');
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -220,6 +237,8 @@ class ProgressTracker {
     console.log('📊 [FRONTEND] Exercise details:', { stage_id: stageId, exercise_id: exerciseId });
     
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -272,6 +291,8 @@ class ProgressTracker {
   async checkContentUnlocks(): Promise<ProgressResponse> {
     console.log('🔄 [FRONTEND] checkContentUnlocks called');
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -321,6 +342,8 @@ class ProgressTracker {
   async getProgressSummary(): Promise<any> {
     console.log('🔄 [FRONTEND] getProgressSummary called');
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -356,6 +379,8 @@ class ProgressTracker {
     console.log('📊 [FRONTEND] Requesting progress for stage:', stageId, 'exercise:', exerciseId);
     
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
@@ -393,6 +418,8 @@ class ProgressTracker {
     console.log('📊 [FRONTEND] Checking unlock for stage:', stageId, 'exercise:', exerciseId);
     
     try {
+      await this.ensureInitialized();
+      
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         return false;
@@ -428,7 +455,14 @@ class ProgressTracker {
    */
   async updateCurrentUser() {
     console.log('🔄 [FRONTEND] updateCurrentUser called');
-    await this.initializeUser();
+    try {
+      await this.initializeUser();
+    } catch (error) {
+      console.error('❌ [FRONTEND] Error updating current user:', error);
+      // Reset initialization state on error
+      this.isInitialized = false;
+      this.currentUser = null;
+    }
   }
 
   /**
@@ -474,19 +508,27 @@ export const ProgressHelpers = {
       completed
     });
     
-    const result = await progressTracker.recordTopicAttempt({
-      user_id: progressTracker.getCurrentUserId() || '',
-      stage_id: 1,
-      exercise_id: 1,
-      topic_id: phraseId,
-      score,
-      urdu_used: urduUsed,
-      time_spent_seconds: timeSpentSeconds,
-      completed
-    });
-    
-    console.log('✅ [HELPER] recordRepeatAfterMeAttempt completed:', result);
-    return result;
+    try {
+      const result = await progressTracker.recordTopicAttempt({
+        user_id: progressTracker.getCurrentUserId() || '',
+        stage_id: 1,
+        exercise_id: 1,
+        topic_id: phraseId,
+        score,
+        urdu_used: urduUsed,
+        time_spent_seconds: timeSpentSeconds,
+        completed
+      });
+      
+      console.log('✅ [HELPER] recordRepeatAfterMeAttempt completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in recordRepeatAfterMeAttempt:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   },
 
   /**
@@ -494,9 +536,14 @@ export const ProgressHelpers = {
    */
   async getRepeatAfterMeProgress(): Promise<any> {
     console.log('🔄 [HELPER] getRepeatAfterMeProgress called');
-    const result = await progressTracker.getExerciseProgress(1, 1);
-    console.log('✅ [HELPER] getRepeatAfterMeProgress completed:', result);
-    return result;
+    try {
+      const result = await progressTracker.getExerciseProgress(1, 1);
+      console.log('✅ [HELPER] getRepeatAfterMeProgress completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in getRepeatAfterMeProgress:', error);
+      return null;
+    }
   },
 
   /**
@@ -504,9 +551,14 @@ export const ProgressHelpers = {
    */
   async isRepeatAfterMeUnlocked(): Promise<boolean> {
     console.log('🔄 [HELPER] isRepeatAfterMeUnlocked called');
-    const result = await progressTracker.isContentUnlocked(1, 1);
-    console.log('✅ [HELPER] isRepeatAfterMeUnlocked completed:', result);
-    return result;
+    try {
+      const result = await progressTracker.isContentUnlocked(1, 1);
+      console.log('✅ [HELPER] isRepeatAfterMeUnlocked completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in isRepeatAfterMeUnlocked:', error);
+      return false;
+    }
   },
 
   /**
@@ -514,9 +566,17 @@ export const ProgressHelpers = {
    */
   async getCurrentTopicForExercise(stageId: number, exerciseId: number): Promise<ProgressResponse> {
     console.log('🔄 [HELPER] getCurrentTopicForExercise called');
-    const result = await progressTracker.getCurrentTopicForExercise(stageId, exerciseId);
-    console.log('✅ [HELPER] getCurrentTopicForExercise completed:', result);
-    return result;
+    try {
+      const result = await progressTracker.getCurrentTopicForExercise(stageId, exerciseId);
+      console.log('✅ [HELPER] getCurrentTopicForExercise completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in getCurrentTopicForExercise:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   },
 
   /**
@@ -524,8 +584,16 @@ export const ProgressHelpers = {
    */
   async initializeProgressForNewUser(): Promise<ProgressResponse> {
     console.log('🔄 [HELPER] initializeProgressForNewUser called');
-    const result = await progressTracker.initializeUserProgress();
-    console.log('✅ [HELPER] initializeProgressForNewUser completed:', result);
-    return result;
+    try {
+      const result = await progressTracker.initializeUserProgress();
+      console.log('✅ [HELPER] initializeProgressForNewUser completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in initializeProgressForNewUser:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 }; 
