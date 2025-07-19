@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Animated, 
   Dimensions, 
@@ -12,7 +12,8 @@ import {
   Alert, 
   Platform,
   StatusBar,
-  SafeAreaView
+  SafeAreaView,
+  ScrollView
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
@@ -51,11 +52,11 @@ const RepeatAfterMeScreen = () => {
   const [scaleAnim] = useState(new Animated.Value(0.9));
   const [cardScaleAnim] = useState(new Animated.Value(0.8));
   const [buttonScaleAnim] = useState(new Animated.Value(1));
-  const [progressScaleAnim] = useState(new Animated.Value(0.7));
 
   // State management
   const [currentPhrase, setCurrentPhrase] = useState<Phrase | null>(null);
-  const [currentPhraseId, setCurrentPhraseId] = useState<number>(1);
+  const [currentTopicId, setCurrentTopicId] = useState(1);
+  const [totalPhrases, setTotalPhrases] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
@@ -68,22 +69,13 @@ const RepeatAfterMeScreen = () => {
   const [userProgress, setUserProgress] = useState<any>(null);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
-  const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState<boolean>(false);
   const [isTopicLoaded, setIsTopicLoaded] = useState<boolean>(false);
-  const [totalPhrases, setTotalPhrases] = useState<number>(50); // Default fallback based on JSON file
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
   const audioRecorder = useAudioRecorder(5000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
-    console.log('📊 [AUTO-STOP] Auto-stop details:', {
-      audioUri: audioUri ? 'Present' : 'None',
-      uriLength: audioUri?.length || 0,
-      currentPhrase: currentPhrase?.phrase || 'None',
-      isProcessing: isProcessing
-    });
-    
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
       await processRecording(audioUri);
@@ -114,19 +106,57 @@ const RepeatAfterMeScreen = () => {
     }
   }, [user, isProgressInitialized]);
 
+  // Load current phrase when topic changes
+  useEffect(() => {
+    if (isTopicLoaded && currentTopicId > 0) {
+      loadPhrase();
+    }
+  }, [isTopicLoaded, currentTopicId]);
+
+  // Animation effects
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScaleAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const initializeProgressTracking = async () => {
-    console.log('🔄 [SCREEN] initializeProgressTracking called');
+    console.log("🔄 [PROGRESS] Initializing progress tracking for Repeat After Me");
     try {
-      console.log('🔄 [SCREEN] Initializing progress tracking for user:', user?.id);
-      
-      await progressTracker.updateCurrentUser();
-      
-      console.log('🔄 [SCREEN] Initializing user progress...');
-      const initResult = await ProgressHelpers.initializeProgressForNewUser();
-      console.log('📊 [SCREEN] Progress initialization result:', initResult);
-      
-      if (initResult.success) {
-        console.log('✅ [SCREEN] Progress initialized successfully');
+      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user?.id
+        })
+      });
+
+      const result = await response.json();
+      console.log("📊 [PROGRESS] Progress initialization result:", result);
+
+      if (result.success) {
+        console.log("✅ [PROGRESS] Progress tracking initialized successfully");
         setIsProgressInitialized(true);
         
         console.log('🔄 [SCREEN] Loading current topic, progress, and total phrases...');
@@ -136,245 +166,139 @@ const RepeatAfterMeScreen = () => {
           loadTotalPhrases()
         ]);
       } else {
-        console.log('⚠️ [SCREEN] Progress initialization failed:', initResult.error);
+        console.log("⚠️ [PROGRESS] Progress initialization failed:", result.error);
       }
     } catch (error) {
-      console.error('❌ [SCREEN] Error initializing progress tracking:', error);
+      console.error("❌ [PROGRESS] Error initializing progress:", error);
     }
   };
 
   const loadUserProgress = async () => {
-    console.log('🔄 [SCREEN] loadUserProgress called');
+    console.log("🔄 [PROGRESS] Loading user progress for Repeat After Me");
     try {
-      console.log('🔄 [SCREEN] Getting repeat after me progress...');
-      const progress = await ProgressHelpers.getRepeatAfterMeProgress();
-      if (progress) {
-        console.log('📊 [SCREEN] Loaded user progress:', progress);
-        setUserProgress(progress);
-        
-        const completed = progress.completed_at !== null;
-        setIsExerciseCompleted(completed);
-        console.log('📊 [SCREEN] Exercise completed status:', completed);
-        
-        if (completed) {
-          console.log('🎉 [SCREEN] Exercise is already completed!');
-          setError('Congratulations! You have completed this exercise. Great job!');
-          return;
-        }
+      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user?.id}`);
+      const result = await response.json();
+      console.log("📊 [PROGRESS] User progress result:", result);
+
+      if (result.success) {
+        setUserProgress(result.data);
+        console.log("✅ [PROGRESS] User progress loaded successfully");
       } else {
-        console.log('ℹ️ [SCREEN] No progress data found');
+        console.log("❌ [PROGRESS] Failed to load user progress:", result.error);
       }
     } catch (error) {
-      console.error('❌ [SCREEN] Error loading user progress:', error);
+      console.error("❌ [PROGRESS] Error loading user progress:", error);
     }
   };
 
   const loadCurrentTopic = async () => {
-    console.log('🔄 [SCREEN] loadCurrentTopic called');
+    console.log("🔄 [PROGRESS] Loading current topic for Repeat After Me");
     try {
-      console.log('🔄 [SCREEN] Getting current topic for exercise...');
-      const topicResult = await ProgressHelpers.getCurrentTopicForExercise(1, 1);
-      
-      if (topicResult.success && topicResult.data) {
-        const { current_topic_id, is_completed } = topicResult.data;
-        console.log('📊 [SCREEN] Current topic data:', { current_topic_id, is_completed });
-        
-        setCurrentTopicId(current_topic_id);
-        setIsExerciseCompleted(is_completed);
-        
-        if (is_completed) {
-          console.log('🎉 [SCREEN] Exercise is already completed!');
-          setError('Congratulations! You have completed this exercise. Great job!');
-          setIsTopicLoaded(true); // Mark as loaded even if completed
-          return;
-        }
-        
-        // Set the current phrase ID but don't mark as loaded yet
-        // The phrase will be loaded in the useEffect when isTopicLoaded becomes true
-        setCurrentPhraseId(current_topic_id);
-        setIsTopicLoaded(true); // Now mark as loaded so phrase can be loaded
+      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          stage_id: 1,
+          exercise_id: 1  // Exercise 1 (Repeat After Me)
+        })
+      });
+
+      const result = await response.json();
+      console.log("📊 [PROGRESS] Current topic result:", result);
+
+      if (result.success && result.data) {
+        const topicId = result.data.current_topic_id || 1;
+        setCurrentTopicId(topicId);
+        setIsTopicLoaded(true);
+        console.log("✅ [PROGRESS] Current topic loaded:", topicId);
       } else {
-        console.log('⚠️ [SCREEN] Failed to get current topic, starting with topic 1');
+        console.log("⚠️ [PROGRESS] No current topic found, using default (1)");
         setCurrentTopicId(1);
-        setCurrentPhraseId(1);
-        setIsTopicLoaded(true); // Mark as loaded even if starting with topic 1
+        setIsTopicLoaded(true);
       }
     } catch (error) {
-      console.error('❌ [SCREEN] Error loading current topic:', error);
+      console.error("❌ [PROGRESS] Error loading current topic:", error);
       setCurrentTopicId(1);
-      setCurrentPhraseId(1);
-      setIsTopicLoaded(true); // Mark as loaded even on error
+      setIsTopicLoaded(true);
     }
   };
 
   const loadTotalPhrases = async () => {
-    console.log('🔄 [SCREEN] loadTotalPhrases called');
+    console.log("🔄 [PHRASES] Loading total phrases count");
     try {
-      console.log('🔄 [SCREEN] Getting total phrases count...');
-      const apiUrl = `${BASE_API_URL}/phrases`;
-      console.log('📡 [SCREEN] API URL for phrases:', apiUrl);
-      
-      const response = await fetch(apiUrl);
-      console.log('📥 [SCREEN] Phrases response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        const phrases = data.phrases || [];
-        console.log('✅ [SCREEN] Total phrases count:', phrases.length);
-        setTotalPhrases(phrases.length);
+      const response = await fetch(`${BASE_API_URL}/api/phrases`);
+      const result = await response.json();
+      console.log("📊 [PHRASES] Total phrases result:", result);
+
+      if (result.phrases) {
+        setTotalPhrases(result.phrases.length);
+        console.log("✅ [PHRASES] Total phrases loaded:", result.phrases.length);
       } else {
-        console.log('⚠️ [SCREEN] Failed to get phrases count, using default');
-        setTotalPhrases(50); // Fallback to default based on JSON file
+        console.log("❌ [PHRASES] Failed to load phrases");
       }
     } catch (error) {
-      console.error('❌ [SCREEN] Error loading total phrases:', error);
-      setTotalPhrases(50); // Fallback to default based on JSON file
+      console.error("❌ [PHRASES] Error loading total phrases:", error);
     }
   };
 
-  useEffect(() => {
-    console.log('🔄 [SCREEN] useEffect triggered - component mount');
-    
-    // Animate elements on mount
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardScaleAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(progressScaleAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    return () => {
-      console.log('🔄 [SCREEN] Component unmounting, cleaning up...');
-      audioPlayer.unloadAudio();
-      audioRecorder.resetRecording();
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('🔄 [SCREEN] useEffect triggered - currentPhraseId changed to:', currentPhraseId);
-    // Only load phrase if topic is loaded and exercise is not completed
-    if (isTopicLoaded && !isExerciseCompleted) {
-      loadPhrase();
-    }
-  }, [currentPhraseId, isExerciseCompleted, isTopicLoaded]);
-
   const loadPhrase = async () => {
-    console.log('🔄 [SCREEN] loadPhrase called');
+    console.log("🔄 [PHRASE] Loading phrase with ID:", currentTopicId);
+    setIsLoading(true);
     try {
-      console.log('🔄 [SCREEN] Starting to load phrase...');
-      console.log('📡 [SCREEN] Base API URL:', BASE_API_URL);
-      console.log('📝 [SCREEN] Loading phrase ID:', currentPhraseId);
-      setIsLoading(true);
-      setError(null);
-      
-      const apiUrl = `${BASE_API_URL}/api/phrases/${currentPhraseId}`;
-      console.log('📡 [SCREEN] API URL for phrase:', apiUrl);
-      
-      const response = await fetch(apiUrl);
-      console.log('📥 [SCREEN] Response status:', response.status);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log('🎉 [SCREEN] Congratulations! You have completed all phrases!');
-          setCurrentPhrase(null);
-          setError('Congratulations! You have completed all phrases. Great job!');
-          return;
-        }
-        console.error('❌ [SCREEN] API Error - Status:', response.status);
-        throw new Error(`Failed to load phrase: ${response.status} ${response.statusText}`);
+      const response = await fetch(`${BASE_API_URL}/api/phrases/${currentTopicId}`);
+      const result = await response.json();
+      console.log("📊 [PHRASE] Phrase result:", result);
+
+      if (response.ok) {
+        setCurrentPhrase(result);
+        console.log("✅ [PHRASE] Phrase loaded successfully:", result.phrase);
+      } else {
+        console.log("❌ [PHRASE] Failed to load phrase:", result.detail);
+        setError('Failed to load phrase. Please try again.');
       }
-      
-      const data = await response.json();
-      console.log('✅ [SCREEN] Phrase data received:', data);
-      setCurrentPhrase({ 
-        id: data.id, 
-        phrase: data.phrase,
-        urdu_meaning: data.urdu_meaning 
-      });
-      setEvaluationResult(null);
     } catch (error) {
-      console.error('❌ [SCREEN] Error loading phrase:', error);
-      setError('Failed to load phrase. Please try again.');
+      console.error("❌ [PHRASE] Error loading phrase:", error);
+      setError('Network error. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const playPhraseAudio = async () => {
-    console.log('🔄 [SCREEN] playPhraseAudio called');
-    if (!currentPhrase || audioPlayer.state.isPlaying) {
-      console.log('⚠️ [SCREEN] Cannot play audio - conditions not met');
-      return;
-    }
+    if (!currentPhrase || audioPlayer.state.isPlaying) return;
 
+    console.log("🔄 [AUDIO] Playing phrase audio for ID:", currentTopicId);
     try {
-      console.log('🔄 [SCREEN] Starting to play phrase audio...');
-      setError(null);
-
-      const apiUrl = `${BASE_API_URL}/api/repeat-after-me/${currentPhrase.id}`;
-      console.log('📡 [SCREEN] API URL for audio:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${BASE_API_URL}/api/repeat-after-me/${currentTopicId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
+        }
       });
-      
-      if (!response.ok) {
-        console.error('❌ [SCREEN] Audio API Error - Status:', response.status);
-        throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
-      }
-      
-      const responseData = await response.json();
-      console.log('✅ [SCREEN] Audio response received:', {
-        hasAudioBase64: !!responseData.audio_base64,
-        base64Length: responseData.audio_base64?.length || 0
-      });
-      
-      if (!responseData.audio_base64) {
-        throw new Error('No audio data received from server');
-      }
-      
-      const audioUri = `data:audio/mpeg;base64,${responseData.audio_base64}`;
-      console.log('✅ [SCREEN] Audio URI created (base64):', audioUri.substring(0, 50) + '...');
 
-      await audioPlayer.loadAudio(audioUri);
-      console.log('✅ [SCREEN] Audio loaded successfully');
-      
-      await audioPlayer.playAudio();
-      console.log('✅ [SCREEN] Audio playback started');
+      const result = await response.json();
+      console.log("📊 [AUDIO] Audio response received");
 
+      if (response.ok && result.audio_base64) {
+        const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        await audioPlayer.loadAudio(audioUri);
+        await audioPlayer.playAudio();
+        console.log("✅ [AUDIO] Audio played successfully");
+      } else {
+        console.log("❌ [AUDIO] Failed to get audio:", result.detail);
+        setError('Failed to play audio. Please try again.');
+      }
     } catch (error) {
-      console.error('❌ [SCREEN] Error playing audio:', error);
-      setError('Failed to play audio. Please try again.');
+      console.error("❌ [AUDIO] Error playing audio:", error);
+      setError('Network error. Please check your connection.');
     }
   };
 
   const handleStartRecording = async () => {
-    console.log('🔄 [SCREEN] handleStartRecording called');
-    if (audioRecorder.state.isRecording || audioPlayer.state.isPlaying) {
+    if (!currentPhrase || audioRecorder.state.isRecording || audioPlayer.state.isPlaying) {
       console.log('⚠️ [SCREEN] Cannot start recording - conditions not met');
       return;
     }
@@ -399,7 +323,6 @@ const RepeatAfterMeScreen = () => {
   };
 
   const handleStopRecording = async () => {
-    console.log('🔄 [SCREEN] handleStopRecording called');
     if (!audioRecorder.state.isRecording) {
       console.log('⚠️ [SCREEN] Cannot stop recording - not currently recording');
       return;
@@ -452,7 +375,7 @@ const RepeatAfterMeScreen = () => {
       const evaluationRequest = {
         audio_base64: base64Audio,
         phrase_id: currentPhrase?.id || 1,
-        filename: `recording-${Date.now()}.mp3`,
+        filename: `repeat_after_me_${currentTopicId}_${Date.now()}.m4a`,
         user_id: user?.id || '',
         time_spent_seconds: timeSpentSeconds,
         urdu_used: false
@@ -484,7 +407,7 @@ const RepeatAfterMeScreen = () => {
       const result: EvaluationResult = await evaluationResponse.json();
       console.log('✅ [SCREEN] Evaluation result received:', {
         success: result.success,
-        expectedPhrase: result.expected_phrase,
+        expected_phrase: result.expected_phrase,
         userText: result.user_text,
         error: result.error,
         message: result.message,
@@ -513,17 +436,8 @@ const RepeatAfterMeScreen = () => {
         setTimeout(() => {
           console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
           setShowCongratulationsAnimation(false);
-          const nextTopicId = currentPhraseId + 1;
-          if (nextTopicId > totalPhrases) {
-            console.log('🎉 [SCREEN] All topics completed! Exercise finished!');
-            setIsExerciseCompleted(true);
-            setError('Congratulations! You have completed all topics in this exercise. Great job!');
-          } else {
-            setCurrentPhraseId(nextTopicId);
-            setCurrentTopicId(nextTopicId);
-            console.log('🔄 [SCREEN] Moving from topic', currentPhraseId, 'to topic', nextTopicId);
-          }
-        }, 4500);
+          moveToNextPhrase();
+        }, 3000);
       } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
         console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
         setShowRetryAnimation(true);
@@ -544,10 +458,17 @@ const RepeatAfterMeScreen = () => {
     }
   };
 
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const tenths = Math.floor((ms % 1000) / 100);
-    return `${seconds}.${tenths}s`;
+  const moveToNextPhrase = () => {
+    if (currentTopicId < totalPhrases) {
+      const nextId = currentTopicId + 1;
+      setCurrentTopicId(nextId);
+      setEvaluationResult(null);
+      console.log("🔄 [PROGRESS] Moving to next phrase:", nextId);
+    } else {
+      console.log("🎉 [PROGRESS] All phrases completed!");
+      setIsExerciseCompleted(true);
+      setError('Congratulations! You have completed all Repeat After Me exercises!');
+    }
   };
 
   const animateButtonPress = () => {
@@ -565,38 +486,16 @@ const RepeatAfterMeScreen = () => {
     ]).start();
   };
 
-  // Show loading screen if auth is still loading or topic is not loaded yet
-  if (authLoading || !isTopicLoaded) {
-    return <LoadingScreen message="Loading your progress..." />;
+  if (authLoading) {
+    return <LoadingScreen />;
   }
 
-  // Show login prompt if user is not authenticated
-  if (!user) {
-    return (
-      <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.container}>
-            <Text style={styles.headerTitle}>Repeat After Me</Text>
-            <Text style={styles.errorText}>Please log in to track your progress</Text>
-            <TouchableOpacity
-              style={styles.speakButton}
-              onPress={() => router.push('/auth/login')}
-            >
-              <LinearGradient colors={["#58D68D", "#45B7A8"]} style={styles.speakButtonGradient}>
-                <Text style={styles.speakButtonText}>Login</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    );
-  }
-
-  console.log('🔄 [SCREEN] Rendering main screen');
   return (
-    <LinearGradient colors={["#8EC5FC", "#6E73F2"]} style={styles.gradient}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      style={styles.gradient}
+    >
+      <StatusBar barStyle="light-content" />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.container}>
           {/* Header */}
@@ -624,37 +523,13 @@ const RepeatAfterMeScreen = () => {
               </LinearGradient>
               <Text style={styles.headerTitle}>Repeat After Me</Text>
               <Text style={styles.headerSubtitle}>Perfect Your Pronunciation</Text>
+              
+              {/* Topic Counter */}
+              <Text style={styles.topicCounter}>
+                Topic: {currentTopicId} of {totalPhrases}
+              </Text>
             </View>
           </Animated.View>
-
-          {/* Progress Display */}
-          {userProgress && (
-            <Animated.View
-              style={[
-                styles.progressCard,
-                {
-                  opacity: fadeAnim,
-                  transform: [
-                    { translateY: slideAnim },
-                    { scale: progressScaleAnim }
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
-                style={styles.progressGradient}
-              >
-                <View style={styles.progressContent}>
-                  <Ionicons name="trending-up" size={24} color="#58D68D" />
-                  <Text style={styles.progressTitle}>Your Progress</Text>
-                  <Text style={styles.progressText}>Topic: {currentTopicId} of {totalPhrases}</Text>
-                  <Text style={styles.progressText}>Score: {userProgress.average_score?.toFixed(1) || 0}%</Text>
-                  <Text style={styles.progressText}>Time: {Math.round(userProgress.time_spent_minutes || 0)} min</Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
-          )}
 
           {/* Main Content Card */}
           <Animated.View
@@ -678,7 +553,7 @@ const RepeatAfterMeScreen = () => {
                   <Ionicons name="trophy" size={64} color="#58D68D" />
                   <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
                   <Text style={styles.completedText}>
-                    Congratulations! You have successfully completed all topics in this exercise.
+                    Congratulations! You have successfully completed all Repeat After Me exercises.
                   </Text>
                   <Text style={styles.completedText}>Great job on your progress!</Text>
                 </View>
@@ -688,35 +563,41 @@ const RepeatAfterMeScreen = () => {
                   <Text style={styles.loadingText}>Loading phrase...</Text>
                 </View>
               ) : currentPhrase ? (
-                <View style={styles.phraseContainer}>
-                  <Text style={styles.phraseText}>{currentPhrase.phrase}</Text>
-                  
-                  {/* Urdu Meaning Display */}
-                  <View style={styles.urduMeaningContainer}>
-                    <Text style={styles.urduMeaningText}>{currentPhrase.urdu_meaning}</Text>
-                  </View>
-                  
-                  <TouchableOpacity
-                    style={styles.playButton}
-                    onPress={playPhraseAudio}
-                    disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
-                  >
-                    <LinearGradient
-                      colors={["#58D68D", "#45B7A8"]}
-                      style={styles.playButtonGradient}
+                <ScrollView 
+                  style={styles.scrollContainer}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.phraseContainer}>
+                    <Text style={styles.phraseText}>{currentPhrase.phrase}</Text>
+                    
+                    {/* Urdu Meaning Display */}
+                    <View style={styles.urduMeaningContainer}>
+                      <Text style={styles.urduMeaningText}>{currentPhrase.urdu_meaning}</Text>
+                    </View>
+                    
+                    <TouchableOpacity
+                      style={styles.playButton}
+                      onPress={playPhraseAudio}
+                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
-                      <Ionicons 
-                        name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                        size={36} 
-                        color="#fff" 
-                      />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  
-                  <Text style={styles.instructionText}>
-                    Listen to the phrase and repeat it clearly
-                  </Text>
-                </View>
+                      <LinearGradient
+                        colors={["#58D68D", "#45B7A8"]}
+                        style={styles.playButtonGradient}
+                      >
+                        <Ionicons 
+                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                          size={36} 
+                          color="#fff" 
+                        />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.instructionText}>
+                      Listen to the phrase and repeat it clearly
+                    </Text>
+                  </View>
+                </ScrollView>
               ) : (
                 <View style={styles.errorContainer}>
                   <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
@@ -768,7 +649,7 @@ const RepeatAfterMeScreen = () => {
                   style={{ marginRight: 8 }} 
                 />
                 <Text style={styles.speakButtonText}>
-                  {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? `Recording... ${formatTime(audioRecorder.state.recordingDuration)}` : 'Speak Now (5s max)'}
+                  {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? 'Listening' : 'Speak Now'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -787,8 +668,8 @@ const RepeatAfterMeScreen = () => {
               />
             </View>
             <View style={styles.congratulationsTextContainer}>
-              <Text style={styles.congratulationsTitle}>Congratulations!!!</Text>
-              <Text style={styles.congratulationsSubtitle}>Move on to the next sentence</Text>
+              <Text style={styles.congratulationsTitle}>Excellent!!!</Text>
+              <Text style={styles.congratulationsSubtitle}>Move on to the next phrase</Text>
             </View>
           </View>
         )}
@@ -804,8 +685,8 @@ const RepeatAfterMeScreen = () => {
               />
             </View>
             <View style={styles.retryTextContainer}>
-              <Text style={styles.retryTitle}>Kindly Try again</Text>
-              <Text style={styles.retrySubtitle}>the sentence</Text>
+              <Text style={styles.retryTitle}>Try Again</Text>
+              <Text style={styles.retrySubtitle}>Repeat the phrase</Text>
             </View>
           </View>
         )}
@@ -838,20 +719,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 20 : 30, // Reduced padding to match index.tsx
-    paddingBottom: Platform.OS === 'ios' ? 40 : 60, // Keep bottom padding for home indicator
+    paddingTop: Platform.OS === 'ios' ? 20 : 30,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 60,
     paddingHorizontal: 24,
   },
   header: {
     width: '100%',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: Platform.OS === 'ios' ? 10 : 20, // Reduced margin to match index.tsx
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
   },
   backButton: {
     position: 'absolute',
     left: 0,
-    top: Platform.OS === 'ios' ? 0 : 10, // Match index.tsx positioning
+    top: Platform.OS === 'ios' ? 0 : 10,
     zIndex: 10,
   },
   backButtonCircle: {
@@ -871,7 +752,7 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignItems: 'center',
-    marginTop: Platform.OS === 'ios' ? 10 : 20, // Reduced margin to match index.tsx
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
   },
   titleGradient: {
     width: 80,
@@ -901,37 +782,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
     opacity: 0.9,
-  },
-  progressCard: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  progressGradient: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  progressContent: {
-    alignItems: 'center',
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginTop: 8,
     marginBottom: 12,
   },
-  progressText: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 4,
+  topicCounter: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   mainCard: {
     width: '100%',
@@ -941,7 +801,7 @@ const styles = StyleSheet.create({
   mainCardGradient: {
     flex: 1,
     borderRadius: 24,
-    padding: 32,
+    padding: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000000',
@@ -949,8 +809,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 12,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   completedContainer: {
     alignItems: 'center',
@@ -973,6 +838,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   loadingContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 20,
@@ -987,23 +853,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    paddingVertical: 20,
   },
   phraseText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 16,
+    marginBottom: 20,
     textAlign: 'center',
     lineHeight: 32,
   },
   urduMeaningContainer: {
-    marginBottom: 24,
+    marginBottom: 32,
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: 'rgba(88, 214, 141, 0.1)',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(88, 214, 141, 0.2)',
+    width: '100%',
   },
   urduMeaningText: {
     fontSize: 18,
@@ -1070,26 +938,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
-  glassOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  glassBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backdropFilter: 'blur(10px)',
-  },
   congratulationsOverlay: {
     position: 'absolute',
     top: 0,
@@ -1100,16 +948,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    paddingHorizontal: 20, // Add padding for smaller screens
+    paddingHorizontal: 20,
   },
   animationContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    maxHeight: height * 0.6, // Limit height for better centering
+    maxHeight: height * 0.6,
   },
   congratulationsAnimation: {
-    width: Math.min(width * 0.7, height * 0.5), // Responsive sizing
+    width: Math.min(width * 0.7, height * 0.5),
     height: Math.min(width * 0.7, height * 0.5),
     alignSelf: 'center',
   },
@@ -1137,7 +985,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   retryAnimation: {
-    width: Math.min(width * 0.7, height * 0.5), // Responsive sizing
+    width: Math.min(width * 0.7, height * 0.5),
     height: Math.min(width * 0.7, height * 0.5),
     alignSelf: 'center',
   },
@@ -1165,7 +1013,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   evaluatingAnimation: {
-    width: Math.min(width * 0.7, height * 0.5), // Responsive sizing
+    width: Math.min(width * 0.7, height * 0.5),
     height: Math.min(width * 0.7, height * 0.5),
     alignSelf: 'center',
   },
