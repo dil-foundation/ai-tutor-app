@@ -424,7 +424,7 @@ export default function ProgressScreen() {
             ]}
           >
             <LinearGradient
-              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+              colors={['#FFFFFF', '#FFFFFF']}
               style={styles.overviewGradient}
             >
               <View style={styles.overviewHeader}>
