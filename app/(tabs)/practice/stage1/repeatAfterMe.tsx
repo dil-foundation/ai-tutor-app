@@ -27,6 +27,7 @@ const { width, height } = Dimensions.get('window');
 interface Phrase {
   id: number;
   phrase: string;
+  urdu_meaning: string;
 }
 
 interface EvaluationResult {
@@ -306,7 +307,11 @@ const RepeatAfterMeScreen = () => {
       
       const data = await response.json();
       console.log('✅ [SCREEN] Phrase data received:', data);
-      setCurrentPhrase({ id: data.id, phrase: data.phrase });
+      setCurrentPhrase({ 
+        id: data.id, 
+        phrase: data.phrase,
+        urdu_meaning: data.urdu_meaning 
+      });
       setEvaluationResult(null);
     } catch (error) {
       console.error('❌ [SCREEN] Error loading phrase:', error);
@@ -686,6 +691,11 @@ const RepeatAfterMeScreen = () => {
                 <View style={styles.phraseContainer}>
                   <Text style={styles.phraseText}>{currentPhrase.phrase}</Text>
                   
+                  {/* Urdu Meaning Display */}
+                  <View style={styles.urduMeaningContainer}>
+                    <Text style={styles.urduMeaningText}>{currentPhrase.urdu_meaning}</Text>
+                  </View>
+                  
                   <TouchableOpacity
                     style={styles.playButton}
                     onPress={playPhraseAudio}
@@ -982,9 +992,25 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 32,
+    marginBottom: 16,
     textAlign: 'center',
     lineHeight: 32,
+  },
+  urduMeaningContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.2)',
+  },
+  urduMeaningText: {
+    fontSize: 18,
+    color: '#58D68D',
+    textAlign: 'center',
+    fontWeight: '600',
+    lineHeight: 24,
   },
   playButton: {
     marginBottom: 24,
