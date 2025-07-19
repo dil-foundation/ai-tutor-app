@@ -586,6 +586,9 @@ const QuickResponseScreen = () => {
                   <View style={styles.promptContainer}>
                     <Text style={styles.promptText}>{currentPrompt.question}</Text>
                     
+                    {/* Urdu Question Display */}
+                    <Text style={styles.urduQuestionText}>{currentPrompt.question_urdu}</Text>
+                    
                     {/* Expected Answers Display */}
                     <View style={styles.expectedAnswersContainer}>
                       <Text style={styles.expectedAnswersTitle}>Expected Answers:</Text>
@@ -877,9 +880,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 24,
+    marginBottom: 12,
     textAlign: 'center',
     lineHeight: 32,
+  },
+  urduQuestionText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 28,
   },
   expectedAnswersContainer: {
     marginBottom: 32,
