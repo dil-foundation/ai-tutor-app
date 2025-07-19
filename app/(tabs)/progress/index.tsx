@@ -594,7 +594,8 @@ export default function ProgressScreen() {
             )}
           </Animated.View>
 
-          {/* Fluency Trend Chart */}
+          {/* Fluency Trend Chart - Temporarily Hidden */}
+          {/* 
           <Animated.View
             style={[
               styles.chartSection,
@@ -659,6 +660,7 @@ export default function ProgressScreen() {
               </LinearGradient>
             </View>
           </Animated.View>
+          */}
 
           {/* Practice Stats */}
           <Animated.View
@@ -685,10 +687,12 @@ export default function ProgressScreen() {
                 ]}
               >
                 <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                  colors={['#E8F5E8', '#F0F9F0']}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="time-outline" size={24} color="#58D68D" />
+                  <View style={styles.insightIconContainer}>
+                    <Ionicons name="time" size={24} color="#58D68D" />
+                  </View>
                   <Text style={styles.statCardValue}>{safeData.total_practice_time}h</Text>
                   <Text style={styles.statCardLabel}>Total Practice Time</Text>
                 </LinearGradient>
@@ -703,10 +707,12 @@ export default function ProgressScreen() {
                 ]}
               >
                 <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                  colors={['#FFF3E0', '#FFF8E1']}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="flame-outline" size={24} color="#FF6B35" />
+                  <View style={styles.insightIconContainer}>
+                    <Ionicons name="flame" size={24} color="#FF6B35" />
+                  </View>
                   <Text style={styles.statCardValue}>{safeData.streak_days}</Text>
                   <Text style={styles.statCardLabel}>Day Streak</Text>
                 </LinearGradient>
@@ -732,10 +738,12 @@ export default function ProgressScreen() {
             <View style={styles.additionalStatsGrid}>
               <View style={styles.additionalStatCard}>
                 <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                  colors={['#E8F5E8', '#F0F9F0']}
                   style={styles.additionalStatGradient}
                 >
-                  <Ionicons name="checkmark-circle-outline" size={20} color="#58D68D" />
+                  <View style={styles.insightIconContainer}>
+                    <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
+                  </View>
                   <Text style={styles.additionalStatValue}>{safeData.total_exercises_completed}</Text>
                   <Text style={styles.additionalStatLabel}>Exercises Completed</Text>
                 </LinearGradient>
@@ -743,10 +751,12 @@ export default function ProgressScreen() {
 
               <View style={styles.additionalStatCard}>
                 <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                  colors={['#E3F2FD', '#F0F8FF']}
                   style={styles.additionalStatGradient}
                 >
-                  <Ionicons name="timer-outline" size={20} color="#3498DB" />
+                  <View style={styles.insightIconContainer}>
+                    <Ionicons name="time" size={24} color="#3498DB" />
+                  </View>
                   <Text style={styles.additionalStatValue}>{safeData.average_session_duration.toFixed(1)}m</Text>
                   <Text style={styles.additionalStatLabel}>Avg Session</Text>
                 </LinearGradient>
@@ -754,10 +764,12 @@ export default function ProgressScreen() {
 
               <View style={styles.additionalStatCard}>
                 <LinearGradient
-                  colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
+                  colors={['#FFF3E0', '#FFF8E1']}
                   style={styles.additionalStatGradient}
                 >
-                  <Ionicons name="calendar-outline" size={20} color="#E74C3C" />
+                  <View style={styles.insightIconContainer}>
+                    <Ionicons name="flame" size={24} color="#FF6B35" />
+                  </View>
                   <Text style={styles.additionalStatValue}>{safeData.longest_streak}</Text>
                   <Text style={styles.additionalStatLabel}>Longest Streak</Text>
                 </LinearGradient>
@@ -1087,25 +1099,28 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    height: 140, // Fixed height for uniform appearance
   },
   statGradient: {
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     backgroundColor: '#F8F9FA',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
   },
   statCardValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000000',
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 4,
   },
   statCardLabel: {
@@ -1118,35 +1133,52 @@ const styles = StyleSheet.create({
   },
   additionalStatsGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
   additionalStatCard: {
     flex: 1,
+    height: 140, // Same height as Practice Statistics cards
   },
   additionalStatGradient: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     backgroundColor: '#F8F9FA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  additionalStatValue: {
+    fontSize: 24, // Same size as Practice Statistics
+    fontWeight: 'bold',
+    color: '#000000',
+    marginTop: 4,
+    marginBottom: 4, // Same margin as Practice Statistics
+  },
+  additionalStatLabel: {
+    fontSize: 12, // Same size as Practice Statistics
+    color: '#6C757D',
+    textAlign: 'center',
+  },
+  insightIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-  },
-  additionalStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  additionalStatLabel: {
-    fontSize: 10,
-    color: '#6C757D',
-    textAlign: 'center',
   },
   emptyState: {
     alignItems: 'center',

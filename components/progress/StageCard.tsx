@@ -39,9 +39,39 @@ const getStatusText = (stage: any) => {
 
 const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children }) => {
   const status = stage.completed ? 'completed' : stage.progress > 0 ? 'in_progress' : 'locked';
-  const progress = Math.round(
-    (stage.exercises.filter((ex) => ex.status === 'completed').length / stage.exercises.length) * 100
-  );
+  const completedExercises = stage.exercises.filter((ex) => ex.status === 'completed').length;
+  const totalExercises = stage.exercises.length;
+  const progress = Math.round((completedExercises / totalExercises) * 100);
+  
+  // Also check if any exercises are in progress and give them partial credit
+  const inProgressExercises = stage.exercises.filter((ex) => ex.status === 'in_progress').length;
+  const partialProgress = Math.round((inProgressExercises * 0.5) * (100 / totalExercises));
+  const totalProgress = progress + partialProgress;
+  
+  // Ensure progress is at least 0 and at most 100
+  const clampedProgress = Math.max(0, Math.min(100, totalProgress));
+  
+  // Debug logging
+  console.log(`📊 [STAGE CARD] Stage ${index + 1} progress:`, {
+    completed: completedExercises,
+    inProgress: inProgressExercises,
+    total: totalExercises,
+    progress: progress,
+    partialProgress: partialProgress,
+    totalProgress: totalProgress,
+    clampedProgress: clampedProgress,
+    expanded: expanded,
+    exercises: stage.exercises.map(e => ({ name: e.name, status: e.status }))
+  });
+  
+  // Additional debug for progress bar
+  if (expanded) {
+    console.log(`🎯 [PROGRESS BAR] Stage ${index + 1}:`, {
+      width: `${clampedProgress}%`,
+      colors: ['#58D68D', '#45B7A8'],
+      zIndex: 2
+    });
+  }
 
   return (
     <View style={styles.cardWrapper}>
@@ -95,14 +125,17 @@ const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, 
       </TouchableOpacity>
       {expanded && (
         <View style={styles.progressBarContainer}>
+          <View style={styles.progressBarBg} />
           <LinearGradient
             colors={['#58D68D', '#45B7A8']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.progressBar, { width: `${progress}%` }]}
-          />
-          <View style={styles.progressBarBg} />
-          <Text style={styles.progressText}>{progress}% Complete</Text>
+            style={[styles.progressBar, { width: `${clampedProgress}%` }]}
+          >
+            {/* Fallback View in case LinearGradient doesn't render */}
+            <View style={[styles.progressBarFallback, { width: '100%' }]} />
+          </LinearGradient>
+          <Text style={styles.progressText}>{clampedProgress}% Complete</Text>
         </View>
       )}
       {expanded && children}
@@ -207,7 +240,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#E5E5E5',
     borderRadius: 5,
-    zIndex: -1,
+    zIndex: 0,
   },
   progressBar: {
     position: 'absolute',
@@ -215,7 +248,12 @@ const styles = StyleSheet.create({
     top: 0,
     height: 10,
     borderRadius: 5,
-    zIndex: 1,
+    zIndex: 2,
+  },
+  progressBarFallback: {
+    height: '100%',
+    backgroundColor: '#58D68D',
+    borderRadius: 5,
   },
   progressText: {
     fontSize: 12,
