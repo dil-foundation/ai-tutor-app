@@ -70,6 +70,7 @@ const RepeatAfterMeScreen = () => {
   const [currentTopicId, setCurrentTopicId] = useState<number>(1);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState<boolean>(false);
   const [isTopicLoaded, setIsTopicLoaded] = useState<boolean>(false);
+  const [totalPhrases, setTotalPhrases] = useState<number>(50); // Default fallback based on JSON file
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
@@ -127,9 +128,12 @@ const RepeatAfterMeScreen = () => {
         console.log('✅ [SCREEN] Progress initialized successfully');
         setIsProgressInitialized(true);
         
-        console.log('🔄 [SCREEN] Loading current topic and progress...');
-        await loadCurrentTopic();
-        await loadUserProgress();
+        console.log('🔄 [SCREEN] Loading current topic, progress, and total phrases...');
+        await Promise.all([
+          loadCurrentTopic(),
+          loadUserProgress(),
+          loadTotalPhrases()
+        ]);
       } else {
         console.log('⚠️ [SCREEN] Progress initialization failed:', initResult.error);
       }
@@ -199,6 +203,31 @@ const RepeatAfterMeScreen = () => {
       setCurrentTopicId(1);
       setCurrentPhraseId(1);
       setIsTopicLoaded(true); // Mark as loaded even on error
+    }
+  };
+
+  const loadTotalPhrases = async () => {
+    console.log('🔄 [SCREEN] loadTotalPhrases called');
+    try {
+      console.log('🔄 [SCREEN] Getting total phrases count...');
+      const apiUrl = `${BASE_API_URL}/phrases`;
+      console.log('📡 [SCREEN] API URL for phrases:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      console.log('📥 [SCREEN] Phrases response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const phrases = data.phrases || [];
+        console.log('✅ [SCREEN] Total phrases count:', phrases.length);
+        setTotalPhrases(phrases.length);
+      } else {
+        console.log('⚠️ [SCREEN] Failed to get phrases count, using default');
+        setTotalPhrases(50); // Fallback to default based on JSON file
+      }
+    } catch (error) {
+      console.error('❌ [SCREEN] Error loading total phrases:', error);
+      setTotalPhrases(50); // Fallback to default based on JSON file
     }
   };
 
@@ -356,6 +385,7 @@ const RepeatAfterMeScreen = () => {
       
       await audioRecorder.startRecording();
       console.log('✅ [SCREEN] Recording started successfully with auto-stop in 5 seconds');
+      console.log('🔴 [SCREEN] Button should now be RED (recording state)');
       
     } catch (error) {
       console.error('❌ [SCREEN] Error starting recording:', error);
@@ -479,7 +509,7 @@ const RepeatAfterMeScreen = () => {
           console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
           setShowCongratulationsAnimation(false);
           const nextTopicId = currentPhraseId + 1;
-          if (nextTopicId > 25) {
+          if (nextTopicId > totalPhrases) {
             console.log('🎉 [SCREEN] All topics completed! Exercise finished!');
             setIsExerciseCompleted(true);
             setError('Congratulations! You have completed all topics in this exercise. Great job!');
@@ -613,7 +643,7 @@ const RepeatAfterMeScreen = () => {
                 <View style={styles.progressContent}>
                   <Ionicons name="trending-up" size={24} color="#58D68D" />
                   <Text style={styles.progressTitle}>Your Progress</Text>
-                  <Text style={styles.progressText}>Topic: {currentTopicId} of 25</Text>
+                  <Text style={styles.progressText}>Topic: {currentTopicId} of {totalPhrases}</Text>
                   <Text style={styles.progressText}>Score: {userProgress.average_score?.toFixed(1) || 0}%</Text>
                   <Text style={styles.progressText}>Time: {Math.round(userProgress.time_spent_minutes || 0)} min</Text>
                 </View>
@@ -700,7 +730,12 @@ const RepeatAfterMeScreen = () => {
             ]}
           >
             <TouchableOpacity
-              style={styles.speakButton}
+              style={[
+                styles.speakButton,
+                {
+                  shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
+                }
+              ]}
               onPress={() => {
                 animateButtonPress();
                 if (audioRecorder.state.isRecording) {
@@ -713,7 +748,7 @@ const RepeatAfterMeScreen = () => {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={["#58D68D", "#45B7A8"]}
+                colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
                 style={styles.speakButtonGradient}
               >
                 <Ionicons 
@@ -723,7 +758,7 @@ const RepeatAfterMeScreen = () => {
                   style={{ marginRight: 8 }} 
                 />
                 <Text style={styles.speakButtonText}>
-                  {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? `Recording ${formatTime(audioRecorder.state.recordingDuration)}` : 'Speak Now (5s max)'}
+                  {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? `Recording... ${formatTime(audioRecorder.state.recordingDuration)}` : 'Speak Now (5s max)'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
