@@ -790,7 +790,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFAFA',
   },
   mainContainer: {
     flex: 1,
@@ -803,13 +803,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 30,
+    marginBottom: 40,
   },
   headerContent: {
     alignItems: 'center',
@@ -828,40 +828,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#6C757D',
+    fontSize: 18,
+    color: '#000000',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
   },
   overviewCard: {
-    marginBottom: 30,
+    marginBottom: 40,
   },
   overviewGradient: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 12,
   },
   overviewHeader: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   overviewTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#6C757D',
+    color: '#000000',
     marginBottom: 4,
   },
   overviewStage: {
@@ -872,12 +872,12 @@ const styles = StyleSheet.create({
   },
   overviewSubtitle: {
     fontSize: 14,
-    color: '#6C757D',
+    color: '#000000',
   },
   progressStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   statItem: {
     alignItems: 'center',
@@ -886,51 +886,53 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#58D68D',
+    color: '#000000',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6C757D',
+    color: '#000000',
     textAlign: 'center',
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#E5E5E5',
-    marginHorizontal: 10,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 12,
   },
   progressBarContainer: {
     marginTop: 10,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#E5E5E5',
-    borderRadius: 4,
+    height: 10,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#58D68D',
-    borderRadius: 4,
+    borderRadius: 6,
   },
   progressText: {
     fontSize: 14,
-    color: '#6C757D',
+    color: '#000000',
     textAlign: 'center',
   },
   additionalProgressInfo: {
-    marginTop: 16,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 24,
+    paddingHorizontal: 4,
   },
   progressInfoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    paddingVertical: 4,
   },
   progressInfoText: {
     fontSize: 14,
-    color: '#6C757D',
+    color: '#000000',
     marginLeft: 8,
   },
   sectionHeader: {
@@ -939,7 +941,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#000000',
     marginLeft: 12,
