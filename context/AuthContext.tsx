@@ -2,12 +2,20 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+interface SignUpData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  grade: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (signUpData: SignUpData) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
 }
@@ -81,20 +89,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (signUpData: SignUpData) => {
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: signUpData.email,
+        password: signUpData.password,
+        options: {
+          emailRedirectTo: `https://dil.lovable.app/dashboard`,
+          data: {
+            role: 'student',
+            first_name: signUpData.firstName,
+            last_name: signUpData.lastName,
+            grade: signUpData.grade
+          }
+        }
       });
       
       if (error) {
-        return { error };
+        return { data: null, error };
       }
       
-      return { error: null };
+      return { data, error: null };
     } catch (error) {
-      return { error };
+      return { data: null, error };
     }
   };
 
