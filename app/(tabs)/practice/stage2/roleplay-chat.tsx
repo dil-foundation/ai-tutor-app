@@ -589,8 +589,11 @@ ${evaluation.areas_for_improvement.join('\n')}
                 <View style={styles.inputRow}>
                   <TextInput
                     ref={inputRef}
-                    style={styles.textInput}
-                    placeholder="Type your message..."
+                    style={[
+                      styles.textInput,
+                      inputText.trim() && styles.textInputActive
+                    ]}
+                    placeholder={inputText.trim() ? "Type your message..." : "Tap mic to speak or type here..."}
                     placeholderTextColor="#999999"
                     value={inputText}
                     onChangeText={setInputText}
@@ -600,41 +603,40 @@ ${evaluation.areas_for_improvement.join('\n')}
                   />
                   
                   <TouchableOpacity
-                    style={styles.sendButton}
-                    onPress={sendTextMessage}
-                    disabled={!inputText.trim() || isProcessing}
+                    style={styles.actionButton}
+                    onPress={inputText.trim() ? sendTextMessage : () => {
+                      if (audioRecorder.state.isRecording) {
+                        handleStopRecording();
+                      } else {
+                        handleStartRecording();
+                      }
+                    }}
+                    disabled={isProcessing || audioPlayer.state.isPlaying}
                   >
                     <LinearGradient
-                      colors={inputText.trim() && !isProcessing ? ['#58D68D', '#45B7A8'] : ['#CCCCCC', '#BBBBBB']}
-                      style={styles.sendButtonGradient}
+                      colors={
+                        inputText.trim() && !isProcessing 
+                          ? ['#58D68D', '#45B7A8'] 
+                          : audioRecorder.state.isRecording 
+                            ? ['#FF6B6B', '#FF5252']
+                            : ['#58D68D', '#45B7A8']
+                      }
+                      style={styles.actionButtonGradient}
                     >
-                      <Ionicons name="send" size={20} color="#FFFFFF" />
+                      <Ionicons 
+                        name={
+                          inputText.trim() 
+                            ? 'send' 
+                            : audioRecorder.state.isRecording 
+                              ? 'stop' 
+                              : 'mic'
+                        } 
+                        size={20} 
+                        color="#FFFFFF" 
+                      />
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
-                
-                <TouchableOpacity
-                  style={[
-                    styles.micButton,
-                    {
-                      backgroundColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#58D68D',
-                    }
-                  ]}
-                  onPress={() => {
-                    if (audioRecorder.state.isRecording) {
-                      handleStopRecording();
-                    } else {
-                      handleStartRecording();
-                    }
-                  }}
-                  disabled={isProcessing || audioPlayer.state.isPlaying}
-                >
-                  <Ionicons 
-                    name={audioRecorder.state.isRecording ? 'stop' : 'mic'} 
-                    size={24} 
-                    color="#FFFFFF" 
-                  />
-                </TouchableOpacity>
               </Animated.View>
             )}
 
@@ -871,29 +873,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 12,
   },
-  sendButton: {
+  textInputActive: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#58D68D',
+  },
+  actionButton: {
     borderRadius: 20,
     overflow: 'hidden',
   },
-  sendButtonGradient: {
+  actionButtonGradient: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  micButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
   conversationEndedContainer: {
     backgroundColor: '#FFFFFF',
