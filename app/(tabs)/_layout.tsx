@@ -12,10 +12,11 @@ export default function TabLayout() {
   const pathname = usePathname();
   console.log('[TabLayout] colorScheme:', colorScheme);
 
-  // Check if we're in conversation screen or stage1 screens to hide tab bar
+  // Check if we're in conversation screen or stage1/stage2 screens to hide tab bar
   const isInConversation = pathname.includes('/conversation');
   const isInStage1 = pathname.includes('/stage1/');
-  const shouldHideTabBar = isInConversation || isInStage1;
+  const isInStage2 = pathname.includes('/stage2/');
+  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2;
 
   return (
     <Tabs
@@ -36,7 +37,7 @@ export default function TabLayout() {
           shadowOpacity: 0.1,
           shadowRadius: 12,
           elevation: 16,
-          // Hide tab bar when in conversation screen or stage1 screens
+          // Hide tab bar when in conversation screen or stage1/stage2 screens
           display: shouldHideTabBar ? 'none' : 'flex',
         },
         tabBarItemStyle: {
