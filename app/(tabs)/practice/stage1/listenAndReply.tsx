@@ -583,14 +583,14 @@ const ListenAndReplyScreen = () => {
                 >
                   <View style={styles.dialogueContainer}>
                     {/* AI Avatar */}
-                    <View style={styles.avatarContainer}>
+                    {/* <View style={styles.avatarContainer}>
                       <LinearGradient
                         colors={['#58D68D', '#45B7A8']}
                         style={styles.avatarGradient}
                       >
                         <Ionicons name="person-circle-outline" size={48} color="#FFFFFF" />
                       </LinearGradient>
-                    </View>
+                    </View> */}
                     
                     {/* AI Prompt */}
                     <Text style={styles.dialogueText}>{currentDialogue.ai_prompt}</Text>
