@@ -132,7 +132,7 @@ export default function TabLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.navigate('progress' as any);
+            // router.navigate('progress' as any);
           },
         }}
       />
