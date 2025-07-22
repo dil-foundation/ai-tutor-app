@@ -151,16 +151,18 @@ export default function EnglishOnlyScreen() {
       isScreenFocusedRef.current = true;
       
       initializeAudio();
+      
+      // Set initial loading state
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        currentMessageText: 'Connecting to server...',
+        isConnected: false
+      }));
+      
       connectToWebSocket();
       
-      // Auto-start with greeting if param is set
-      if (autoStart === 'true') {
-        setTimeout(() => {
-          if (isScreenFocusedRef.current) {
-            playGreeting();
-          }
-        }, 500);
-      }
+      // Note: Greeting will be handled after WebSocket connection is established
 
       return () => {
         console.log('English-Only screen losing focus - cleaning up...');
@@ -207,6 +209,19 @@ export default function EnglishOnlyScreen() {
   const playGreeting = async () => {
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping greeting');
+      return;
+    }
+
+    // Check if WebSocket is connected before sending greeting
+    if (!isEnglishOnlySocketConnected()) {
+      console.log('❌ WebSocket not connected, cannot send greeting');
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isGreeting: false,
+        isAISpeaking: false,
+        currentMessageText: 'Connecting to server...',
+      }));
       return;
     }
 
@@ -322,11 +337,34 @@ export default function EnglishOnlyScreen() {
       () => handleWebSocketClose()
     );
 
+    // Set connection timeout
+    const connectionTimeout = setTimeout(() => {
+      if (!isEnglishOnlySocketConnected()) {
+        console.log('⚠️ WebSocket connection timeout, retrying...');
+        setState(prev => ({ 
+          ...prev, 
+          currentMessageText: 'Connection timeout. Please check your internet connection.',
+          currentStep: 'error'
+        }));
+      }
+    }, 10000); // 10 second timeout
+
     const interval = setInterval(() => {
       if (isEnglishOnlySocketConnected()) {
         console.log("✅ English-Only Socket verified connected");
         setState(prev => ({ ...prev, isConnected: true }));
         clearInterval(interval);
+        clearTimeout(connectionTimeout);
+        
+        // Auto-start with greeting if param is set and connection is ready
+        if (autoStart === 'true' && isScreenFocusedRef.current) {
+          console.log('🎯 Connection established, now playing greeting...');
+          setTimeout(() => {
+            if (isScreenFocusedRef.current) {
+              playGreeting();
+            }
+          }, 200); // Short delay after connection
+        }
       }
     }, 100);
   };
