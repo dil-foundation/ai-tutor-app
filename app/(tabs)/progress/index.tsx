@@ -530,10 +530,10 @@ export default function ProgressScreen() {
             )}
           </Animated.View>
 
-          {/* Progress Statistics Section */}
+          {/* Completion Statistics Bar Chart */}
           <Animated.View
             style={[
-              styles.progressStatsSection,
+              styles.completionStatsSection,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
@@ -541,84 +541,96 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="stats-chart" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Learning Analytics</Text>
+              <Ionicons name="bar-chart" size={24} color="#58D68D" />
+              <Text style={styles.sectionTitle}>Completion Overview</Text>
             </View>
             
-            <View style={styles.progressStatsContent}>
-              {/* Overall Activity Section */}
-              <View style={styles.overallActivitySection}>
-                <View style={styles.activityHeader}>
-                  <Text style={styles.activityPercentage}>{Math.round(safeData.overall_progress)}%</Text>
-                  <Text style={styles.activityLabel}>Overall Mastery</Text>
-                </View>
-                
-                {/* Segmented Progress Bar */}
-                <View style={styles.segmentedProgressContainer}>
-                  <View style={styles.segmentedProgressBar}>
-                    <View style={[
-                      styles.progressSegment, 
-                      styles.purpleSegment, 
-                      { 
-                        flex: Math.max(0.2, safeData.current_stage.progress / 100),
-                        minWidth: 30
-                      }
-                    ]} />
-                    <View style={[
-                      styles.progressSegment, 
-                      styles.greenSegment, 
-                      { 
-                        flex: Math.max(0.2, safeData.total_completed_stages / 6),
-                        minWidth: 30
-                      }
-                    ]} />
-                    <View style={[
-                      styles.progressSegment, 
-                      styles.orangeSegment, 
-                      { 
-                        flex: Math.max(0.2, safeData.total_exercises_completed / 18),
-                        minWidth: 30
-                      }
-                    ]} />
+            <View style={styles.barChartContainer}>
+              <LinearGradient
+                colors={['#FFFFFF', '#F8F9FA']}
+                style={styles.barChartGradient}
+              >
+                {/* Stages Completed Bar */}
+                <View style={styles.barItem}>
+                  <View style={styles.barHeader}>
+                    <View style={styles.barIconContainer}>
+                      <Ionicons name="layers" size={20} color="#8E44AD" />
+                    </View>
+                    <View style={styles.barTextContainer}>
+                      <Text style={styles.barLabel}>Stages Completed</Text>
+                      <Text style={styles.barValue}>{safeData.total_completed_stages}</Text>
+                    </View>
                   </View>
-                  <View style={styles.segmentLabels}>
-                    <Text style={styles.segmentLabel}>Current Stage</Text>
-                    <Text style={styles.segmentLabel}>Completed Stages</Text>
-                    <Text style={styles.segmentLabel}>Topics Mastered</Text>
+                  <View style={styles.barContainer}>
+                    <View style={styles.barBackground}>
+                      <View 
+                        style={[
+                          styles.barFill, 
+                          styles.purpleBar,
+                          { width: `${Math.min(100, (safeData.total_completed_stages / 6) * 100)}%` }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.barPercentage}>
+                      {Math.round((safeData.total_completed_stages / 6) * 100)}%
+                    </Text>
                   </View>
                 </View>
-              </View>
-              
-              {/* Task Status Summary */}
-              <View style={styles.taskStatusCard}>
-                <View style={styles.statusSection}>
-                  <View style={styles.statusIconContainer}>
-                    <Ionicons name="time" size={20} color="#FFFFFF" />
+
+                {/* Exercises Completed Bar */}
+                <View style={styles.barItem}>
+                  <View style={styles.barHeader}>
+                    <View style={[styles.barIconContainer, styles.greenIcon]}>
+                      <Ionicons name="fitness" size={20} color="#58D68D" />
+                    </View>
+                    <View style={styles.barTextContainer}>
+                      <Text style={styles.barLabel}>Exercises Completed</Text>
+                      <Text style={styles.barValue}>{safeData.total_exercises_completed}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.statusNumber}>{safeData.stages.filter(s => s.progress > 0 && !s.completed).length}</Text>
-                  <Text style={styles.statusLabel}>Active Stages</Text>
-                </View>
-                
-                <View style={styles.statusDivider} />
-                
-                <View style={styles.statusSection}>
-                  <View style={[styles.statusIconContainer, styles.completedIcon]}>
-                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                  <View style={styles.barContainer}>
+                    <View style={styles.barBackground}>
+                      <View 
+                        style={[
+                          styles.barFill, 
+                          styles.greenBar,
+                          { width: `${Math.min(100, (safeData.total_exercises_completed / 18) * 100)}%` }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.barPercentage}>
+                      {Math.round((safeData.total_exercises_completed / 18) * 100)}%
+                    </Text>
                   </View>
-                  <Text style={styles.statusNumber}>{safeData.total_completed_stages}</Text>
-                  <Text style={styles.statusLabel}>Stages Completed</Text>
                 </View>
-                
-                <View style={styles.statusDivider} />
-                
-                <View style={styles.statusSection}>
-                  <View style={[styles.statusIconContainer, styles.upcomingIcon]}>
-                    <Ionicons name="calendar" size={20} color="#FFFFFF" />
+
+                {/* Topics Completed Bar */}
+                <View style={styles.barItem}>
+                  <View style={styles.barHeader}>
+                    <View style={[styles.barIconContainer, styles.orangeIcon]}>
+                      <Ionicons name="book" size={20} color="#F39C12" />
+                    </View>
+                    <View style={styles.barTextContainer}>
+                      <Text style={styles.barLabel}>Topics Mastered</Text>
+                      <Text style={styles.barValue}>{safeData.total_completed_units}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.statusNumber}>{safeData.stages.filter(s => s.progress === 0).length}</Text>
-                  <Text style={styles.statusLabel}>Upcoming Stages</Text>
+                  <View style={styles.barContainer}>
+                    <View style={styles.barBackground}>
+                      <View 
+                        style={[
+                          styles.barFill, 
+                          styles.orangeBar,
+                          { width: `${Math.min(100, (safeData.total_completed_units / 100) * 100)}%` }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.barPercentage}>
+                      {Math.round((safeData.total_completed_units / 100) * 100)}%
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </LinearGradient>
             </View>
           </Animated.View>
 
@@ -1205,6 +1217,93 @@ const styles = StyleSheet.create({
   },
   learningPathSection: {
     marginBottom: 30,
+  },
+  completionStatsSection: {
+    marginBottom: 30,
+  },
+  barChartContainer: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  barChartGradient: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  barItem: {
+    marginBottom: 24,
+  },
+  barHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  barIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(142, 68, 173, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  greenIcon: {
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+  },
+  orangeIcon: {
+    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+  },
+  barTextContainer: {
+    flex: 1,
+  },
+  barLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  barValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  barContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  barBackground: {
+    flex: 1,
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  purpleBar: {
+    backgroundColor: '#8E44AD',
+  },
+  greenBar: {
+    backgroundColor: '#58D68D',
+  },
+  orangeBar: {
+    backgroundColor: '#F39C12',
+  },
+  barPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7F8C8D',
+    minWidth: 40,
+    textAlign: 'right',
   },
   progressStatsSection: {
     marginBottom: 30,
