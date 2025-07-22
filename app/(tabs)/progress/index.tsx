@@ -23,6 +23,7 @@ import LoadingScreen from '../../../components/LoadingScreen';
 import StageCard from '@/components/progress/StageCard';
 import RoadmapLine from '@/components/progress/RoadmapLine';
 import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
+import CircularProgress from '../../../components/CircularProgress';
 
 const { width, height } = Dimensions.get('window');
 
@@ -436,40 +437,31 @@ export default function ProgressScreen() {
                 </View>
               </View>
               
-              {/* Additional Progress Info */}
-              <View style={styles.additionalProgressInfo}>
-                <View style={styles.progressInfoItem}>
-                  <Ionicons name="checkmark-circle" size={16} color="#58D68D" />
-                  <Text style={styles.progressInfoText}>{safeData.total_exercises_completed} exercises completed</Text>
-                </View>
-                <View style={styles.progressInfoItem}>
-                  <Ionicons name="time" size={16} color="#3498DB" />
-                  <Text style={styles.progressInfoText}>{safeData.total_practice_time}h total practice time</Text>
-                </View>
-                <View style={styles.progressInfoItem}>
-                  <Ionicons name="trophy" size={16} color="#F39C12" />
-                  <Text style={styles.progressInfoText}>{safeData.total_completed_stages} stages completed</Text>
-                </View>
-                <View style={styles.progressInfoItem}>
-                  <Ionicons name="book" size={16} color="#8E44AD" />
-                  <Text style={styles.progressInfoText}>{safeData.total_completed_units || 0} topics completed</Text>
-                </View>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <Animated.View 
-                    style={[
-                      styles.progressFill,
-                      { 
-                        width: `${safeData.current_stage.progress}%`,
-                        transform: [{ scaleX: progressScaleAnim }]
-                      }
-                    ]} 
+              {/* Circular Progress Integrated in Current Stage */}
+              <View style={styles.integratedProgressSection}>
+                <View style={styles.circularProgressContainer}>
+                  <CircularProgress
+                    progress={safeData.current_stage.progress}
+                    size={100}
+                    strokeWidth={10}
+                    tintColor="#58D68D"
+                    backgroundColor="#E8F5E8"
+                    textColor="#2C3E50"
+                    textSize={20}
+                    animate={true}
+                    animationDuration={1500}
                   />
                 </View>
-                <Text style={styles.progressText}>{Math.round(safeData.current_stage.progress)}% Complete</Text>
+                <View style={styles.integratedStatsContainer}>
+                  <View style={styles.integratedStatItem}>
+                    {/* <Text style={styles.integratedStatValue}>{safeData.total_exercises_completed}</Text> */}
+                    <Text style={styles.integratedStatLabel}>{safeData.total_exercises_completed} Completed Exercises</Text>
+                  </View>
+                  <View style={styles.integratedStatItem}>
+                    {/* <Text style={styles.integratedStatValue}>{safeData.total_practice_time}h</Text> */}
+                    <Text style={styles.integratedStatLabel}>{safeData.total_practice_time}hTotal Practice Time</Text>
+                  </View>
+                </View>
               </View>
             </LinearGradient>
           </Animated.View>
@@ -538,6 +530,98 @@ export default function ProgressScreen() {
             )}
           </Animated.View>
 
+          {/* Progress Statistics Section */}
+          <Animated.View
+            style={[
+              styles.progressStatsSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.sectionHeader}>
+              <Ionicons name="stats-chart" size={24} color="#58D68D" />
+              <Text style={styles.sectionTitle}>Learning Analytics</Text>
+            </View>
+            
+            <View style={styles.progressStatsContent}>
+              {/* Overall Activity Section */}
+              <View style={styles.overallActivitySection}>
+                <View style={styles.activityHeader}>
+                  <Text style={styles.activityPercentage}>{Math.round(safeData.overall_progress)}%</Text>
+                  <Text style={styles.activityLabel}>Overall Mastery</Text>
+                </View>
+                
+                {/* Segmented Progress Bar */}
+                <View style={styles.segmentedProgressContainer}>
+                  <View style={styles.segmentedProgressBar}>
+                    <View style={[
+                      styles.progressSegment, 
+                      styles.purpleSegment, 
+                      { 
+                        flex: Math.max(0.2, safeData.current_stage.progress / 100),
+                        minWidth: 30
+                      }
+                    ]} />
+                    <View style={[
+                      styles.progressSegment, 
+                      styles.greenSegment, 
+                      { 
+                        flex: Math.max(0.2, safeData.total_completed_stages / 6),
+                        minWidth: 30
+                      }
+                    ]} />
+                    <View style={[
+                      styles.progressSegment, 
+                      styles.orangeSegment, 
+                      { 
+                        flex: Math.max(0.2, safeData.total_exercises_completed / 18),
+                        minWidth: 30
+                      }
+                    ]} />
+                  </View>
+                  <View style={styles.segmentLabels}>
+                    <Text style={styles.segmentLabel}>Current Stage</Text>
+                    <Text style={styles.segmentLabel}>Completed Stages</Text>
+                    <Text style={styles.segmentLabel}>Topics Mastered</Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Task Status Summary */}
+              <View style={styles.taskStatusCard}>
+                <View style={styles.statusSection}>
+                  <View style={styles.statusIconContainer}>
+                    <Ionicons name="time" size={20} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.statusNumber}>{safeData.stages.filter(s => s.progress > 0 && !s.completed).length}</Text>
+                  <Text style={styles.statusLabel}>Active Stages</Text>
+                </View>
+                
+                <View style={styles.statusDivider} />
+                
+                <View style={styles.statusSection}>
+                  <View style={[styles.statusIconContainer, styles.completedIcon]}>
+                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.statusNumber}>{safeData.total_completed_stages}</Text>
+                  <Text style={styles.statusLabel}>Stages Completed</Text>
+                </View>
+                
+                <View style={styles.statusDivider} />
+                
+                <View style={styles.statusSection}>
+                  <View style={[styles.statusIconContainer, styles.upcomingIcon]}>
+                    <Ionicons name="calendar" size={20} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.statusNumber}>{safeData.stages.filter(s => s.progress === 0).length}</Text>
+                  <Text style={styles.statusLabel}>Upcoming Stages</Text>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+
           {/* Achievements Section */}
           <Animated.View
             style={[
@@ -600,7 +684,7 @@ export default function ProgressScreen() {
           >
             <View style={styles.sectionHeader}>
               <Ionicons name="time" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Practice Statistics</Text>
+              <Text style={styles.sectionTitle}>Learning Sessions</Text>
             </View>
 
             <View style={styles.statsGrid}>
@@ -620,7 +704,7 @@ export default function ProgressScreen() {
                     <Ionicons name="time" size={24} color="#58D68D" />
                   </View>
                   <Text style={styles.statCardValue}>{safeData.total_practice_time}h</Text>
-                  <Text style={styles.statCardLabel}>Total Practice Time</Text>
+                  <Text style={styles.statCardLabel}>Total Learning Time</Text>
                 </LinearGradient>
               </Animated.View>
 
@@ -658,7 +742,7 @@ export default function ProgressScreen() {
           >
             <View style={styles.sectionHeader}>
               <Ionicons name="stats-chart" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Learning Insights</Text>
+              <Text style={styles.sectionTitle}>Topic Mastery</Text>
             </View>
 
             <View style={styles.additionalStatsGrid}>
@@ -671,7 +755,7 @@ export default function ProgressScreen() {
                     <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
                   </View>
                   <Text style={styles.additionalStatValue}>{safeData.total_exercises_completed}</Text>
-                  <Text style={styles.additionalStatLabel}>Exercises Completed</Text>
+                  <Text style={styles.additionalStatLabel}>Topics Completed</Text>
                 </LinearGradient>
               </View>
 
@@ -684,7 +768,7 @@ export default function ProgressScreen() {
                     <Ionicons name="time" size={24} color="#3498DB" />
                   </View>
                   <Text style={styles.additionalStatValue}>{safeData.average_session_duration.toFixed(1)}m</Text>
-                  <Text style={styles.additionalStatLabel}>Avg Session</Text>
+                  <Text style={styles.additionalStatLabel}>Avg Learning Session</Text>
                 </LinearGradient>
               </View>
 
@@ -697,7 +781,7 @@ export default function ProgressScreen() {
                     <Ionicons name="flame" size={24} color="#FF6B35" />
                   </View>
                   <Text style={styles.additionalStatValue}>{safeData.longest_streak}</Text>
-                  <Text style={styles.additionalStatLabel}>Longest Streak</Text>
+                  <Text style={styles.additionalStatLabel}>Best Learning Streak</Text>
                 </LinearGradient>
               </View>
             </View>
@@ -711,7 +795,7 @@ export default function ProgressScreen() {
       </SafeAreaView>
     </View>
   );
-}
+} // End of ProgressScreen component
 
 const styles = StyleSheet.create({
   container: {
@@ -765,6 +849,20 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
     lineHeight: 26,
+  },
+  cardWrapper: {
+    marginHorizontal: 20,
+    marginBottom: 30,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   overviewCard: {
     marginBottom: 40,
@@ -852,6 +950,212 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     marginHorizontal: 12,
   },
+  circularProgressSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 30,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  circularProgressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circularProgressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  integratedProgressSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  integratedStatsContainer: {
+    flex: 1,
+    marginLeft: 20,
+  },
+  integratedStatItem: {
+    marginBottom: 12,
+  },
+  integratedStatValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  integratedStatLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    textAlign: 'left',
+  },
+  detailedStatsCard: {
+    marginHorizontal: 20,
+    marginBottom: 30,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  detailedStatsGradient: {
+    borderRadius: 24,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: '#FFFFFF',
+  },
+  detailedStatsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  detailedStatsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 20,
+  },
+  overallActivitySection: {
+    marginBottom: 30,
+  },
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 16,
+  },
+  activityPercentage: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginRight: 12,
+  },
+  activityLabel: {
+    fontSize: 16,
+    color: '#7F8C8D',
+    fontWeight: '500',
+  },
+  segmentedProgressContainer: {
+    marginBottom: 8,
+  },
+  segmentedProgressBar: {
+    flexDirection: 'row',
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: '#E0E0E0',
+  },
+  progressSegment: {
+    height: '100%',
+  },
+  purpleSegment: {
+    backgroundColor: '#8E44AD',
+  },
+  greenSegment: {
+    backgroundColor: '#58D68D',
+  },
+  orangeSegment: {
+    backgroundColor: '#F39C12',
+  },
+  segmentLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  segmentLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    fontWeight: '500',
+  },
+  taskStatusCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  statusSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statusIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#8E44AD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completedIcon: {
+    backgroundColor: '#58D68D',
+  },
+  upcomingIcon: {
+    backgroundColor: '#F39C12',
+  },
+  statusNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  statusLabel: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    fontWeight: '500',
+  },
+  statusDivider: {
+    width: 1,
+    height: 60,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 16,
+  },
+  additionalStatsContainer: {
+    flex: 1,
+    marginLeft: 20,
+  },
+  circularStatItem: {
+    marginBottom: 12,
+  },
+  circularStatValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  circularStatLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    textAlign: 'left',
+  },
   progressBarContainer: {
     marginTop: 10,
   },
@@ -901,6 +1205,12 @@ const styles = StyleSheet.create({
   },
   learningPathSection: {
     marginBottom: 30,
+  },
+  progressStatsSection: {
+    marginBottom: 30,
+  },
+  progressStatsContent: {
+    marginTop: 16,
   },
   exerciseDropdown: {
     backgroundColor: '#F8F9FA',

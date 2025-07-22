@@ -263,10 +263,10 @@ class ProgressTracker {
       const result = await this.makeApiRequest<ProgressResponse>(
         `${BASE_API_URL}/api/progress/initialize-progress`,
         {
-          method: 'POST',
-          body: JSON.stringify({
-            user_id: this.currentUser.id
-          }),
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: this.currentUser.id
+        }),
         }
       );
 
@@ -324,11 +324,11 @@ class ProgressTracker {
       const result = await this.makeApiRequest<ProgressResponse>(
         `${BASE_API_URL}/api/progress/record-topic-attempt`,
         {
-          method: 'POST',
-          body: JSON.stringify({
-            ...attempt,
-            user_id: this.currentUser.id
-          }),
+        method: 'POST',
+        body: JSON.stringify({
+          ...attempt,
+          user_id: this.currentUser.id
+        }),
         }
       );
 
@@ -501,12 +501,12 @@ class ProgressTracker {
       const result = await this.makeApiRequest<ProgressResponse>(
         `${BASE_API_URL}/api/progress/get-current-topic`,
         {
-          method: 'POST',
-          body: JSON.stringify({
-            user_id: this.currentUser.id,
-            stage_id: stageId,
-            exercise_id: exerciseId
-          }),
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: this.currentUser.id,
+          stage_id: stageId,
+          exercise_id: exerciseId
+        }),
         }
       );
 
