@@ -19,61 +19,15 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../context/AuthContext';
-import BASE_API_URL from '../../../config/api';
 import LoadingScreen from '../../../components/LoadingScreen';
 import StageCard from '@/components/progress/StageCard';
 import RoadmapLine from '@/components/progress/RoadmapLine';
+import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
 
 const { width, height } = Dimensions.get('window');
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-// Types for progress data
-interface ProgressData {
-  current_stage: {
-    id: number;
-    name: string;
-    subtitle: string;
-    progress: number;
-  };
-  overall_progress: number;
-  total_progress: number;
-  streak_days: number;
-  total_practice_time: number;
-  total_exercises_completed: number;
-  longest_streak: number;
-  average_session_duration: number;
-  weekly_learning_hours: number;
-  monthly_learning_hours: number;
-  first_activity_date: string | null;
-  last_activity_date: string | null;
-  stages: Array<{
-    stage_id: number;
-    name: string;
-    subtitle: string;
-    completed: boolean;
-    progress: number;
-    unlocked: boolean;
-    exercises: Array<{
-      name: string;
-      status: 'completed' | 'in_progress' | 'locked';
-      progress: number;
-      attempts: number;
-    }>;
-    started_at: string | null;
-    completed_at: string | null;
-  }>;
-  achievements: Array<{
-    name: string;
-    icon: string;
-    date: string;
-    color: string;
-    description: string;
-  }>;
-  fluency_trend: number[];
-  unlocked_content: any[];
 }
 
 const getStageStatus = (stage: any) => {
@@ -122,10 +76,11 @@ export default function ProgressScreen() {
   const [error, setError] = useState<string | null>(null);
   const [expandedStage, setExpandedStage] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
-  // Load progress data
-  const loadProgressData = async () => {
-    console.log('🔄 [PROGRESS] Loading progress data...');
+  // Load progress data with improved error handling
+  const loadProgressData = async (forceRefresh = false) => {
+    console.log('🔄 [PROGRESS] Loading progress data...', { forceRefresh });
     try {
       if (!user?.id) {
         console.log('⚠️ [PROGRESS] No user ID available');
@@ -135,25 +90,11 @@ export default function ProgressScreen() {
       }
 
       console.log('🔄 [PROGRESS] Fetching comprehensive progress for user:', user.id);
-      const response = await fetch(`${BASE_API_URL}/api/progress/comprehensive-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: user.id
-        }),
-      });
+      
+      const result = forceRefresh 
+        ? await ProgressHelpers.forceRefreshProgress()
+        : await ProgressHelpers.getComprehensiveProgress();
 
-      console.log('📥 [PROGRESS] Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [PROGRESS] API Error:', response.status, errorText);
-        throw new Error(`Failed to load progress: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
       console.log('✅ [PROGRESS] Progress data received:', {
         success: result.success,
         hasData: !!result.data,
@@ -166,6 +107,7 @@ export default function ProgressScreen() {
       if (result.success && result.data) {
         setProgressData(result.data);
         setError(null);
+        setLastRefreshTime(new Date());
         console.log('✅ [PROGRESS] Progress data set successfully');
       } else {
         console.error('❌ [PROGRESS] API returned error:', result.error);
@@ -193,7 +135,11 @@ export default function ProgressScreen() {
         stages: [],
         achievements: [],
         fluency_trend: [50, 50, 50, 50, 50, 50, 50],
-        unlocked_content: []
+        unlocked_content: [],
+        total_completed_stages: 0,
+        total_completed_exercises: 0,
+        total_learning_units: 0,
+        total_completed_units: 0
       });
     } finally {
       setIsLoading(false);
@@ -259,7 +205,22 @@ export default function ProgressScreen() {
   const handleRefresh = () => {
     console.log('🔄 [PROGRESS] Refreshing progress data...');
     setRefreshing(true);
-    loadProgressData();
+    loadProgressData(true); // Force refresh
+  };
+
+  const formatLastRefreshTime = () => {
+    if (!lastRefreshTime) return '';
+    const now = new Date();
+    const diffMs = now.getTime() - lastRefreshTime.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins === 1) return '1 minute ago';
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours === 1) return '1 hour ago';
+    return `${diffHours} hours ago`;
   };
 
   // Show loading screen
@@ -335,16 +296,22 @@ export default function ProgressScreen() {
       progress: 0,
       unlocked: true,
       exercises: [
-        { name: "Repeat After Me", status: "in_progress" as const, progress: 0, attempts: 0 },
-        { name: "Quick Response Prompts", status: "locked" as const, progress: 0, attempts: 0 },
-        { name: "Listen and Reply", status: "locked" as const, progress: 0, attempts: 0 }
+        { name: "Repeat After Me", status: "in_progress" as const, progress: 0, attempts: 0, topics: 10, completed_topics: 0 },
+        { name: "Quick Response Prompts", status: "locked" as const, progress: 0, attempts: 0, topics: 8, completed_topics: 0 },
+        { name: "Listen and Reply", status: "locked" as const, progress: 0, attempts: 0, topics: 12, completed_topics: 0 }
       ],
       started_at: null,
-      completed_at: null
+      completed_at: null,
+      total_topics: 30,
+      completed_topics: 0
     }],
     achievements: [],
     fluency_trend: [50, 50, 50, 50, 50, 50, 50],
-    unlocked_content: []
+    unlocked_content: [],
+    total_completed_stages: 0,
+    total_completed_exercises: 0,
+    total_learning_units: 30,
+    total_completed_units: 0
   };
 
   console.log('🔄 [PROGRESS] Rendering progress screen with data:', {
@@ -353,7 +320,9 @@ export default function ProgressScreen() {
     streakDays: safeData.streak_days,
     totalTime: safeData.total_practice_time,
     stagesCount: safeData.stages.length,
-    achievementsCount: safeData.achievements.length
+    achievementsCount: safeData.achievements.length,
+    completedStages: safeData.total_completed_stages,
+    completedExercises: safeData.total_completed_exercises
   });
   
   // Debug stage status
@@ -408,6 +377,11 @@ export default function ProgressScreen() {
               </LinearGradient>
               <Text style={styles.headerTitle}>Your Progress</Text>
               <Text style={styles.headerSubtitle}>Track your English learning journey</Text>
+              {lastRefreshTime && (
+                <Text style={styles.lastRefreshText}>
+                  Last updated: {formatLastRefreshTime()}
+                </Text>
+              )}
             </View>
           </Animated.View>
 
@@ -472,6 +446,14 @@ export default function ProgressScreen() {
                   <Ionicons name="time" size={16} color="#3498DB" />
                   <Text style={styles.progressInfoText}>{safeData.total_practice_time}h total practice time</Text>
                 </View>
+                <View style={styles.progressInfoItem}>
+                  <Ionicons name="trophy" size={16} color="#F39C12" />
+                  <Text style={styles.progressInfoText}>{safeData.total_completed_stages} stages completed</Text>
+                </View>
+                <View style={styles.progressInfoItem}>
+                  <Ionicons name="book" size={16} color="#8E44AD" />
+                  <Text style={styles.progressInfoText}>{safeData.total_completed_units || 0} topics completed</Text>
+                </View>
               </View>
 
               {/* Progress Bar */}
@@ -518,18 +500,18 @@ export default function ProgressScreen() {
                       isLast={idx === safeData.stages.length - 1}
                       status={status}
                     />
-                                         <StageCard
-                       index={idx}
-                       stage={{
-                         stage: stage.name,
-                         subtitle: stage.subtitle,
-                         completed: stage.completed,
-                         progress: stage.progress,
-                         exercises: stage.exercises
-                       }}
-                       expanded={isExpanded}
-                       onPress={() => handleStagePress(idx)}
-                     >
+                    <StageCard
+                      index={idx}
+                      stage={{
+                        stage: stage.name,
+                        subtitle: stage.subtitle,
+                        completed: stage.completed,
+                        progress: stage.progress,
+                        exercises: stage.exercises
+                      }}
+                      expanded={isExpanded}
+                      onPress={() => handleStagePress(idx)}
+                    >
                       {isExpanded && (
                         <View style={styles.exerciseDropdown}>
                           {stage.exercises.map((ex, exIdx) => (
@@ -605,74 +587,6 @@ export default function ProgressScreen() {
               </View>
             )}
           </Animated.View>
-
-          {/* Fluency Trend Chart - Temporarily Hidden */}
-          {/* 
-          <Animated.View
-            style={[
-              styles.chartSection,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.sectionHeader}>
-              <Ionicons name="analytics" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Fluency Trend</Text>
-            </View>
-
-            <View style={styles.chartContainer}>
-              <LinearGradient
-                colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                style={styles.chartGradient}
-              >
-                <View style={styles.chartHeader}>
-                  <Text style={styles.chartTitle}>Weekly Progress</Text>
-                  <Text style={styles.chartSubtitle}>Your fluency improvement over time</Text>
-                </View>
-                
-                <View style={styles.chartBars}>
-                  {safeData.fluency_trend.map((value, index) => (
-                    <Animated.View 
-                      key={index} 
-                      style={[
-                        styles.chartBarContainer,
-                        {
-                          transform: [{ scaleY: statsScaleAnim }]
-                        }
-                      ]}
-                    >
-                      <View style={styles.chartBar}>
-                        <Animated.View 
-                          style={[
-                            styles.chartBarFill,
-                            { 
-                              height: `${(value / 100) * 80}%`,
-                              transform: [{ scaleY: progressScaleAnim }]
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text style={styles.chartLabel}>W{index + 1}</Text>
-                    </Animated.View>
-                  ))}
-                </View>
-                
-                <View style={styles.chartStats}>
-                  <View style={styles.chartStat}>
-                    <Text style={styles.chartStatValue}>{Math.round(safeData.fluency_trend[safeData.fluency_trend.length - 1] || 0)}</Text>
-                    <Text style={styles.chartStatLabel}>Current Score</Text>
-                  </View>
-                  <View style={styles.chartStat}>
-                    <Text style={styles.chartStatValue}>+{Math.round((safeData.fluency_trend[safeData.fluency_trend.length - 1] || 0) - (safeData.fluency_trend[0] || 0))}</Text>
-                    <Text style={styles.chartStatLabel}>Total Improvement</Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </View>
-          </Animated.View>
-          */}
 
           {/* Practice Stats */}
           <Animated.View
@@ -1295,6 +1209,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 0.5,
+  },
+  lastRefreshText: {
+    fontSize: 12,
+    color: '#6C757D',
+    marginTop: 10,
   },
   decorativeCircle1: {
     position: 'absolute',

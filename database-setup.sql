@@ -245,6 +245,7 @@ CREATE TABLE IF NOT EXISTS public.ai_tutor_daily_learning_analytics (
     exercises_completed INTEGER NOT NULL DEFAULT 0,
     average_score DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     urdu_usage_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    urdu_usage_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, date)
