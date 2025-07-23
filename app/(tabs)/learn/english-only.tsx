@@ -116,6 +116,10 @@ export default function EnglishOnlyScreen() {
     correctionProvided: false,
   });
 
+  // Track connection attempts to prevent multiple simultaneous connections
+  const connectionAttemptsRef = useRef(0);
+  const maxConnectionAttempts = 3;
+
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<any>(null);
@@ -331,6 +335,20 @@ export default function EnglishOnlyScreen() {
   };
 
   const connectToWebSocket = () => {
+    // Prevent multiple simultaneous connection attempts
+    if (connectionAttemptsRef.current >= maxConnectionAttempts) {
+      console.log('❌ Max connection attempts reached, stopping retries');
+      setState(prev => ({ 
+        ...prev, 
+        currentMessageText: 'Connection failed. Please check your internet and try again.',
+        currentStep: 'error'
+      }));
+      return;
+    }
+
+    connectionAttemptsRef.current++;
+    console.log(`🔌 Starting WebSocket connection (attempt ${connectionAttemptsRef.current}/${maxConnectionAttempts})...`);
+    
     connectEnglishOnlySocket(
       (data: any) => handleWebSocketMessage(data),
       (audioBuffer: ArrayBuffer) => handleAudioData(audioBuffer),
@@ -340,19 +358,36 @@ export default function EnglishOnlyScreen() {
     // Set connection timeout
     const connectionTimeout = setTimeout(() => {
       if (!isEnglishOnlySocketConnected()) {
-        console.log('⚠️ WebSocket connection timeout, retrying...');
+        console.log(`⚠️ WebSocket connection timeout (attempt ${connectionAttemptsRef.current})`);
         setState(prev => ({ 
           ...prev, 
-          currentMessageText: 'Connection timeout. Please check your internet connection.',
+          currentMessageText: `Connection attempt ${connectionAttemptsRef.current} failed. Retrying...`,
           currentStep: 'error'
         }));
+        
+        // Retry connection after timeout
+        setTimeout(() => {
+          if (isScreenFocusedRef.current && !state.isConnected) {
+            console.log('🔄 Retrying WebSocket connection...');
+            connectToWebSocket();
+          }
+        }, 2000);
+      } else {
+        console.log('✅ Connection established before timeout, clearing timeout');
+        connectionAttemptsRef.current = 0; // Reset attempts on success
       }
-    }, 10000); // 10 second timeout
+    }, 12000); // 12 second timeout (increased to be less than WebSocket timeout)
 
     const interval = setInterval(() => {
       if (isEnglishOnlySocketConnected()) {
         console.log("✅ English-Only Socket verified connected");
-        setState(prev => ({ ...prev, isConnected: true }));
+        connectionAttemptsRef.current = 0; // Reset attempts on successful connection
+        setState(prev => ({ 
+          ...prev, 
+          isConnected: true,
+          currentMessageText: '', // Clear any loading/error messages
+          currentStep: 'waiting'
+        }));
         clearInterval(interval);
         clearTimeout(connectionTimeout);
         
@@ -1017,6 +1052,7 @@ export default function EnglishOnlyScreen() {
     
     speechStartTimeRef.current = null;
     setIsTalking(false);
+    connectionAttemptsRef.current = 0; // Reset connection attempts
     
     console.log('✅ Cleanup completed');
   };

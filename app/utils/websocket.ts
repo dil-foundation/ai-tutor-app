@@ -91,8 +91,10 @@ export const connectEnglishOnlySocket = (
       if (englishOnlySocket.readyState !== WebSocket.OPEN) {
         console.error("English-Only WebSocket connection timeout");
         onClose?.();
+      } else {
+        console.log("✅ English-Only WebSocket connection successful, timeout cleared");
       }
-    }, 5000); // 5 second timeout
+    }, 15000); // 15 second timeout (increased from 5 seconds)
   
     englishOnlySocket.onopen = () => {
       console.log("English-Only WebSocket Connected");
