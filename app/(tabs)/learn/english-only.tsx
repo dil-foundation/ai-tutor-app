@@ -25,6 +25,7 @@ import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as Speech from 'expo-speech';
 import {
     ActivityIndicator,
     Alert,
@@ -70,6 +71,8 @@ interface EnglishOnlyState {
   silenceStartTime: number | null;
   lastUserInput: string;
   correctionProvided: boolean;
+  isNoSpeechDetected: boolean; // New state for tracking no speech detected animation
+  isProcessingAudio: boolean; // New state for tracking audio processing
 }
 
 export default function EnglishOnlyScreen() {
@@ -114,15 +117,23 @@ export default function EnglishOnlyScreen() {
     silenceStartTime: null,
     lastUserInput: '',
     correctionProvided: false,
+    isNoSpeechDetected: false,
+    isProcessingAudio: false,
   });
 
   // Track connection attempts to prevent multiple simultaneous connections
   const connectionAttemptsRef = useRef(0);
   const maxConnectionAttempts = 3;
 
+  // Custom silence detection for English-Only feature
+  const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
+  const hasUserSpokenRef = useRef(false); // Track if user has spoken in current session
+  const isNewSessionAfterAI = useRef(false); // Track if this is a new session after AI spoke
+
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const scrollViewRef = useRef<any>(null);
+  const isPlayingAudioRef = useRef(false); // Prevent multiple audio sessions
   const [isTalking, setIsTalking] = useState(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechStartTimeRef = useRef<number | null>(null);
@@ -298,6 +309,115 @@ export default function EnglishOnlyScreen() {
   };
 
   // Handle user response to pause prompt
+  const handleFirstTimeSilence = async () => {
+    console.log('🔇 Handling first time silence - playing no speech message (frontend only)');
+    
+    // Stop current recording
+    if (recordingRef.current) {
+      try {
+        await recordingRef.current.stopAndUnloadAsync();
+        recordingRef.current = null;
+      } catch (error) {
+        console.error('Error stopping recording for first time silence:', error);
+      }
+    }
+
+    // Reset first recording flag since we've handled the first silence
+    isFirstRecordingRef.current = false;
+    console.log('🔄 First recording silence handled, switching to normal mode');
+
+    // Set state to show no speech detected with animation (like conversation.tsx)
+    setState(prev => ({
+      ...prev,
+      currentStep: 'waiting',
+      isAISpeaking: false,
+      isListening: false,
+      isNoSpeechDetected: true, // Show no speech detected animation
+      currentMessageText: 'No speech detected. Please try speaking again.',
+    }));
+
+    // Play pre-recorded TTS audio directly in frontend (no backend call)
+    await playNoSpeechDetectedAudio();
+
+    console.log('✅ No speech detected handled in frontend only');
+  };
+
+  const playNoSpeechDetectedAudio = async () => {
+    console.log('🔊 Playing no speech detected audio in frontend...');
+    
+    try {
+      // Use expo-speech to play the audio directly (like conversation.tsx)
+      const noSpeechText = 'No speech detected. Please try speaking again.';
+      
+      // Set state to show AI speaking animation
+      setState(prev => ({
+        ...prev,
+        currentStep: 'speaking',
+        isAISpeaking: true,
+        isNoSpeechDetected: true,
+        currentMessageText: noSpeechText,
+      }));
+
+      // Play the audio using expo-speech
+      await Speech.speak(noSpeechText, {
+        language: 'en-US',
+        rate: 0.8,
+        pitch: 1.0,
+        onDone: () => {
+          console.log('🎵 No speech detected audio finished playing, restarting recording');
+          setState(prev => ({
+            ...prev,
+            currentStep: 'waiting',
+            isAISpeaking: false,
+            isNoSpeechDetected: false, // Clear no speech detected state
+            currentMessageText: '',
+            silenceStartTime: Date.now(),
+          }));
+
+          // Restart recording after no speech detected audio finishes
+          setTimeout(() => {
+            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+              console.log('🎤 Restarting recording after no speech detected audio finished');
+              startRecording();
+            }
+          }, 1000); // 1 second delay before restarting recording
+        },
+        onError: (error: any) => {
+          console.error('Error playing no speech detected audio:', error);
+          // Fallback: restart recording even if audio fails
+          setState(prev => ({
+            ...prev,
+            currentStep: 'waiting',
+            isAISpeaking: false,
+            isNoSpeechDetected: false,
+            currentMessageText: '',
+          }));
+          setTimeout(() => {
+            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+              startRecording();
+            }
+          }, 1000);
+        }
+      });
+
+    } catch (error) {
+      console.error('Failed to play no speech detected audio:', error);
+      // Fallback: restart recording
+      setState(prev => ({
+        ...prev,
+        currentStep: 'waiting',
+        isAISpeaking: false,
+        isNoSpeechDetected: false,
+        currentMessageText: '',
+      }));
+      setTimeout(() => {
+        if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+          startRecording();
+        }
+      }, 1000);
+    }
+  };
+
   const handlePauseResponse = (userResponse: string) => {
     console.log('⏰ User response to pause prompt:', userResponse);
     
@@ -430,6 +550,7 @@ export default function EnglishOnlyScreen() {
     // Track if this is a response to user speech (not greeting or pause)
     const isResponseToUserSpeech = data.step === 'correction' && data.original_text;
     const isPausePrompt = data.step === 'pause_detected';
+    const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
 
     setState(prev => ({
       ...prev,
@@ -437,11 +558,26 @@ export default function EnglishOnlyScreen() {
       isListening: false,
       isGreeting: false,
       isPauseDetected: isPausePrompt,
+      isNoSpeechDetected: isNoSpeechDetected,
+      isProcessingAudio: false, // Clear processing state when we get response
       currentMessageText: data.conversation_text || data.response || 'AI response',
-      isAISpeaking: false, // Will be set to true in handleAudioData
+      // Don't set isAISpeaking to false here - let handleAudioData manage it
       // Update lastUserInput if this is a response to user speech
       lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
     }));
+
+    // Handle no speech detected response from backend
+    if (isNoSpeechDetected) {
+      console.log('🔇 Backend detected no speech - playing no speech detected audio');
+      // Reset hasUserSpoken flag since backend detected no speech
+      hasUserSpokenRef.current = false;
+      // Play no speech detected audio and restart recording
+      setTimeout(() => {
+        if (isScreenFocusedRef.current) {
+          playNoSpeechDetectedAudio();
+        }
+      }, 500); // Short delay before playing audio
+    }
 
     // Auto-scroll UI
     setTimeout(() => {
@@ -488,18 +624,31 @@ export default function EnglishOnlyScreen() {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Check if this is greeting audio
+      // Check if this is greeting audio or no speech detected audio
       const isGreeting = state.isGreeting;
+      const isNoSpeechDetected = state.isNoSpeechDetected;
 
-      setState(prev => ({
-        ...prev,
-        currentAudioUri: audioUri,
-        currentStep: 'speaking',
-        isAISpeaking: true,
-        isListening: false, // Ensure listening is stopped
-      }));
+      // Only update state if not already speaking to prevent unnecessary re-renders
+      setState(prev => {
+        if (prev.isAISpeaking) {
+          // Already speaking, just update the audio URI
+          return {
+            ...prev,
+            currentAudioUri: audioUri,
+          };
+        } else {
+          // Not speaking, set all speaking-related states
+          return {
+            ...prev,
+            currentAudioUri: audioUri,
+            currentStep: 'speaking',
+            isAISpeaking: true,
+            isListening: false, // Ensure listening is stopped
+          };
+        }
+      });
 
-      await playAudio(audioUri, isGreeting);
+      await playAudio(audioUri, isGreeting, isNoSpeechDetected);
     } catch (error) {
       console.error('Failed to handle audio data:', error);
     }
@@ -518,11 +667,19 @@ export default function EnglishOnlyScreen() {
     }));
   };
 
-  const playAudio = async (audioUri: string, isGreeting = false) => {
+  const playAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false) => {
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping audio playback');
       return;
     }
+
+    // Prevent multiple audio sessions
+    if (isPlayingAudioRef.current) {
+      console.log('Audio already playing, skipping new audio session');
+      return;
+    }
+
+    isPlayingAudioRef.current = true;
 
     try {
       // Stop any existing audio playback
@@ -547,6 +704,9 @@ export default function EnglishOnlyScreen() {
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
+          // Reset audio playing flag
+          isPlayingAudioRef.current = false;
+          
           if (isGreeting) {
             console.log('🎵 Greeting audio finished playing, starting to listen');
             setState(prev => ({
@@ -564,7 +724,25 @@ export default function EnglishOnlyScreen() {
                 console.log('🎤 Starting to listen after greeting finished');
                 startRecording();
               }
-            }, 800); // 0.8 second delay after greeting
+            }, 2000); // 2 second delay after greeting to allow for 5-second silence scenario
+          } else if (isNoSpeechDetected) {
+            console.log('🎵 No speech detected audio finished playing, restarting recording');
+            setState(prev => ({
+              ...prev, 
+              currentStep: 'waiting',
+              isAISpeaking: false,
+              isNoSpeechDetected: false, // Clear no speech detected state
+              currentMessageText: '',
+              silenceStartTime: Date.now(),
+            }));
+
+            // Restart recording after no speech detected audio finishes
+            setTimeout(() => {
+              if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+                console.log('🎤 Restarting recording after no speech detected audio finished');
+                startRecording();
+              }
+            }, 1000); // 1 second delay before restarting recording
           } else {
             console.log('🎵 AI audio finished playing, preparing to listen again');
             setState(prev => ({
@@ -588,6 +766,11 @@ export default function EnglishOnlyScreen() {
               
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
                 console.log('🎤 Starting to listen again after AI finished speaking');
+                // Mark this as a new session after AI spoke
+                isNewSessionAfterAI.current = true;
+                // Reset hasUserSpoken for the new session after AI
+                hasUserSpokenRef.current = false;
+                console.log('🔄 Reset hasUserSpoken for new session after AI');
                 startRecording();
               } else {
                 console.log('🛑 Cannot start recording - conditions not met');
@@ -600,6 +783,7 @@ export default function EnglishOnlyScreen() {
       await sound.playAsync();
     } catch (error) {
       console.error('Failed to play audio:', error);
+      isPlayingAudioRef.current = false; // Reset flag on error
       setState(prev => ({ ...prev, currentStep: 'waiting' }));
     }
   };
@@ -722,6 +906,9 @@ export default function EnglishOnlyScreen() {
         silenceStartTime: null,
       }));
 
+      // Don't reset first recording flag here - it should only be reset after first silence detection or user speaks
+      console.log(`🔄 Recording started - isFirstRecording: ${isFirstRecordingRef.current}, hasUserSpoken: ${hasUserSpokenRef.current}`);
+
       console.log('🎤 Recording started successfully');
 
       console.log('DEBUG: Recording started. Resetting speech start time.');
@@ -733,20 +920,61 @@ export default function EnglishOnlyScreen() {
           silenceTimerRef.current = null;
         }
         
-        const silenceTimeout = getSilenceDuration(!!speechStartTimeRef.current);
-        const timingType = speechStartTimeRef.current ? 'post-speech' : 'initial';
+        // Custom silence detection logic for English-Only feature
+        let silenceTimeout: number;
+        let timingType: 'initial' | 'post-speech' | 'ai-delay' | 'user-delay';
+        
+        if (isFirstRecordingRef.current && !hasUserSpokenRef.current) {
+          // First time recording - 5 seconds silence
+          silenceTimeout = 5000; // 5 seconds
+          timingType = 'initial';
+        } else if (isNewSessionAfterAI.current && !hasUserSpokenRef.current) {
+          // New session after AI spoke - 5 seconds silence (play no speech detected)
+          silenceTimeout = 5000; // 5 seconds
+          timingType = 'ai-delay';
+        } else if (hasUserSpokenRef.current) {
+          // User has spoken in this session - 2 seconds silence (send to backend)
+          silenceTimeout = 2000; // 2 seconds
+          timingType = 'post-speech';
+        } else {
+          // Fallback to ChatGPT timing
+          silenceTimeout = getSilenceDuration(!!speechStartTimeRef.current);
+          timingType = speechStartTimeRef.current ? 'post-speech' : 'initial';
+        }
         
         logTimingInfo('English-Only', silenceTimeout, timingType);
         
         silenceTimerRef.current = setTimeout(() => {
-          setState(prevState => {
-            if (prevState.currentStep === 'listening' && prevState.isListening) {
-              setIsTalking(false);
-              console.log(`🎯 SILENCE DETECTED: Timer triggered after ${silenceTimeout}ms, stopping recording.`);
+          console.log(`🎯 SILENCE DETECTED: Timer triggered after ${silenceTimeout}ms`);
+          console.log(`🔍 Current state - isFirstRecording: ${isFirstRecordingRef.current}, hasUserSpoken: ${hasUserSpokenRef.current}, isNewSessionAfterAI: ${isNewSessionAfterAI.current}`);
+          console.log(`🔍 Recording state - currentStep: ${state.currentStep}, recordingRef: ${!!recordingRef.current}`);
+          
+          // Check if we're still in listening state or if recording is active
+          if (state.currentStep === 'listening' || recordingRef.current) {
+            setIsTalking(false);
+            console.log('🎯 Stopping recording due to silence detection');
+            
+            // Handle different silence scenarios
+            if (isFirstRecordingRef.current && !hasUserSpokenRef.current) {
+              // First time silence - play "No speech detected" message
+              console.log('🔇 First recording silence detected - playing no speech message');
+              handleFirstTimeSilence();
+            } else if (isNewSessionAfterAI.current && !hasUserSpokenRef.current) {
+              // New session after AI spoke - play "No speech detected" message
+              console.log('🔇 New session after AI silence detected - playing no speech message');
+              handleFirstTimeSilence();
+            } else if (hasUserSpokenRef.current) {
+              // Post-speech silence - send to backend for processing
+              console.log('🔇 Post-speech silence detected - sending to backend');
               stopRecording(true);
+            } else {
+              // Fallback case
+              console.log('🔇 Fallback silence detected - playing no speech message');
+              handleFirstTimeSilence();
             }
-            return prevState;
-          });
+          } else {
+            console.log('🛑 Silence timer triggered but not in listening state, ignoring');
+          }
         }, silenceTimeout);
       };
 
@@ -786,6 +1014,22 @@ export default function EnglishOnlyScreen() {
                 console.log(`DEBUG: Speech start time set to: ${speechStartTimeRef.current}`);
               }
 
+              // Mark that user has spoken in this session
+              if (!hasUserSpokenRef.current) {
+                hasUserSpokenRef.current = true;
+                // Reset first recording flag since user has spoken
+                if (isFirstRecordingRef.current) {
+                  isFirstRecordingRef.current = false;
+                  console.log('🔄 First recording completed - user has spoken, switching to normal mode');
+                }
+                // Reset new session after AI flag since user has spoken
+                if (isNewSessionAfterAI.current) {
+                  isNewSessionAfterAI.current = false;
+                  console.log('🔄 New session after AI completed - user has spoken, switching to normal mode');
+                }
+                console.log('🎤 User has spoken in this session');
+              }
+
               if (!isTalking) {
                 setIsTalking(true);
                 setState(prev => ({ 
@@ -793,6 +1037,7 @@ export default function EnglishOnlyScreen() {
                   isListening: false,
                 }));
               }
+              // Only reset silence timer when user is talking
               resetSilenceTimer();
             } else {
               if (isTalking) {
@@ -802,6 +1047,7 @@ export default function EnglishOnlyScreen() {
                   isListening: true,
                 }));
               }
+              // Don't reset silence timer when user is not talking - let it complete
             }
           } else if (Platform.OS === 'ios' && status.isRecording && !isStoppingRef.current) {
             if (!iOSMeteringCalibration.current.calibrated && Date.now() - iOSMeteringCalibration.current.calibrationStart > 2000) {
@@ -912,16 +1158,27 @@ export default function EnglishOnlyScreen() {
       console.log(`DEBUG: Stop recording details - Start: ${speechStartedAt}, End: ${speechEndedAt}, Duration: ${duration}ms`);
       console.log(`Stopping recording. Reason: ${stoppedBySilence ? 'silence' : 'manual'}. Speech duration: ${duration}ms, valid: ${hadValidSpeech}`);
 
-      if (uri && hadValidSpeech && !stoppedBySilence) {
-        console.log("Valid speech detected. Processing audio...");
-        await processUserSpeech(uri);
+      if (uri && hadValidSpeech) {
+        if (stoppedBySilence) {
+          // Post-speech silence detected - send to backend for processing
+          console.log('🔇 Post-speech silence detected - sending audio to backend for processing');
+          await processUserSpeech(uri);
+        } else {
+          // Manual stop - also process
+          console.log("Valid speech detected. Processing audio...");
+          await processUserSpeech(uri);
+        }
       } else if (stoppedBySilence) {
-        console.log('🔇 Recording stopped due to silence, not uploading');
+        console.log('🔇 Recording stopped due to silence, but no valid speech detected');
       } else {
         console.log('Recording stopped but speech was too short or invalid.');
       }
       
       speechStartTimeRef.current = null;
+      
+      // Don't reset hasUserSpoken flag - keep it true once user has spoken
+      // This ensures we only send to backend when user actually speaks
+      console.log('🔄 Keeping hasUserSpoken flag as true - user has spoken in this session');
     } catch (error) {
       console.error('Failed to stop recording:', error);
       setState(prev => ({ ...prev, currentStep: 'error' }));
@@ -979,18 +1236,25 @@ export default function EnglishOnlyScreen() {
         console.log('⏰ Processing pause response...');
       }
 
+      // Set processing state to show loading animation
+      setState(prev => ({
+        ...prev,
+        currentStep: 'waiting', // Show loading animation
+        isAISpeaking: false, // Not AI speaking yet, just processing
+        isListening: false,
+        isProcessingAudio: true, // Show processing animation
+        currentMessageText: 'Processing your speech...',
+      }));
+
+      // Send the audio directly to backend for processing
       const messagePayload = {
         audio_base64: base64Audio,
         filename: `english_only_recording-${Date.now()}.wav`,
         user_name: state.userName,
       };
 
+      console.log('📤 Sending audio to backend for processing...');
       sendEnglishOnlyMessage(JSON.stringify(messagePayload));
-
-      setState(prev => ({
-        ...prev,
-        currentStep: 'waiting',
-      }));
 
     } catch (error) {
       console.error('Failed to process user speech:', error);
@@ -1033,6 +1297,10 @@ export default function EnglishOnlyScreen() {
       soundRef.current = null;
     }
     
+    // Stop Speech synthesis
+    console.log('🔇 Stopping speech synthesis...');
+    Speech.stop();
+    
     console.log('🔌 Closing WebSocket connection...');
     closeEnglishOnlySocket();
     
@@ -1044,6 +1312,7 @@ export default function EnglishOnlyScreen() {
       isAISpeaking: false,
       isGreeting: false,
       isPauseDetected: false,
+      isNoSpeechDetected: false,
       currentMessageText: '',
       silenceStartTime: null,
       lastUserInput: '',
@@ -1053,6 +1322,9 @@ export default function EnglishOnlyScreen() {
     speechStartTimeRef.current = null;
     setIsTalking(false);
     connectionAttemptsRef.current = 0; // Reset connection attempts
+    isFirstRecordingRef.current = true; // Reset first recording flag
+    hasUserSpokenRef.current = false; // Reset user spoken flag
+    isPlayingAudioRef.current = false; // Reset audio playing flag
     
     console.log('✅ Cleanup completed');
   };
@@ -1067,6 +1339,10 @@ export default function EnglishOnlyScreen() {
         console.warn('Error stopping sound:', error);
       });
     }
+    
+    // Stop Speech synthesis immediately
+    console.log('🔇 Stopping speech synthesis immediately...');
+    Speech.stop();
     
     if (recordingRef.current) {
       console.log('🛑 Stopping recording immediately...');
@@ -1092,6 +1368,7 @@ export default function EnglishOnlyScreen() {
       isAISpeaking: false,
       isGreeting: false,
       isPauseDetected: false,
+      isNoSpeechDetected: false,
       currentMessageText: '',
       silenceStartTime: null,
       lastUserInput: '',
@@ -1134,6 +1411,22 @@ export default function EnglishOnlyScreen() {
     if (state.isListening) {
       return {
         animation: require('../../../assets/animations/listening.json'),
+        text: '',
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isNoSpeechDetected) {
+      return {
+        animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
+        text: '',
+        showMessage: !!state.currentMessageText
+      };
+    }
+    
+    if (state.isProcessingAudio) {
+      return {
+        animation: require('../../../assets/animations/loading.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };

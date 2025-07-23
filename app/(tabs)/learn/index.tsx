@@ -139,17 +139,17 @@ export default function LearnScreen() {
               style={[styles.toggleOption, styles.toggleActive]}
               onPress={() => setMode('english')}
             >
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.toggleOption, styles.toggleActive, { borderRadius: 12 }]}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="language" size={18} color={'#fff'} style={{ marginRight: 6 }} />
-                  <Text style={[styles.toggleOptionText, { color: '#fff' }]}>Urdu-English</Text>
-                </View>
-              </LinearGradient>
+            <LinearGradient
+              colors={['#58D68D', '#45B7A8', '#58D68D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.toggleOption, styles.toggleActive, { borderRadius: 12 }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="language" size={18} color={'#fff'} style={{ marginRight: 6 }} />
+                <Text style={[styles.toggleOptionText, { color: '#fff' }]}>Urdu-English</Text>
+              </View>
+            </LinearGradient>
             </TouchableOpacity>
           </View>
         </Animated.View>
