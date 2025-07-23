@@ -323,9 +323,9 @@ export default function EnglishOnlyScreen() {
       }
     }
 
-    // Reset first recording flag since we've handled the first silence
+    // Reset first recording flag since we've handled the silence
     isFirstRecordingRef.current = false;
-    console.log('🔄 First recording silence handled, switching to normal mode');
+    console.log('🔄 Silence handled, switching to normal mode');
 
     // Set state to show no speech detected with animation (like conversation.tsx)
     setState(prev => ({
@@ -819,10 +819,13 @@ export default function EnglishOnlyScreen() {
               
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
                 console.log('🎤 Starting to listen again after AI finished speaking');
+                // Reset isFirstRecording to true for new conversation cycle
+                isFirstRecordingRef.current = true;
                 // Mark this as a new session after AI spoke
                 isNewSessionAfterAI.current = true;
                 // Reset hasUserSpoken for the new session after AI
                 hasUserSpokenRef.current = false;
+                console.log('🔄 Reset isFirstRecording to true for new conversation cycle');
                 console.log('🔄 Reset hasUserSpoken for new session after AI');
                 startRecording();
               } else {
@@ -986,8 +989,8 @@ export default function EnglishOnlyScreen() {
         silenceStartTime: null,
       }));
 
-      // Don't reset first recording flag here - it should only be reset after first silence detection or user speaks
-      console.log(`🔄 Recording started - isFirstRecording: ${isFirstRecordingRef.current}, hasUserSpoken: ${hasUserSpokenRef.current}`);
+      // Log the recording state for debugging
+      console.log(`🔄 Recording started - isFirstRecording: ${isFirstRecordingRef.current}, hasUserSpoken: ${hasUserSpokenRef.current}, isNewSessionAfterAI: ${isNewSessionAfterAI.current}`);
 
       console.log('🎤 Recording started successfully');
 
@@ -1036,8 +1039,8 @@ export default function EnglishOnlyScreen() {
             
             // Handle different silence scenarios
             if (isFirstRecordingRef.current && !hasUserSpokenRef.current) {
-              // First time silence - play "No speech detected" message
-              console.log('🔇 First recording silence detected - playing no speech message');
+              // First time silence or new conversation cycle silence - play "No speech detected" message
+              console.log('🔇 First recording/new cycle silence detected - playing no speech message');
               handleFirstTimeSilence();
             } else if (isNewSessionAfterAI.current && !hasUserSpokenRef.current) {
               // New session after AI spoke - play "No speech detected" message
