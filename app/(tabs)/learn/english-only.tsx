@@ -576,6 +576,12 @@ export default function EnglishOnlyScreen() {
 
     // Handle no speech detected response from backend
     if (isNoSpeechDetected) {
+      // Don't handle no_speech if we're currently processing audio
+      if (isProcessingAudioRef.current || state.isProcessingAudio) {
+        console.log('🔇 Ignoring no_speech response - currently processing audio (ref: ' + isProcessingAudioRef.current + ', state: ' + state.isProcessingAudio + ')');
+        return;
+      }
+      
       console.log('🔇 Backend detected no speech - playing no speech detected audio');
       // Reset hasUserSpoken flag since backend detected no speech
       hasUserSpokenRef.current = false;
