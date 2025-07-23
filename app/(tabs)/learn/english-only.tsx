@@ -718,13 +718,11 @@ export default function EnglishOnlyScreen() {
               silenceStartTime: Date.now(),
             }));
 
-            // Start listening after greeting finishes
-            setTimeout(() => {
-              if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-                console.log('🎤 Starting to listen after greeting finished');
-                startRecording();
-              }
-            }, 2000); // 2 second delay after greeting to allow for 5-second silence scenario
+            // Start listening immediately after greeting finishes
+            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+              console.log('🎤 Starting to listen immediately after greeting finished');
+              startRecording();
+            }
           } else if (isNoSpeechDetected) {
             console.log('🎵 No speech detected audio finished playing, restarting recording');
             setState(prev => ({
@@ -812,35 +810,25 @@ export default function EnglishOnlyScreen() {
 
     try {
       console.log('🎤 Setting audio mode for recording...');
-      await Audio.setAudioModeAsync({
+      // Set audio mode with timeout to prevent hanging
+      const audioModePromise = Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
         interruptionModeIOS: InterruptionModeIOS.DoNotMix,
       });
+      
+      await Promise.race([
+        audioModePromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Audio mode timeout')), 1000))
+      ]);
       console.log('✅ Audio mode set successfully');
     } catch (error) {
       console.error('Failed to set audio mode for recording:', error);
-      Alert.alert('Error', 'Could not configure audio for recording.');
-      setState(prev => ({ 
-        ...prev, 
-        currentStep: 'waiting',
-        isListening: false 
-      }));
-      return;
-    }
-
-    isStoppingRef.current = false;
-
-    console.log('🎤 Checking audio permissions...');
-    const permission = await Audio.getPermissionsAsync();
-    if (!permission.granted) {
-      console.log('Requesting audio permissions...');
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) {
-        console.log('❌ Audio permission denied');
-        Alert.alert('Permission Required', 'Microphone access is needed to speak with the tutor.');
+      // Don't show alert for timeout, just continue
+      if (error instanceof Error && !error.message?.includes('timeout')) {
+        Alert.alert('Error', 'Could not configure audio for recording.');
         setState(prev => ({ 
           ...prev, 
           currentStep: 'waiting',
@@ -849,34 +837,71 @@ export default function EnglishOnlyScreen() {
         return;
       }
     }
-    console.log('✅ Audio permissions granted');
+
+    isStoppingRef.current = false;
+
+    console.log('🎤 Checking audio permissions...');
+    try {
+      const permission = await Audio.getPermissionsAsync();
+      if (!permission.granted) {
+        console.log('Requesting audio permissions...');
+        const { granted } = await Audio.requestPermissionsAsync();
+        if (!granted) {
+          console.log('❌ Audio permission denied');
+          Alert.alert('Permission Required', 'Microphone access is needed to speak with the tutor.');
+          setState(prev => ({ 
+            ...prev, 
+            currentStep: 'waiting',
+            isListening: false 
+          }));
+          return;
+        }
+      }
+      console.log('✅ Audio permissions granted');
+    } catch (error) {
+      console.error('Permission check failed:', error);
+      // Continue anyway - permissions might already be granted
+    }
 
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping recording start');
       return;
     }
 
-    // Stop any existing recording
+    // Quick cleanup - stop existing recording and audio in parallel
+    const cleanupPromises = [];
+    
     if (recordingRef.current) {
-      try {
-        console.log('🛑 Stopping existing recording...');
-        await recordingRef.current.stopAndUnloadAsync();
-        console.log('✅ Existing recording stopped');
-      } catch (e) {
-        console.log('Error stopping existing recording:', e);
-      }
+      console.log('🛑 Stopping existing recording...');
+      cleanupPromises.push(
+        recordingRef.current.stopAndUnloadAsync().catch(e => {
+          console.log('Error stopping existing recording:', e);
+        })
+      );
       recordingRef.current = null;
     }
 
-    // Stop any existing audio playback
     if (soundRef.current) {
-      try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-      } catch (e) {
-        console.log('Error stopping existing audio:', e);
-      }
+      console.log('🔇 Stopping existing audio...');
+      cleanupPromises.push(
+        soundRef.current.stopAsync().then(() => soundRef.current?.unloadAsync()).catch(e => {
+          console.log('Error stopping existing audio:', e);
+        })
+      );
       soundRef.current = null;
+    }
+
+    // Wait for cleanup to complete (but don't block if it takes too long)
+    if (cleanupPromises.length > 0) {
+      try {
+        await Promise.race([
+          Promise.all(cleanupPromises),
+          new Promise(resolve => setTimeout(resolve, 500)) // Max 500ms wait
+        ]);
+        console.log('✅ Cleanup completed');
+      } catch (e) {
+        console.log('Cleanup completed with errors:', e);
+      }
     }
 
     if (!isEnglishOnlySocketConnected()) {
