@@ -1599,6 +1599,14 @@ export default function EnglishOnlyScreen() {
       };
     }
     
+    if (isTalking) {
+      return {
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        text: '',
+        showMessage: false,
+      };
+    }
+
     if (state.isNoSpeechDetected) {
       return {
         animation: require('../../../assets/animations/ai_speaking_v2.json'),
