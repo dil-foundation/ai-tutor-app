@@ -1103,7 +1103,7 @@ export default function EnglishOnlyScreen() {
           timingType = 'initial';
         } else if (isNewSessionAfterAI.current && !hasUserSpokenRef.current) {
           // New session after AI spoke - 5 seconds silence (play no speech detected)
-          silenceTimeout = 5000; // 5 seconds
+          silenceTimeout = 7000; // 5 seconds
           timingType = 'ai-delay';
         } else if (hasUserSpokenRef.current) {
           // User has spoken in this session - 2 seconds silence (send to backend)
