@@ -629,8 +629,13 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Completion Overview</Text>
             </View>
             
-            <BlurView intensity={15} style={styles.glassCard}>
-              <View style={styles.unifiedCard}>
+            <BlurView intensity={20} style={styles.glassCard}>
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                style={styles.overviewGradient}
+              >
+
+                
                 {/* Stages Completed Bar */}
                 <View style={styles.barItem}>
                   <View style={styles.barHeader}>
@@ -711,7 +716,7 @@ export default function ProgressScreen() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </LinearGradient>
             </BlurView>
           </Animated.View>
 
@@ -735,9 +740,14 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Achievements</Text>
             </View>
 
-            <BlurView intensity={15} style={styles.glassCard}>
-              <View style={styles.unifiedCard}>
-                {safeData.achievements.length > 0 ? (
+            <BlurView intensity={20} style={styles.glassCard}>
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                style={styles.overviewGradient}
+              >
+
+                
+                                {safeData.achievements.length > 0 ? (
                   safeData.achievements.map((achievement, index) => (
                     <View key={index} style={[styles.infoRow, index === safeData.achievements.length - 1 && styles.infoRowLast]}>
                       <View style={styles.infoRowLeft}>
@@ -759,7 +769,7 @@ export default function ProgressScreen() {
                     <Text style={styles.emptyStateSubtext}>Complete exercises to earn achievements</Text>
                   </View>
                 )}
-              </View>
+              </LinearGradient>
             </BlurView>
           </Animated.View>
 
@@ -783,9 +793,14 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Learning Statistics</Text>
             </View>
 
-            <BlurView intensity={15} style={styles.glassCard}>
-              <View style={styles.unifiedCard}>
-                {/* Total Learning Time */}
+            <BlurView intensity={20} style={styles.glassCard}>
+              <LinearGradient
+                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                style={styles.overviewGradient}
+              >
+
+                
+                                {/* Total Learning Time */}
                 <View style={styles.infoRow}>
                   <View style={styles.infoRowLeft}>
                     <View style={[styles.infoRowIcon, { backgroundColor: COLORS.primary }]}>
@@ -828,7 +843,7 @@ export default function ProgressScreen() {
                   </View>
                   <Text style={styles.infoRowValue}>{safeData.average_session_duration.toFixed(1)}m</Text>
                 </View>
-              </View>
+              </LinearGradient>
             </BlurView>
           </Animated.View>
 
