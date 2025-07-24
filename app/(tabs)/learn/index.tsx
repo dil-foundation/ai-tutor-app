@@ -134,24 +134,35 @@ export default function LearnScreen() {
           <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
           
           {/* Language Mode Toggle */}
-          <View style={styles.segmentedToggleContainer}>
-            <TouchableOpacity 
-              style={[styles.toggleOption, styles.toggleActive]}
-              onPress={() => setMode('english')}
-            >
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8', '#58D68D']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.toggleOption, styles.toggleActive, { borderRadius: 12 }]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="language" size={18} color={'#fff'} style={{ marginRight: 6 }} />
-                <Text style={[styles.toggleOptionText, { color: '#fff' }]}>Urdu-English</Text>
-              </View>
-            </LinearGradient>
-            </TouchableOpacity>
-          </View>
+          <View style={styles.toggleButtonWrapper}>
+          <TouchableOpacity 
+  onPress={() => setMode('english')}
+  activeOpacity={0.8}
+  style={{
+    alignSelf: 'center',
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginVertical: -16,
+  }}
+>
+  <LinearGradient
+    colors={['#58D68D', '#45B7A8', '#58D68D']}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 15,
+      paddingHorizontal: 25,
+      borderRadius: 30,
+    }}
+  >
+    <Ionicons name="language" size={18} color="#black" style={{ marginRight: 8 }} />
+    <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 15 }}>Urdu-English</Text>
+  </LinearGradient>
+</TouchableOpacity>
+</View>
+
         </Animated.View>
         
         <Animated.View
@@ -186,8 +197,8 @@ export default function LearnScreen() {
                   <Ionicons name="chatbubbles" size={24} color="#000000" />
                 </View>
                 <View style={styles.buttonTextContainer}>
-                  <Text style={styles.buttonText}>Urdu-English Conversation</Text>
-                  <Text style={styles.buttonSubtext}>Speak Urdu, learn English →</Text>
+                  <Text style={styles.buttonText}>Press to Start Urdu-Eng Conversation</Text>
+                  <Text style={styles.buttonSubtext}>Begin your learning journey</Text>
                 </View>
                 <View style={styles.arrowContainer}>
                   <Ionicons name="arrow-forward" size={20} color="#000000" />
@@ -203,21 +214,21 @@ export default function LearnScreen() {
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={['#007AFF', '#5856D6', '#007AFF']}
+              colors={['#58D68D', '#45B7A8', '#58D68D']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.buttonGradient}
             >
               <View style={styles.buttonContent}>
                 <View style={styles.buttonIconContainer}>
-                  <Ionicons name="school" size={24} color="#FFFFFF" />
+                  <Ionicons name="school" size={24} color="#000000" />
                 </View>
                 <View style={styles.buttonTextContainer}>
-                  <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>English-Only Tutor</Text>
-                  <Text style={[styles.buttonSubtext, { color: '#FFFFFF' }]}>Perfect your English →</Text>
+                  <Text style={styles.buttonText}>Press to Start English-Only Tutoring</Text>
+                  <Text style={styles.buttonSubtext}>Perfect your English skills </Text>
                 </View>
                 <View style={styles.arrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                  <Ionicons name="arrow-forward" size={20} color="#000000" />
                 </View>
               </View>
             </LinearGradient>
@@ -295,6 +306,12 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  toggleButtonWrapper: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    marginTop: 20,
   },
   toggleBox: {
     width: '100%',
