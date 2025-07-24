@@ -671,8 +671,8 @@ export default function ProgressScreen() {
                       <Ionicons name="layers" size={20} color="#8E44AD" />
                     </View>
                     <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Stages Completed</Text>
                       <Text style={styles.barValue}>{safeData.total_completed_stages}</Text>
+                      <Text style={styles.barLabel}>Stages Completed</Text> 
                     </View>
                   </View>
                   <View style={styles.barContainer}>
@@ -698,8 +698,9 @@ export default function ProgressScreen() {
                       <Ionicons name="fitness" size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Exercises Completed</Text>
+                      
                       <Text style={styles.barValue}>{safeData.total_exercises_completed}</Text>
+                      <Text style={styles.barLabel}>Exercises Completed</Text>
                     </View>
                   </View>
                   <View style={styles.barContainer}>
@@ -725,8 +726,9 @@ export default function ProgressScreen() {
                       <Ionicons name="book" size={20} color="#F39C12" />
                     </View>
                     <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Topics Mastered</Text>
+                      
                       <Text style={styles.barValue}>{safeData.total_completed_units}</Text>
+                      <Text style={styles.barLabel}>Topics Mastered</Text>
                     </View>
                   </View>
                   <View style={styles.barContainer}>
@@ -1337,7 +1339,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text.primary,
-    marginLeft: 12,
+    marginLeft: -5,
     fontFamily: 'Lexend-Bold',
   },
 
@@ -1402,18 +1404,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(243, 156, 18, 0.1)',
   },
   barTextContainer: {
+    flexDirection: 'row',     
+    alignItems: 'center',    
     flex: 1,
   },
   barLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#2C3E50',
-    marginBottom: 2,
+    marginBottom: 2, 
+    marginLeft: 10,
   },
   barValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2C3E50',
+    minWidth: 28,            // Ensures space even for 1-digit numbers
+    textAlign: 'right',
+    marginLeft: -12,      // Right-align numbers
   },
   barContainer: {
     flexDirection: 'row',
