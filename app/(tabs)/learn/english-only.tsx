@@ -1593,7 +1593,7 @@ export default function EnglishOnlyScreen() {
   const getCurrentAnimation = () => {
     if (state.isListening) {
       return {
-        animation: require('../../../assets/animations/listening.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1601,7 +1601,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isNoSpeechDetected) {
       return {
-        animation: require('../../../assets/animations/tap_the_mic_try_again.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1609,7 +1609,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isNoSpeechAfterProcessing) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1617,7 +1617,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isProcessingAudio) {
       return {
-        animation: require('../../../assets/animations/loading.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: 'Processing your speech...',
         showMessage: !!state.currentMessageText
       };
@@ -1625,7 +1625,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isAISpeaking) {
       return {
-        animation: require('../../../assets/animations/ai_speaking.json'),
+        animation: require('../../../assets/animations/ai_speaking_v2.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1685,11 +1685,11 @@ export default function EnglishOnlyScreen() {
 
       {/* Animation Overlay */}
       <View style={styles.processingOverlay} pointerEvents="box-none">
-        {currentAnimation.showMessage && state.currentMessageText ? (
+        {/* {currentAnimation.showMessage && state.currentMessageText ? (
           <View style={styles.messageBox}>
             <Text style={styles.currentMessageText}>{state.currentMessageText}</Text>
           </View>
-        ) : null}
+        ) : null} */}
         
         {currentAnimation.animation && (
           <>
