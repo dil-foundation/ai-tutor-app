@@ -63,7 +63,7 @@ const getStageStatus = (stage: any) => {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'completed': return COLORS.success;
-    case 'in_progress': return COLORS.primary;
+    case 'in_progress': return '#3B82F6'; // Blue for in progress
     case 'locked': return COLORS.text.tertiary;
     default: return COLORS.text.tertiary;
   }
@@ -582,15 +582,43 @@ export default function ProgressScreen() {
                           {stage.exercises.map((ex, exIdx) => {
                             const exStatusColor = getStatusColor(ex.status);
                             const isLocked = ex.status === 'locked';
+                            const isCompleted = ex.status === 'completed';
+                            const isInProgress = ex.status === 'in_progress';
+                            
                             return (
-                              <View key={exIdx} style={styles.exerciseRow}>
-                                <View style={[styles.exerciseDot, { backgroundColor: isLocked ? COLORS.text.tertiary : exStatusColor }]} />
+                              <View key={exIdx} style={[
+                                styles.exerciseRow,
+                                isCompleted && styles.completedExerciseRow,
+                                isInProgress && styles.inProgressExerciseRow,
+                                isLocked && styles.lockedExerciseRow
+                              ]}>
+                                <View style={[
+                                  styles.exerciseDot, 
+                                  { backgroundColor: isLocked ? COLORS.text.tertiary : exStatusColor }
+                                ]} />
                                 <View style={styles.exerciseContent}>
-                                  <Text style={[styles.exerciseName, isLocked && styles.lockedText]}>{ex.name}</Text>
+                                  <Text style={[
+                                    styles.exerciseName, 
+                                    isLocked && styles.lockedText,
+                                    isCompleted && styles.completedText,
+                                    isInProgress && styles.inProgressText
+                                  ]}>
+                                    {ex.name}
+                                  </Text>
                                 </View>
-                                <Text style={[styles.exerciseStatus, { color: isLocked ? COLORS.text.tertiary : exStatusColor }]}>
-                                  {ex.status.replace('_', ' ')}
-                                </Text>
+                                <View style={[
+                                  styles.exerciseStatusContainer,
+                                  isCompleted && styles.completedStatusContainer,
+                                  isInProgress && styles.inProgressStatusContainer,
+                                  isLocked && styles.lockedStatusContainer
+                                ]}>
+                                  <Text style={[
+                                    styles.exerciseStatus, 
+                                    { color: isLocked ? COLORS.text.tertiary : exStatusColor }
+                                  ]}>
+                                    {ex.status.replace('_', ' ')}
+                                  </Text>
+                                </View>
                               </View>
                             );
                           })}
@@ -1439,6 +1467,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(88, 214, 141, 0.15)',
   },
+  completedExerciseRow: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  inProgressExerciseRow: {
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+  },
+  lockedExerciseRow: {
+    backgroundColor: 'rgba(156, 163, 175, 0.05)',
+    borderColor: 'rgba(156, 163, 175, 0.2)',
+  },
   exerciseDot: {
     width: 10,
     height: 10,
@@ -1460,6 +1500,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Lexend-Regular',
     fontWeight: '500',
   },
+  completedText: {
+    color: COLORS.success,
+    fontWeight: '600',
+  },
+  inProgressText: {
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
   lockedText: {
     color: COLORS.text.tertiary,
   },
@@ -1468,6 +1516,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Lexend-Medium',
     textTransform: 'capitalize',
+  },
+  exerciseStatusContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+  },
+  completedStatusContainer: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  inProgressStatusContainer: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  lockedStatusContainer: {
+    backgroundColor: 'rgba(156, 163, 175, 0.1)',
   },
   achievementsSection: {
     marginBottom: 30,
