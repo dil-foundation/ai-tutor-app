@@ -27,13 +27,69 @@ export interface ProgressResponse {
   message?: string;
 }
 
+export interface ProgressData {
+  current_stage: {
+    id: number;
+    name: string;
+    subtitle: string;
+    progress: number;
+  };
+  overall_progress: number;
+  total_progress: number;
+  streak_days: number;
+  total_practice_time: number;
+  total_exercises_completed: number;
+  longest_streak: number;
+  average_session_duration: number;
+  weekly_learning_hours: number;
+  monthly_learning_hours: number;
+  first_activity_date: string | null;
+  last_activity_date: string | null;
+  stages: Array<{
+    stage_id: number;
+    name: string;
+    subtitle: string;
+    completed: boolean;
+    progress: number;
+    unlocked: boolean;
+    exercises: Array<{
+      name: string;
+      status: 'completed' | 'in_progress' | 'locked';
+      progress: number;
+      attempts: number;
+      topics: number;
+      completed_topics: number;
+    }>;
+    started_at: string | null;
+    completed_at: string | null;
+    total_topics: number;
+    completed_topics: number;
+  }>;
+  achievements: Array<{
+    name: string;
+    icon: string;
+    date: string;
+    color: string;
+    description: string;
+  }>;
+  fluency_trend: number[];
+  unlocked_content: any[];
+  total_completed_stages: number;
+  total_completed_exercises: number;
+  total_learning_units: number;
+  total_completed_units: number;
+}
+
 class ProgressTracker {
   private static instance: ProgressTracker;
   private currentUser: any = null;
   private isInitialized: boolean = false;
+  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAY = 1000; // 1 second
 
   private constructor() {
-    // Don't initialize user in constructor - wait for explicit initialization
     console.log('🔄 [FRONTEND] ProgressTracker instance created (lazy initialization)');
   }
 
@@ -66,6 +122,124 @@ class ProgressTracker {
     }
   }
 
+  private validateUserId(userId: string): boolean {
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+      console.error('❌ [FRONTEND] Invalid user ID:', userId);
+      return false;
+    }
+    return true;
+  }
+
+  private validateTopicAttempt(attempt: TopicAttempt): boolean {
+    const errors: string[] = [];
+    
+    if (!this.validateUserId(attempt.user_id)) {
+      errors.push('Invalid user_id');
+    }
+    
+    if (!Number.isInteger(attempt.stage_id) || attempt.stage_id < 1 || attempt.stage_id > 6) {
+      errors.push('Invalid stage_id (must be 1-6)');
+    }
+    
+    if (!Number.isInteger(attempt.exercise_id) || attempt.exercise_id < 1 || attempt.exercise_id > 3) {
+      errors.push('Invalid exercise_id (must be 1-3)');
+    }
+    
+    if (!Number.isInteger(attempt.topic_id) || attempt.topic_id < 1 || attempt.topic_id > 100) {
+      errors.push('Invalid topic_id (must be 1-100)');
+    }
+    
+    if (typeof attempt.score !== 'number' || attempt.score < 0 || attempt.score > 100) {
+      errors.push('Invalid score (must be 0-100)');
+    }
+    
+    if (typeof attempt.urdu_used !== 'boolean') {
+      errors.push('Invalid urdu_used (must be boolean)');
+    }
+    
+    if (!Number.isInteger(attempt.time_spent_seconds) || attempt.time_spent_seconds < 1 || attempt.time_spent_seconds > 3600) {
+      errors.push('Invalid time_spent_seconds (must be 1-3600)');
+    }
+    
+    if (typeof attempt.completed !== 'boolean') {
+      errors.push('Invalid completed (must be boolean)');
+    }
+    
+    if (errors.length > 0) {
+      console.error('❌ [FRONTEND] Topic attempt validation failed:', errors);
+      return false;
+    }
+    
+    return true;
+  }
+
+  private async makeApiRequest<T>(
+    url: string, 
+    options: RequestInit = {}, 
+    retryCount = 0
+  ): Promise<T> {
+    try {
+      console.log(`📡 [FRONTEND] API Request: ${options.method || 'GET'} ${url}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      console.log(`📥 [FRONTEND] Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ [FRONTEND] API Error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [FRONTEND] API request successful');
+      return result;
+    } catch (error) {
+      console.error(`❌ [FRONTEND] API request failed (attempt ${retryCount + 1}):`, error);
+      
+      if (retryCount < this.MAX_RETRIES - 1) {
+        console.log(`🔄 [FRONTEND] Retrying in ${this.RETRY_DELAY}ms...`);
+        await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY));
+        return this.makeApiRequest<T>(url, options, retryCount + 1);
+      }
+      
+      throw error;
+    }
+  }
+
+  private getCacheKey(key: string): string {
+    return `progress_${this.currentUser?.id}_${key}`;
+  }
+
+  private getCachedData(key: string): any | null {
+    const cacheKey = this.getCacheKey(key);
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`📦 [FRONTEND] Using cached data for: ${key}`);
+      return cached.data;
+    }
+    
+    return null;
+  }
+
+  private setCachedData(key: string, data: any): void {
+    const cacheKey = this.getCacheKey(key);
+    this.cache.set(cacheKey, { data, timestamp: Date.now() });
+    console.log(`📦 [FRONTEND] Cached data for: ${key}`);
+  }
+
+  private clearCache(): void {
+    this.cache.clear();
+    console.log('🗑️ [FRONTEND] Cache cleared');
+  }
+
   /**
    * Initialize user progress when they first start using the app
    */
@@ -79,27 +253,28 @@ class ProgressTracker {
         throw new Error('User not authenticated');
       }
 
+      if (!this.validateUserId(this.currentUser.id)) {
+        throw new Error('Invalid user ID');
+      }
+
       console.log('🔄 [FRONTEND] Initializing progress for user:', this.currentUser.id);
       console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/initialize-progress`);
 
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/initialize-progress`,
+        {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: this.currentUser.id
         }),
-      });
+        }
+      );
 
-      console.log('📥 [FRONTEND] Response status:', response.status);
-      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json();
       console.log('✅ [FRONTEND] Progress initialization result:', result);
       
       if (result.success) {
         console.log('🎉 [FRONTEND] Progress initialized successfully');
+        this.clearCache(); // Clear cache after initialization
       } else {
         console.log('❌ [FRONTEND] Progress initialization failed:', result.error);
       }
@@ -139,23 +314,24 @@ class ProgressTracker {
         throw new Error('User not authenticated');
       }
 
+      // Validate attempt data
+      if (!this.validateTopicAttempt(attempt)) {
+        throw new Error('Invalid topic attempt data');
+      }
+
       console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/record-topic-attempt`);
 
-      const response = await fetch(`${BASE_API_URL}/api/progress/record-topic-attempt`, {
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/record-topic-attempt`,
+        {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           ...attempt,
           user_id: this.currentUser.id
         }),
-      });
+        }
+      );
 
-      console.log('📥 [FRONTEND] Response status:', response.status);
-      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json();
       console.log('✅ [FRONTEND] Topic attempt recorded:', result);
       
       if (result.success) {
@@ -163,6 +339,9 @@ class ProgressTracker {
         if (result.data?.unlocked_content?.length > 0) {
           console.log('🔓 [FRONTEND] Unlocked content:', result.data.unlocked_content);
         }
+        
+        // Clear cache after recording attempt
+        this.clearCache();
       } else {
         console.log('❌ [FRONTEND] Topic attempt recording failed:', result.error);
       }
@@ -191,20 +370,18 @@ class ProgressTracker {
         throw new Error('User not authenticated');
       }
 
+      if (!this.validateUserId(this.currentUser.id)) {
+        throw new Error('Invalid user ID');
+      }
+
       console.log('📈 [FRONTEND] Getting progress for user:', this.currentUser.id);
       console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/user-progress/${this.currentUser.id}`);
 
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${this.currentUser.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/user-progress/${this.currentUser.id}`,
+        { method: 'GET' }
+      );
 
-      console.log('📥 [FRONTEND] Response status:', response.status);
-      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json();
       console.log('✅ [FRONTEND] User progress retrieved:', result);
       
       if (result.success && result.data) {
@@ -230,6 +407,73 @@ class ProgressTracker {
   }
 
   /**
+   * Get comprehensive progress data for the progress page
+   */
+  async getComprehensiveProgress(): Promise<ProgressResponse> {
+    console.log('🔄 [FRONTEND] getComprehensiveProgress called');
+    try {
+      await this.ensureInitialized();
+      
+      if (!this.currentUser?.id) {
+        console.log('❌ [FRONTEND] User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      if (!this.validateUserId(this.currentUser.id)) {
+        throw new Error('Invalid user ID');
+      }
+
+      // Check cache first
+      const cachedData = this.getCachedData('comprehensive_progress');
+      if (cachedData) {
+        return { success: true, data: cachedData };
+      }
+
+      console.log('📈 [FRONTEND] Getting comprehensive progress for user:', this.currentUser.id);
+      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/comprehensive-progress`);
+
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/comprehensive-progress`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            user_id: this.currentUser.id
+          }),
+        }
+      );
+
+      console.log('✅ [FRONTEND] Comprehensive progress retrieved:', result);
+      
+      if (result.success && result.data) {
+        // Cache the result
+        this.setCachedData('comprehensive_progress', result.data);
+        
+        const data = result.data as ProgressData;
+        console.log('📊 [FRONTEND] Comprehensive progress summary:');
+        console.log('   - Current stage:', data.current_stage?.name);
+        console.log('   - Overall progress:', data.overall_progress);
+        console.log('   - Streak days:', data.streak_days);
+        console.log('   - Total practice time:', data.total_practice_time);
+        console.log('   - Stages count:', data.stages?.length || 0);
+        console.log('   - Achievements count:', data.achievements?.length || 0);
+        console.log('   - Completed stages:', data.total_completed_stages);
+        console.log('   - Completed exercises:', data.total_completed_exercises);
+      } else {
+        console.log('❌ [FRONTEND] Comprehensive progress retrieval failed:', result.error);
+      }
+      
+      return result;
+
+    } catch (error) {
+      console.error('❌ [FRONTEND] Error getting comprehensive progress:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
    * Get the current topic_id for a specific exercise
    */
   async getCurrentTopicForExercise(stageId: number, exerciseId: number): Promise<ProgressResponse> {
@@ -244,24 +488,28 @@ class ProgressTracker {
         throw new Error('User not authenticated');
       }
 
+      if (!Number.isInteger(stageId) || stageId < 1 || stageId > 6) {
+        throw new Error('Invalid stage_id (must be 1-6)');
+      }
+
+      if (!Number.isInteger(exerciseId) || exerciseId < 1 || exerciseId > 3) {
+        throw new Error('Invalid exercise_id (must be 1-3)');
+      }
+
       console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/get-current-topic`);
 
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/get-current-topic`,
+        {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: this.currentUser.id,
           stage_id: stageId,
           exercise_id: exerciseId
         }),
-      });
+        }
+      );
 
-      console.log('📥 [FRONTEND] Response status:', response.status);
-      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json();
       console.log('✅ [FRONTEND] Current topic result:', result);
       
       if (result.success) {
@@ -298,26 +546,25 @@ class ProgressTracker {
         throw new Error('User not authenticated');
       }
 
+      if (!this.validateUserId(this.currentUser.id)) {
+        throw new Error('Invalid user ID');
+      }
+
       console.log('🔓 [FRONTEND] Checking content unlocks for user:', this.currentUser.id);
       console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/check-unlocks/${this.currentUser.id}`);
 
-      const response = await fetch(`${BASE_API_URL}/api/progress/check-unlocks/${this.currentUser.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const result = await this.makeApiRequest<ProgressResponse>(
+        `${BASE_API_URL}/api/progress/check-unlocks/${this.currentUser.id}`,
+        { method: 'POST' }
+      );
 
-      console.log('📥 [FRONTEND] Response status:', response.status);
-      console.log('📥 [FRONTEND] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json();
       console.log('✅ [FRONTEND] Content unlock check result:', result);
       
       if (result.success) {
         const unlockedContent = result.data?.unlocked_content || [];
         if (unlockedContent.length > 0) {
           console.log('🎉 [FRONTEND] Unlocked content:', unlockedContent);
+          this.clearCache(); // Clear cache when content is unlocked
         } else {
           console.log('ℹ️ [FRONTEND] No new content unlocked');
         }
@@ -347,6 +594,10 @@ class ProgressTracker {
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
+      }
+
+      if (!this.validateUserId(this.currentUser.id)) {
+        throw new Error('Invalid user ID');
       }
 
       console.log('🔍 [FRONTEND] Fetching progress summary from Supabase for user:', this.currentUser.id);
@@ -384,6 +635,14 @@ class ProgressTracker {
       if (!this.currentUser?.id) {
         console.log('❌ [FRONTEND] User not authenticated');
         throw new Error('User not authenticated');
+      }
+
+      if (!Number.isInteger(stageId) || stageId < 1 || stageId > 6) {
+        throw new Error('Invalid stage_id (must be 1-6)');
+      }
+
+      if (!Number.isInteger(exerciseId) || exerciseId < 1 || exerciseId > 3) {
+        throw new Error('Invalid exercise_id (must be 1-3)');
       }
 
       console.log('🔍 [FRONTEND] Fetching exercise progress from Supabase...');
@@ -425,6 +684,16 @@ class ProgressTracker {
         return false;
       }
 
+      if (!Number.isInteger(stageId) || stageId < 1 || stageId > 6) {
+        console.log('❌ [FRONTEND] Invalid stage_id:', stageId);
+        return false;
+      }
+
+      if (exerciseId !== undefined && (!Number.isInteger(exerciseId) || exerciseId < 1 || exerciseId > 3)) {
+        console.log('❌ [FRONTEND] Invalid exercise_id:', exerciseId);
+        return false;
+      }
+
       console.log('🔍 [FRONTEND] Fetching unlock status from Supabase...');
 
       const { data, error } = await supabase
@@ -457,6 +726,7 @@ class ProgressTracker {
     console.log('🔄 [FRONTEND] updateCurrentUser called');
     try {
       await this.initializeUser();
+      this.clearCache(); // Clear cache when user changes
     } catch (error) {
       console.error('❌ [FRONTEND] Error updating current user:', error);
       // Reset initialization state on error
@@ -481,6 +751,22 @@ class ProgressTracker {
     const isAuth = !!this.currentUser?.id;
     console.log('🔄 [FRONTEND] isAuthenticated called, returning:', isAuth);
     return isAuth;
+  }
+
+  /**
+   * Clear all cached data
+   */
+  clearAllCache(): void {
+    this.clearCache();
+  }
+
+  /**
+   * Force refresh progress data (clears cache and fetches fresh data)
+   */
+  async forceRefreshProgress(): Promise<ProgressResponse> {
+    console.log('🔄 [FRONTEND] Force refreshing progress data...');
+    this.clearCache();
+    return this.getComprehensiveProgress();
   }
 }
 
@@ -590,6 +876,42 @@ export const ProgressHelpers = {
       return result;
     } catch (error) {
       console.error('❌ [HELPER] Error in initializeProgressForNewUser:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  },
+
+  /**
+   * Get comprehensive progress data for the progress page
+   */
+  async getComprehensiveProgress(): Promise<ProgressResponse> {
+    console.log('🔄 [HELPER] getComprehensiveProgress called');
+    try {
+      const result = await progressTracker.getComprehensiveProgress();
+      console.log('✅ [HELPER] getComprehensiveProgress completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in getComprehensiveProgress:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  },
+
+  /**
+   * Force refresh progress data
+   */
+  async forceRefreshProgress(): Promise<ProgressResponse> {
+    console.log('🔄 [HELPER] forceRefreshProgress called');
+    try {
+      const result = await progressTracker.forceRefreshProgress();
+      console.log('✅ [HELPER] forceRefreshProgress completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [HELPER] Error in forceRefreshProgress:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

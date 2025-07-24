@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../context/AuthContext';
+import { getUserFullNameSync } from '../../../utils/userUtils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -66,10 +67,7 @@ export default function ProfileScreen() {
   // Update user data when authenticated user changes
   useEffect(() => {
     if (user) {
-      const userMetadata = user.user_metadata || {};
-      const firstName = userMetadata.first_name || '';
-      const lastName = userMetadata.last_name || '';
-      const fullName = `${firstName} ${lastName}`.trim() || 'User';
+      const fullName = getUserFullNameSync(user, 'User');
       
       setUserData({
         ...defaultUserData,

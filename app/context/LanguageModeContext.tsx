@@ -19,7 +19,7 @@ export const useLanguageMode = () => {
 };
 
 export const LanguageModeProvider = ({ children }: { children: ReactNode }) => {
-  const [mode, setMode] = useState<LanguageMode>('urdu'); // Default to Urdu
+  const [mode, setMode] = useState<LanguageMode>('english'); // Default to English (Urdu-English mode)
 
   return (
     <LanguageModeContext.Provider value={{ mode, setMode }}>
