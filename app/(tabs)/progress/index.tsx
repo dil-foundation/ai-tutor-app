@@ -121,7 +121,7 @@ export default function ProgressScreen() {
       
       // Set default data for graceful degradation
       setProgressData({
-        current_stage: { id: 1, name: "Stage 1 – A1 Beginner", subtitle: "Foundation Building", progress: 0 },
+        current_stage: { id: 1, name: "Stage 1 - A1 Beginner", subtitle: "Foundation Building", progress: 0 },
         overall_progress: 0,
         total_progress: 0,
         streak_days: 0,
