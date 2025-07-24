@@ -1640,7 +1640,7 @@ export default function EnglishOnlyScreen() {
     }
     
     return {
-      animation: require('../../../assets/animations/loading.json'),
+      animation: require('../../../assets/animations/ai_speaking_v2.json'),
       text: '',
       showMessage: false
     };
@@ -1959,8 +1959,9 @@ const styles = StyleSheet.create({
     marginTop: -160,
   },
   processingAnimation: {
-    width: 200,
-    height: 200,
+    width: width * 0.8,    // 80% of screen width
+    height: height * 0.4,  // 40% of screen height
+    alignSelf: 'center',
   },
   messageBox: {
     backgroundColor: '#F8F9FA',
