@@ -12,12 +12,13 @@ export default function TabLayout() {
   const pathname = usePathname();
   console.log('[TabLayout] colorScheme:', colorScheme);
 
-  // Check if we're in conversation screen or stage1/stage2 screens to hide tab bar
+  // Check if we're in conversation screen, greeting, or stage1/stage2 screens to hide tab bar
   const isInConversation = pathname.includes('/conversation');
   const isInEnglishOnly = pathname.includes('/english-only');
+  const isInGreeting = pathname.includes('/greeting');
   const isInStage1 = pathname.includes('/stage1/');
   const isInStage2 = pathname.includes('/stage2/');
-  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInEnglishOnly;
+  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInEnglishOnly || isInGreeting;
 
   return (
     <Tabs
