@@ -28,6 +28,7 @@ export default function LearnScreen() {
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [pulseAnim] = useState(new Animated.Value(1));
   const { mode, setMode } = useLanguageMode();
+  const [selectedToggle, setSelectedToggle] = useState('urdu-eng'); // Default to Urdu-Eng
 
   useEffect(() => {
     // Animate elements on mount
@@ -135,33 +136,84 @@ export default function LearnScreen() {
           
           {/* Language Mode Toggle */}
           <View style={styles.toggleButtonWrapper}>
-          <TouchableOpacity 
-  onPress={() => setMode('english')}
-  activeOpacity={0.8}
-  style={{
-    alignSelf: 'center',
-    borderRadius: 30,
-    overflow: 'hidden',
-    marginVertical: -16,
-  }}
->
-  <LinearGradient
-    colors={['#58D68D', '#45B7A8', '#58D68D']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 15,
-      paddingHorizontal: 25,
-      borderRadius: 30,
-    }}
-  >
-    <Ionicons name="language" size={18} color="#black" style={{ marginRight: 8 }} />
-    <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 15 }}>Urdu-English</Text>
-  </LinearGradient>
-</TouchableOpacity>
-</View>
+            <View style={styles.segmentedToggleContainer}>
+              {/* Urdu-Eng Toggle */}
+              {selectedToggle === 'urdu-eng' ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.toggleOption, styles.toggleActive]}
+                >
+                  <TouchableOpacity
+                    onPress={() => setSelectedToggle('urdu-eng')}
+                    activeOpacity={0.8}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Ionicons
+                      name="language"
+                      size={18}
+                      color={'#000000'}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={[styles.toggleOptionText, { color: '#000000' }]}>Urdu-Eng</Text>
+                  </TouchableOpacity>
+                </LinearGradient>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setSelectedToggle('urdu-eng')}
+                  activeOpacity={0.8}
+                  style={[styles.toggleOption, styles.toggleInactive]}
+                >
+                  <Ionicons
+                    name="language"
+                    size={18}
+                    color={'#6C757D'}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.toggleOptionText, { color: '#6C757D' }]}>Urdu-Eng</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Eng-Eng Toggle */}
+              {selectedToggle === 'eng-eng' ? (
+                <LinearGradient
+                  colors={['#58D68D', '#45B7A8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.toggleOption, styles.toggleActive]}
+                >
+                  <TouchableOpacity
+                    onPress={() => setSelectedToggle('eng-eng')}
+                    activeOpacity={0.8}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Ionicons
+                      name="school"
+                      size={18}
+                      color={'#000000'}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={[styles.toggleOptionText, { color: '#000000' }]}>Eng-Eng</Text>
+                  </TouchableOpacity>
+                </LinearGradient>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setSelectedToggle('eng-eng')}
+                  activeOpacity={0.8}
+                  style={[styles.toggleOption, styles.toggleInactive]}
+                >
+                  <Ionicons
+                    name="school"
+                    size={18}
+                    color={'#6C757D'}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.toggleOptionText, { color: '#6C757D' }]}>Eng-Eng</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
 
         </Animated.View>
         
@@ -180,59 +232,62 @@ export default function LearnScreen() {
             },
           ]}
         >
-          {/* Urdu-English Button */}
-          <TouchableOpacity 
-            onPress={handleConversationPress}
-            style={styles.buttonWrapper}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8', '#58D68D']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonGradient}
+          {/* Conditional Button Display */}
+          {selectedToggle === 'urdu-eng' ? (
+            // Urdu-Eng Button
+            <TouchableOpacity 
+              onPress={handleConversationPress}
+              style={styles.buttonWrapper}
+              activeOpacity={0.8}
             >
-              <View style={styles.buttonContent}>
-                <View style={styles.buttonIconContainer}>
-                  <Ionicons name="chatbubbles" size={24} color="#000000" />
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.buttonGradient}
+              >
+                <View style={styles.buttonContent}>
+                  <View style={styles.buttonIconContainer}>
+                    <Ionicons name="chatbubbles" size={24} color="#000000" />
+                  </View>
+                  <View style={styles.buttonTextContainer}>
+                    <Text style={styles.buttonText}>Press to Start Urdu-Eng Conversation</Text>
+                    <Text style={styles.buttonSubtext}>Begin your learning journey</Text>
+                  </View>
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="arrow-forward" size={20} color="#000000" />
+                  </View>
                 </View>
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.buttonText}>Press to Start Urdu-Eng Conversation</Text>
-                  <Text style={styles.buttonSubtext}>Begin your learning journey</Text>
-                </View>
-                <View style={styles.arrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color="#000000" />
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* English-Only Button */}
-          <TouchableOpacity 
-            onPress={handleEnglishOnlyPress}
-            style={[styles.buttonWrapper, { marginTop: 16 }]}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#58D68D', '#45B7A8', '#58D68D']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonGradient}
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            // Eng-Eng Button
+            <TouchableOpacity 
+              onPress={handleEnglishOnlyPress}
+              style={styles.buttonWrapper}
+              activeOpacity={0.8}
             >
-              <View style={styles.buttonContent}>
-                <View style={styles.buttonIconContainer}>
-                  <Ionicons name="school" size={24} color="#000000" />
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.buttonGradient}
+              >
+                <View style={styles.buttonContent}>
+                  <View style={styles.buttonIconContainer}>
+                    <Ionicons name="school" size={24} color="#000000" />
+                  </View>
+                  <View style={styles.buttonTextContainer}>
+                    <Text style={styles.buttonText}>Press to Start English-Only Tutoring</Text>
+                    <Text style={styles.buttonSubtext}>Perfect your English skills</Text>
+                  </View>
+                  <View style={styles.arrowContainer}>
+                    <Ionicons name="arrow-forward" size={20} color="#000000" />
+                  </View>
                 </View>
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.buttonText}>Press to Start English-Only Tutoring</Text>
-                  <Text style={styles.buttonSubtext}>Perfect your English skills </Text>
-                </View>
-                <View style={styles.arrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color="#000000" />
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       </View>
 
@@ -549,7 +604,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf: 'center',
     backgroundColor: '#fff',
-    borderRadius: 30,
+    borderRadius: 30, // Remove rounded corners
     borderWidth: 1,
     borderColor: '#E0E0E0',
     marginTop: 18,
@@ -559,15 +614,18 @@ const styles = StyleSheet.create({
   toggleOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 13,
     paddingHorizontal: 22,
-    borderRadius: 30,
+    borderRadius: 0, // Remove rounded corners
+    borderRightWidth: 1, // Add straight line divider
+    borderRightColor: '#E0E0E0',
   },
   toggleActive: {
     backgroundColor: '#58D68D',
   },
   toggleInactive: {
     backgroundColor: 'transparent',
+    borderWidth: 0, // Remove border for inactive state
   },
   toggleOptionText: {
     fontWeight: 'bold',
