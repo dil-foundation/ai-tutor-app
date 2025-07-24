@@ -511,23 +511,16 @@ export default function ProgressScreen() {
                         <View style={styles.exerciseDropdown}>
                           {stage.exercises.map((ex, exIdx) => {
                             const exStatusColor = getStatusColor(ex.status);
+                            const isLocked = ex.status === 'locked';
                             return (
-                              <View key={exIdx} style={styles.exerciseContainer}>
-                                <View style={styles.exerciseHeader}>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                                    <View style={[styles.exerciseDot, { backgroundColor: exStatusColor }]} />
-                                    <Text style={styles.exerciseName}>{ex.name}</Text>
-                                  </View>
-                                  <Text style={[styles.exerciseStatusText, { color: exStatusColor }]}>
-                                    {ex.status === 'completed' ? 'Completed' : ex.status === 'in_progress' ? 'In Progress' : 'Locked'}
-                                  </Text>
+                              <View key={exIdx} style={styles.exerciseRow}>
+                                <View style={[styles.exerciseDot, { backgroundColor: isLocked ? '#D1D5DB' : exStatusColor }]} />
+                                <View style={styles.exerciseContent}>
+                                  <Text style={[styles.exerciseName, isLocked && styles.lockedText]}>{ex.name}</Text>
                                 </View>
-                                <View style={styles.exerciseProgressWrapper}>
-                                  <View style={styles.exerciseProgressBarContainer}>
-                                    <View style={[styles.exerciseProgressBar, { width: `${ex.progress || 0}%`, backgroundColor: exStatusColor }]} />
-                                  </View>
-                                  <Text style={styles.exerciseProgressText}>{Math.round(ex.progress || 0)}%</Text>
-                                </View>
+                                <Text style={[styles.exerciseStatus, { color: isLocked ? '#9CA3AF' : exStatusColor }]}>
+                                  {ex.status.replace('_', ' ')}
+                                </Text>
                               </View>
                             );
                           })}
@@ -1274,57 +1267,36 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   exerciseDropdown: {
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingTop: 8,
   },
-  exerciseContainer: {
-    backgroundColor: 'rgba(248, 249, 250, 0.5)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  exerciseHeader: {
+  exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingVertical: 12,
   },
   exerciseDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 10,
+    marginRight: 12,
+  },
+  exerciseContent: {
+    flex: 1,
+    marginRight: 12,
   },
   exerciseName: {
+    fontSize: 16,
+    color: '#34495E',
+    fontFamily: 'Lexend-Regular',
+  },
+  lockedText: {
+    color: '#9CA3AF',
+  },
+  exerciseStatus: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#34495E',
-    flexShrink: 1,
-  },
-  exerciseStatusText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  exerciseProgressWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  exerciseProgressBarContainer: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#EAECEE',
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  exerciseProgressBar: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  exerciseProgressText: {
-    fontSize: 12,
-    color: '#34495E',
-    fontWeight: '600',
+    fontFamily: 'Lexend-Medium',
+    textTransform: 'capitalize',
   },
   achievementsSection: {
     marginBottom: 30,
