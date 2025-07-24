@@ -413,7 +413,7 @@ export default function ProgressScreen() {
                     />
                   </View>
                   <View style={styles.overviewTextContent}>
-                    <Text style={styles.overviewTitle}>Current Stage</Text>
+                    {/* <Text style={styles.overviewTitle}>Current Stage</Text> */}
                     <Text style={styles.overviewStage}>{safeData.current_stage.name}</Text>
                     <Text style={styles.overviewSubtitle}>{safeData.current_stage.subtitle}</Text>
                   </View>
@@ -546,92 +546,87 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Completion Overview</Text>
             </View>
             
-            <View style={styles.barChartContainer}>
-              <LinearGradient
-                colors={['#FFFFFF', '#F8F9FA']}
-                style={styles.barChartGradient}
-              >
-                {/* Stages Completed Bar */}
-                <View style={styles.barItem}>
-                  <View style={styles.barHeader}>
-                    <View style={styles.barIconContainer}>
-                      <Ionicons name="layers" size={20} color="#8E44AD" />
-                    </View>
-                    <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Stages Completed</Text>
-                      <Text style={styles.barValue}>{safeData.total_completed_stages}</Text>
-                    </View>
+            <View style={styles.unifiedCard}>
+              {/* Stages Completed Bar */}
+              <View style={styles.barItem}>
+                <View style={styles.barHeader}>
+                  <View style={styles.barIconContainer}>
+                    <Ionicons name="layers" size={20} color="#8E44AD" />
                   </View>
-                  <View style={styles.barContainer}>
-                    <View style={styles.barBackground}>
-                      <View 
-                        style={[
-                          styles.barFill, 
-                          styles.purpleBar,
-                          { width: `${Math.min(100, (safeData.total_completed_stages / 6) * 100)}%` }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_completed_stages / 6) * 100)}%
-                    </Text>
+                  <View style={styles.barTextContainer}>
+                    <Text style={styles.barLabel}>Stages Completed</Text>
+                    <Text style={styles.barValue}>{safeData.total_completed_stages}</Text>
                   </View>
                 </View>
+                <View style={styles.barContainer}>
+                  <View style={styles.barBackground}>
+                    <View 
+                      style={[
+                        styles.barFill, 
+                        styles.purpleBar,
+                        { width: `${Math.min(100, (safeData.total_completed_stages / 6) * 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.barPercentage}>
+                    {Math.round((safeData.total_completed_stages / 6) * 100)}%
+                  </Text>
+                </View>
+              </View>
 
-                {/* Exercises Completed Bar */}
-                <View style={styles.barItem}>
-                  <View style={styles.barHeader}>
-                    <View style={[styles.barIconContainer, styles.greenIcon]}>
-                      <Ionicons name="fitness" size={20} color="#58D68D" />
-                    </View>
-                    <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Exercises Completed</Text>
-                      <Text style={styles.barValue}>{safeData.total_exercises_completed}</Text>
-                    </View>
+              {/* Exercises Completed Bar */}
+              <View style={styles.barItem}>
+                <View style={styles.barHeader}>
+                  <View style={[styles.barIconContainer, styles.greenIcon]}>
+                    <Ionicons name="fitness" size={20} color="#58D68D" />
                   </View>
-                  <View style={styles.barContainer}>
-                    <View style={styles.barBackground}>
-                      <View 
-                        style={[
-                          styles.barFill, 
-                          styles.greenBar,
-                          { width: `${Math.min(100, (safeData.total_exercises_completed / 18) * 100)}%` }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_exercises_completed / 18) * 100)}%
-                    </Text>
+                  <View style={styles.barTextContainer}>
+                    <Text style={styles.barLabel}>Exercises Completed</Text>
+                    <Text style={styles.barValue}>{safeData.total_exercises_completed}</Text>
                   </View>
                 </View>
+                <View style={styles.barContainer}>
+                  <View style={styles.barBackground}>
+                    <View 
+                      style={[
+                        styles.barFill, 
+                        styles.greenBar,
+                        { width: `${Math.min(100, (safeData.total_exercises_completed / 18) * 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.barPercentage}>
+                    {Math.round((safeData.total_exercises_completed / 18) * 100)}%
+                  </Text>
+                </View>
+              </View>
 
-                {/* Topics Completed Bar */}
-                <View style={styles.barItem}>
-                  <View style={styles.barHeader}>
-                    <View style={[styles.barIconContainer, styles.orangeIcon]}>
-                      <Ionicons name="book" size={20} color="#F39C12" />
-                    </View>
-                    <View style={styles.barTextContainer}>
-                      <Text style={styles.barLabel}>Topics Mastered</Text>
-                      <Text style={styles.barValue}>{safeData.total_completed_units}</Text>
-                    </View>
+              {/* Topics Completed Bar */}
+              <View style={styles.barItem}>
+                <View style={styles.barHeader}>
+                  <View style={[styles.barIconContainer, styles.orangeIcon]}>
+                    <Ionicons name="book" size={20} color="#F39C12" />
                   </View>
-                  <View style={styles.barContainer}>
-                    <View style={styles.barBackground}>
-                      <View 
-                        style={[
-                          styles.barFill, 
-                          styles.orangeBar,
-                          { width: `${Math.min(100, (safeData.total_completed_units / 100) * 100)}%` }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_completed_units / 100) * 100)}%
-                    </Text>
+                  <View style={styles.barTextContainer}>
+                    <Text style={styles.barLabel}>Topics Mastered</Text>
+                    <Text style={styles.barValue}>{safeData.total_completed_units}</Text>
                   </View>
                 </View>
-              </LinearGradient>
+                <View style={styles.barContainer}>
+                  <View style={styles.barBackground}>
+                    <View 
+                      style={[
+                        styles.barFill, 
+                        styles.orangeBar,
+                        { width: `${Math.min(100, (safeData.total_completed_units / 100) * 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.barPercentage}>
+                    {Math.round((safeData.total_completed_units / 100) * 100)}%
+                  </Text>
+                </View>
+              </View>
             </View>
           </Animated.View>
 
@@ -650,42 +645,33 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Achievements</Text>
             </View>
 
-            {safeData.achievements.length > 0 ? (
-              <View style={styles.achievementsGrid}>
-                {safeData.achievements.map((achievement, index) => (
-                  <Animated.View 
-                    key={index} 
-                    style={[
-                      styles.achievementCard,
-                      {
-                        transform: [{ scale: statsScaleAnim }],
-                        opacity: fadeAnim
-                      }
-                    ]}
-                  >
-                    <LinearGradient
-                      colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-                      style={styles.achievementGradient}
-                    >
-                      <View style={styles.achievementIcon}>
-                        <Ionicons name={achievement.icon as any} size={24} color={achievement.color} />
+            <View style={styles.unifiedCard}>
+              {safeData.achievements.length > 0 ? (
+                safeData.achievements.map((achievement, index) => (
+                  <View key={index} style={[styles.infoRow, index === safeData.achievements.length - 1 && styles.infoRowLast]}>
+                    <View style={styles.infoRowLeft}>
+                      <View style={[styles.infoRowIcon, { backgroundColor: achievement.color || '#58D68D' }]}>
+                        <Ionicons name={achievement.icon as any} size={20} color="#FFFFFF" />
                       </View>
-                      <Text style={styles.achievementName}>{achievement.name}</Text>
-                      <Text style={styles.achievementDate}>{achievement.date}</Text>
-                    </LinearGradient>
-                  </Animated.View>
-                ))}
-              </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="trophy-outline" size={48} color="#BDC3C7" />
-                <Text style={styles.emptyStateText}>No achievements yet</Text>
-                <Text style={styles.emptyStateSubtext}>Complete exercises to earn achievements</Text>
-              </View>
-            )}
+                      <View style={styles.infoRowTextContainer}>
+                        <Text style={styles.infoRowLabel}>{achievement.name}</Text>
+                        <Text style={styles.infoRowSubLabel}>{achievement.date}</Text>
+                      </View>
+                    </View>
+                    <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="trophy-outline" size={48} color="#BDC3C7" />
+                  <Text style={styles.emptyStateText}>No achievements yet</Text>
+                  <Text style={styles.emptyStateSubtext}>Complete exercises to earn achievements</Text>
+                </View>
+              )}
+            </View>
           </Animated.View>
 
-          {/* Practice Stats */}
+          {/* Learning Statistics Section */}
           <Animated.View
             style={[
               styles.statsSection,
@@ -696,106 +682,53 @@ export default function ProgressScreen() {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Ionicons name="time" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Learning Sessions</Text>
-            </View>
-
-            <View style={styles.statsGrid}>
-              <Animated.View 
-                style={[
-                  styles.statCard,
-                  {
-                    transform: [{ scale: statsScaleAnim }]
-                  }
-                ]}
-              >
-                <LinearGradient
-                  colors={['#E8F5E8', '#F0F9F0']}
-                  style={styles.statGradient}
-                >
-                  <View style={styles.insightIconContainer}>
-                    <Ionicons name="time" size={24} color="#58D68D" />
-                  </View>
-                  <Text style={styles.statCardValue}>{safeData.total_practice_time}h</Text>
-                  <Text style={styles.statCardLabel}>Total Learning Time</Text>
-                </LinearGradient>
-              </Animated.View>
-
-              <Animated.View 
-                style={[
-                  styles.statCard,
-                  {
-                    transform: [{ scale: statsScaleAnim }]
-                  }
-                ]}
-              >
-                <LinearGradient
-                  colors={['#FFF3E0', '#FFF8E1']}
-                  style={styles.statGradient}
-                >
-                  <View style={styles.insightIconContainer}>
-                    <Ionicons name="flame" size={24} color="#FF6B35" />
-                  </View>
-                  <Text style={styles.statCardValue}>{safeData.streak_days}</Text>
-                  <Text style={styles.statCardLabel}>Day Streak</Text>
-                </LinearGradient>
-              </Animated.View>
-            </View>
-          </Animated.View>
-
-          {/* Additional Stats */}
-          <Animated.View
-            style={[
-              styles.additionalStatsSection,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.sectionHeader}>
               <Ionicons name="stats-chart" size={24} color="#58D68D" />
-              <Text style={styles.sectionTitle}>Topic Mastery</Text>
+              <Text style={styles.sectionTitle}>Learning Statistics</Text>
             </View>
 
-            <View style={styles.additionalStatsGrid}>
-              <View style={styles.additionalStatCard}>
-                <LinearGradient
-                  colors={['#E8F5E8', '#F0F9F0']}
-                  style={styles.additionalStatGradient}
-                >
-                  <View style={styles.insightIconContainer}>
-                    <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
+            <View style={styles.unifiedCard}>
+              {/* Total Learning Time */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoRowLeft}>
+                  <View style={[styles.infoRowIcon, { backgroundColor: '#58D68D' }]}>
+                    <Ionicons name="time" size={20} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.additionalStatValue}>{safeData.total_exercises_completed}</Text>
-                  <Text style={styles.additionalStatLabel}>Topics Completed</Text>
-                </LinearGradient>
+                  <Text style={styles.infoRowLabel}>Total Learning Time</Text>
+                </View>
+                <Text style={styles.infoRowValue}>{safeData.total_practice_time}h</Text>
+              </View>
+              
+              {/* Current Day Streak */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoRowLeft}>
+                  <View style={[styles.infoRowIcon, { backgroundColor: '#FF6B35' }]}>
+                    <Ionicons name="flame" size={20} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.infoRowLabel}>Day Streak</Text>
+                </View>
+                <Text style={styles.infoRowValue}>{safeData.streak_days}</Text>
               </View>
 
-              <View style={styles.additionalStatCard}>
-                <LinearGradient
-                  colors={['#E3F2FD', '#F0F8FF']}
-                  style={styles.additionalStatGradient}
-                >
-                  <View style={styles.insightIconContainer}>
-                    <Ionicons name="time" size={24} color="#3498DB" />
+              {/* Longest Streak */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoRowLeft}>
+                  <View style={[styles.infoRowIcon, { backgroundColor: '#F39C12' }]}>
+                    <Ionicons name="medal" size={20} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.additionalStatValue}>{safeData.average_session_duration.toFixed(1)}m</Text>
-                  <Text style={styles.additionalStatLabel}>Avg Learning Session</Text>
-                </LinearGradient>
+                  <Text style={styles.infoRowLabel}>Best Learning Streak</Text>
+                </View>
+                <Text style={styles.infoRowValue}>{safeData.longest_streak}</Text>
               </View>
 
-              <View style={styles.additionalStatCard}>
-                <LinearGradient
-                  colors={['#FFF3E0', '#FFF8E1']}
-                  style={styles.additionalStatGradient}
-                >
-                  <View style={styles.insightIconContainer}>
-                    <Ionicons name="flame" size={24} color="#FF6B35" />
+              {/* Average Session Duration */}
+              <View style={[styles.infoRow, styles.infoRowLast]}>
+                <View style={styles.infoRowLeft}>
+                  <View style={[styles.infoRowIcon, { backgroundColor: '#3498DB' }]}>
+                    <Ionicons name="hourglass" size={20} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.additionalStatValue}>{safeData.longest_streak}</Text>
-                  <Text style={styles.additionalStatLabel}>Best Learning Streak</Text>
-                </LinearGradient>
+                  <Text style={styles.infoRowLabel}>Avg. Learning Session</Text>
+                </View>
+                <Text style={styles.infoRowValue}>{safeData.average_session_duration.toFixed(1)}m</Text>
               </View>
             </View>
           </Animated.View>
@@ -1222,6 +1155,19 @@ const styles = StyleSheet.create({
   completionStatsSection: {
     marginBottom: 30,
   },
+  unifiedCard: {
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 8,
+  },
   barChartContainer: {
     borderRadius: 20,
     overflow: 'hidden',
@@ -1531,19 +1477,46 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
   },
-  insightIconContainer: {
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  infoRowLast: {
+    borderBottomWidth: 0,
+  },
+  infoRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoRowIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginRight: 16,
+  },
+  infoRowTextContainer: {
+    flexDirection: 'column',
+  },
+  infoRowLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  infoRowSubLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginTop: 2,
+  },
+  infoRowValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
   },
   emptyState: {
     alignItems: 'center',
