@@ -16,241 +16,159 @@ interface StageCardProps {
     completed: boolean;
     progress: number;
     exercises: Exercise[];
-    unlocked: boolean; // Add unlocked prop
+    unlocked: boolean;
   };
   expanded: boolean;
   onPress: () => void;
   children?: React.ReactNode;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'completed': return '#58D68D';
-    case 'in_progress': return '#3B82F6';
-    case 'locked': return '#F3F4F6';
-    default: return '#F3F4F6';
-  }
-};
+const stageColors = [
+  { bg: ['#E0F8E9', '#D8F3E4'], border: '#58D68D', shadow: 'rgba(88, 214, 141, 0.4)' }, // Green
+  { bg: ['#E1F5FE', '#D4ECF9'], border: '#3B82F6', shadow: 'rgba(59, 130, 246, 0.4)' }, // Blue
+  { bg: ['#F3E8FF', '#EADFF8'], border: '#8B5CF6', shadow: 'rgba(139, 92, 246, 0.4)' }, // Purple
+  { bg: ['#FFFBEB', '#FFF8E1'], border: '#F59E0B', shadow: 'rgba(245, 158, 11, 0.4)' }, // Amber
+  { bg: ['#FFF1F2', '#FFE4E6'], border: '#EF4444', shadow: 'rgba(239, 68, 68, 0.4)' }, // Red
+  { bg: ['#F0F9FF', '#E0F2FE'], border: '#0EA5E9', shadow: 'rgba(14, 165, 233, 0.4)' }, // Sky
+];
 
 const getStatusText = (stage: any) => {
   if (stage.completed) return 'Complete';
-  if (stage.progress > 0) return `${Math.floor(stage.progress / 33.34) + 1}/3 done`;
-  return stage.unlocked ? 'In Progress' : 'Locked';
+  if (stage.unlocked) return 'In Progress';
+  return 'Locked';
 };
 
 const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children }) => {
   const status = stage.completed ? 'completed' : (stage.unlocked || stage.progress > 0) ? 'in_progress' : 'locked';
-  
-  // Use the accurate progress from the backend directly.
   const clampedProgress = Math.round(stage.progress);
-  
-  // Debug logging
-  console.log(`📊 [STAGE CARD] Stage ${index + 1} progress:`, {
-    completed: stage.completed,
-    unlocked: stage.unlocked,
-    progress: stage.progress,
-    clampedProgress: clampedProgress,
-    expanded: expanded,
-    exercises: stage.exercises.map(e => ({ name: e.name, status: e.status }))
-  });
-  
-  // Additional debug for progress bar
-  if (expanded) {
-    console.log(`🎯 [PROGRESS BAR] Stage ${index + 1}:`, {
-      width: `${clampedProgress}%`,
-      colors: ['#58D68D', '#45B7A8'],
-      zIndex: 2
-    });
-  }
+  const colors = stageColors[index % stageColors.length];
+  const isActive = expanded;
 
   return (
-    <View style={styles.cardWrapper}>
+    <View style={[styles.cardWrapper, isActive && styles.activeCardWrapper, isActive && { shadowColor: colors.shadow }]}>
       <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.85}
+        style={styles.touchable}
+        activeOpacity={0.9}
         onPress={onPress}
         disabled={status === 'locked'}
       >
-        {/* Icon Circle/Shield with number and overlay icon */}
-        <View
-          style={[
-            styles.iconCircle,
-            status === 'completed'
-              ? { backgroundColor: '#58D68D', borderWidth: 0 }
-              : status === 'in_progress'
-              ? { backgroundColor: '#3B82F6', borderWidth: 0 }
-              : { backgroundColor: '#F3F4F6', borderColor: '#E0E0E0', borderWidth: 1 }
-          ]}
-        >
-          <Text
-            style={[
-              styles.stageNumber,
-              status === 'locked'
-                ? { color: '#888' }
-                : { color: '#fff' }
-            ]}
-          >
-            {index + 1}
-          </Text>
-          {/* Overlay icon for completed and locked */}
-          {status === 'completed' && (
-            <View style={styles.iconOverlayCompleted}>
-              <Ionicons name="checkmark" size={18} color="#fff" />
-            </View>
-          )}
-          {status === 'locked' && (
-            <View style={styles.iconOverlayLocked}>
-              <Ionicons name="lock-closed" size={16} color="#B0B3B8" />
-            </View>
-          )}
-        </View>
-        <View style={styles.textBlock}>
-          <Text style={[styles.title, status === 'completed' && { color: '#222' }, status === 'in_progress' && { color: '#58D68D' }]}>{stage.stage.replace(/Stage \d+ – /, '')}</Text>
-          <Text style={styles.subtitle}>{stage.subtitle}</Text>
-        </View>
-        <View style={styles.statusBlock}>
-          <Text style={[styles.status, status === 'completed' && { color: '#58D68D' }, status === 'locked' && { color: '#BDC3C7' }]}>{getStatusText(stage)}</Text>
-        </View>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={status === 'locked' ? '#BDC3C7' : '#58D68D'} style={{ marginLeft: 8 }} />
+        <LinearGradient colors={status === 'locked' ? ['#F5F5F5', '#E8E8E8'] : colors.bg as any} style={[styles.card, { borderColor: status === 'locked' ? '#DCDCDC' : colors.border }]}>
+          <View style={styles.iconCircle}>
+            <Text style={styles.stageNumber}>{index + 1}</Text>
+          </View>
+          <View style={styles.textBlock}>
+            <Text style={[styles.title, status === 'locked' && { color: '#A0A0A0' }]}>{stage.stage.replace(/Stage \d+ – /, '')}</Text>
+            <Text style={[styles.subtitle, status === 'locked' && { color: '#B0B0B0' }]}>{stage.subtitle}</Text>
+          </View>
+          <View style={styles.statusBlock}>
+            {status === 'locked' ? (
+              <Ionicons name="lock-closed" size={24} color="#A0A0A0" />
+            ) : status === 'completed' ? (
+              <Ionicons name="checkmark-circle" size={24} color={colors.border} />
+            ) : (
+              <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={24} color={colors.border} />
+            )}
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
       {expanded && (
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBg} />
-          <LinearGradient
-            colors={['#58D68D', '#45B7A8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressBar, { width: `${clampedProgress}%` }]}
-          >
-            {/* Fallback View in case LinearGradient doesn't render */}
-            <View style={[styles.progressBarFallback, { width: '100%' }]} />
-          </LinearGradient>
-          <Text style={styles.progressText}>{clampedProgress}% Complete</Text>
+        <View style={styles.expandedContent}>
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBar, { width: `${clampedProgress}%`, backgroundColor: colors.border }]} />
+          </View>
+          <Text style={[styles.progressText, { color: colors.border }]}>{clampedProgress}% Complete</Text>
+          {children}
         </View>
       )}
-      {expanded && children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   cardWrapper: {
-    marginBottom: 16,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
+    marginBottom: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  activeCardWrapper: {
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  touchable: {
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    backgroundColor: '#fff',
-    borderRadius: 18,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 2,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconOverlayCompleted: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    backgroundColor: '#58D68D',
-    borderRadius: 10,
-    padding: 2,
-    zIndex: 2,
-  },
-  iconOverlayLocked: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 2,
-    zIndex: 2,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    marginRight: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   stageNumber: {
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 22,
+    color: '#333',
     fontFamily: 'Lexend-Bold',
   },
   textBlock: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#222',
+    color: '#1E293B',
     fontFamily: 'Lexend-Bold',
   },
   subtitle: {
-    fontSize: 13,
-    color: '#888',
+    fontSize: 14,
+    color: '#475569',
     marginTop: 2,
     fontFamily: 'Lexend-Regular',
   },
   statusBlock: {
-    minWidth: 60,
-    alignItems: 'flex-end',
+    marginLeft: 16,
   },
-  status: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    fontFamily: 'Lexend-Bold',
+  expandedContent: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginTop: -20, // Overlap with the touchable
+    paddingTop: 20, // Add padding back
   },
   progressBarContainer: {
-    marginTop: 0,
-    marginBottom: 8,
-    marginHorizontal: 18,
-    position: 'relative',
-    height: 10,
-    justifyContent: 'center',
-  },
-  progressBarBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#E5E5E5',
-    borderRadius: 5,
-    zIndex: 0,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E0E7FF',
+    overflow: 'hidden',
+    marginTop: 8,
   },
   progressBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    height: 10,
-    borderRadius: 5,
-    zIndex: 2,
-  },
-  progressBarFallback: {
     height: '100%',
-    backgroundColor: '#58D68D',
-    borderRadius: 5,
+    borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    color: '#58D68D',
-    marginTop: 4,
-    marginLeft: 2,
-    fontFamily: 'Lexend-Regular',
+    fontWeight: '600',
+    marginTop: 6,
+    textAlign: 'right',
+    fontFamily: 'Lexend-Medium',
   },
 });
 

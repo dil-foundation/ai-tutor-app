@@ -486,11 +486,13 @@ export default function ProgressScreen() {
                 const status = getStageStatus(stage);
                 const isExpanded = expandedStage === idx;
                 return (
-                  <View key={stage.stage_id} style={{ position: 'relative' }}>
+                  <View key={stage.stage_id} style={{ position: 'relative', zIndex: isExpanded ? 1 : 0 }}>
                     <RoadmapLine
                       isFirst={idx === 0}
                       isLast={idx === safeData.stages.length - 1}
                       status={status}
+                      isActive={status === 'in_progress'}
+                      index={idx}
                     />
                     <StageCard
                       index={idx}
@@ -507,15 +509,28 @@ export default function ProgressScreen() {
                     >
                       {isExpanded && (
                         <View style={styles.exerciseDropdown}>
-                          {stage.exercises.map((ex, exIdx) => (
-                            <View key={exIdx} style={styles.exerciseRow}>
-                              <View style={[styles.exerciseDot, { backgroundColor: getStatusColor(ex.status) }]} />
-                              <Text style={styles.exerciseName}>{ex.name}</Text>
-                              <Text style={[styles.exerciseStatusText, { color: getStatusColor(ex.status) }]}> 
-                                {ex.status === 'completed' ? 'Completed' : ex.status === 'in_progress' ? 'In Progress' : 'Locked'}
-                              </Text>
-                            </View>
-                          ))}
+                          {stage.exercises.map((ex, exIdx) => {
+                            const exStatusColor = getStatusColor(ex.status);
+                            return (
+                              <View key={exIdx} style={styles.exerciseContainer}>
+                                <View style={styles.exerciseHeader}>
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <View style={[styles.exerciseDot, { backgroundColor: exStatusColor }]} />
+                                    <Text style={styles.exerciseName}>{ex.name}</Text>
+                                  </View>
+                                  <Text style={[styles.exerciseStatusText, { color: exStatusColor }]}>
+                                    {ex.status === 'completed' ? 'Completed' : ex.status === 'in_progress' ? 'In Progress' : 'Locked'}
+                                  </Text>
+                                </View>
+                                <View style={styles.exerciseProgressWrapper}>
+                                  <View style={styles.exerciseProgressBarContainer}>
+                                    <View style={[styles.exerciseProgressBar, { width: `${ex.progress || 0}%`, backgroundColor: exStatusColor }]} />
+                                  </View>
+                                  <Text style={styles.exerciseProgressText}>{Math.round(ex.progress || 0)}%</Text>
+                                </View>
+                              </View>
+                            );
+                          })}
                         </View>
                       )}
                     </StageCard>
@@ -1259,34 +1274,57 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   exerciseDropdown: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    marginHorizontal: 18,
-    marginBottom: 10,
-    marginTop: -6,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
-  exerciseRow: {
+  exerciseContainer: {
+    backgroundColor: 'rgba(248, 249, 250, 0.5)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  exerciseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   exerciseDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: 10,
   },
   exerciseName: {
-    flex: 1,
     fontSize: 14,
-    color: '#222',
+    fontWeight: '600',
+    color: '#34495E',
+    flexShrink: 1,
   },
   exerciseStatusText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: 'bold',
     marginLeft: 8,
+  },
+  exerciseProgressWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  exerciseProgressBarContainer: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#EAECEE',
+    borderRadius: 3,
+    marginRight: 8,
+  },
+  exerciseProgressBar: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  exerciseProgressText: {
+    fontSize: 12,
+    color: '#34495E',
+    fontWeight: '600',
   },
   achievementsSection: {
     marginBottom: 30,
