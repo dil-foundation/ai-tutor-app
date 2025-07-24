@@ -21,20 +21,26 @@ const stageColors = [
 const getLineColor = (status: string, isActive: boolean, index: number) => {
   if (isActive) return [stageColors[index], stageColors[index]];
   if (status === 'completed') return [stageColors[index], stageColors[index]];
-  return ['#E0E0E0', '#E0E0E0'];
+  return ['#E5E7EB', '#D1D5DB'];
 };
 
 const RoadmapLine: React.FC<RoadmapLineProps & { index: number }> = ({ isFirst, isLast, status, isActive, index }) => {
   const colors = getLineColor(status, isActive, index);
   return(
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {/* Top segment */}
+      {/* Top segment - hidden behind the card above */}
       {!isFirst && (
-        <LinearGradient colors={colors as any} style={[styles.line, { top: 0, height: '55%' }]} />
+        <LinearGradient 
+          colors={colors as any} 
+          style={[styles.line, { top: -20, height: '60%' }]} 
+        />
       )}
-      {/* Bottom segment */}
+      {/* Bottom segment - hidden behind the card below */}
       {!isLast && (
-        <LinearGradient colors={colors as any} style={[styles.line, { bottom: 0, height: '55%' }]} />
+        <LinearGradient 
+          colors={colors as any} 
+          style={[styles.line, { bottom: -20, height: '60%' }]} 
+        />
       )}
     </View>
   );
@@ -43,10 +49,10 @@ const RoadmapLine: React.FC<RoadmapLineProps & { index: number }> = ({ isFirst, 
 const styles = StyleSheet.create({
   line: {
     position: 'absolute',
-    left: 36, // Centered with the 48px icon + 16px margin = 24px center. 24 - 2 = 22
+    left: 44, // Centered with the 56px icon + 20px margin = 28px center. 28 - 2 = 26
     width: 4,
     borderRadius: 2,
-    zIndex: -1,
+    zIndex: -1, // Ensure it's behind the cards
   },
 });
 
