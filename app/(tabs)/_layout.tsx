@@ -14,9 +14,10 @@ export default function TabLayout() {
 
   // Check if we're in conversation screen or stage1/stage2 screens to hide tab bar
   const isInConversation = pathname.includes('/conversation');
+  const isInEnglishOnly = pathname.includes('/english-only');
   const isInStage1 = pathname.includes('/stage1/');
   const isInStage2 = pathname.includes('/stage2/');
-  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2;
+  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInEnglishOnly;
 
   return (
     <Tabs
