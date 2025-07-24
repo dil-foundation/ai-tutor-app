@@ -16,6 +16,7 @@ interface StageCardProps {
     completed: boolean;
     progress: number;
     exercises: Exercise[];
+    unlocked: boolean; // Add unlocked prop
   };
   expanded: boolean;
   onPress: () => void;
@@ -34,31 +35,20 @@ const getStatusColor = (status: string) => {
 const getStatusText = (stage: any) => {
   if (stage.completed) return 'Complete';
   if (stage.progress > 0) return `${Math.floor(stage.progress / 33.34) + 1}/3 done`;
-  return 'Locked';
+  return stage.unlocked ? 'In Progress' : 'Locked';
 };
 
 const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children }) => {
-  const status = stage.completed ? 'completed' : stage.progress > 0 ? 'in_progress' : 'locked';
-  const completedExercises = stage.exercises.filter((ex) => ex.status === 'completed').length;
-  const totalExercises = stage.exercises.length;
-  const progress = Math.round((completedExercises / totalExercises) * 100);
+  const status = stage.completed ? 'completed' : (stage.unlocked || stage.progress > 0) ? 'in_progress' : 'locked';
   
-  // Also check if any exercises are in progress and give them partial credit
-  const inProgressExercises = stage.exercises.filter((ex) => ex.status === 'in_progress').length;
-  const partialProgress = Math.round((inProgressExercises * 0.5) * (100 / totalExercises));
-  const totalProgress = progress + partialProgress;
-  
-  // Ensure progress is at least 0 and at most 100
-  const clampedProgress = Math.max(0, Math.min(100, totalProgress));
+  // Use the accurate progress from the backend directly.
+  const clampedProgress = Math.round(stage.progress);
   
   // Debug logging
   console.log(`📊 [STAGE CARD] Stage ${index + 1} progress:`, {
-    completed: completedExercises,
-    inProgress: inProgressExercises,
-    total: totalExercises,
-    progress: progress,
-    partialProgress: partialProgress,
-    totalProgress: totalProgress,
+    completed: stage.completed,
+    unlocked: stage.unlocked,
+    progress: stage.progress,
     clampedProgress: clampedProgress,
     expanded: expanded,
     exercises: stage.exercises.map(e => ({ name: e.name, status: e.status }))

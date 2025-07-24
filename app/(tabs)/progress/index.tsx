@@ -499,7 +499,8 @@ export default function ProgressScreen() {
                         subtitle: stage.subtitle,
                         completed: stage.completed,
                         progress: stage.progress,
-                        exercises: stage.exercises
+                        exercises: stage.exercises,
+                        unlocked: stage.unlocked, // Pass unlocked status
                       }}
                       expanded={isExpanded}
                       onPress={() => handleStagePress(idx)}
