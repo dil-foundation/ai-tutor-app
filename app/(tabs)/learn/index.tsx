@@ -228,7 +228,7 @@ export default function LearnScreen() {
               ],
               alignSelf: 'center',
               width: '100%',
-              marginTop: 40,
+              marginTop: 20,
             },
           ]}
         >
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 30,
-    marginTop: 20,
+    marginTop: -10,
   },
   toggleBox: {
     width: '100%',
