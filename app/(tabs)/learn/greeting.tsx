@@ -11,6 +11,9 @@ import {
   View,
   ScrollView,
   SafeAreaView,
+  StatusBar,
+  Platform,
+  BackHandler,
 } from 'react-native';
 import audioManager from '../../utils/audioManager';
 
@@ -31,6 +34,22 @@ export default function GreetingScreen() {
   const [visibleLines, setVisibleLines] = useState<Array<{urdu: string, english: string}>>([]);
   const [showContinue, setShowContinue] = useState(false);
   const [hasStartedGreeting, setHasStartedGreeting] = useState(false);
+  
+  // Prevent back navigation - users must use the continue button
+  useFocusEffect(
+    useCallback(() => {
+      const preventBack = () => {
+        // This prevents the default back behavior
+        return true;
+      };
+      
+      // Add back handler for Android
+      if (Platform.OS === 'android') {
+        const subscription = BackHandler.addEventListener('hardwareBackPress', preventBack);
+        return () => subscription.remove();
+      }
+    }, [])
+  );
   
   // Add sound reference to properly manage audio
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -148,6 +167,7 @@ export default function GreetingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <View style={styles.centeredContainer}>
         {/* Welcome Header */}
         <View style={styles.headerContent}>
@@ -223,6 +243,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    // Ensure full screen coverage
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   centeredContainer: {
     flex: 1,
@@ -231,6 +257,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: '#fff',
     width: '100%',
+    // Ensure full height coverage
+    minHeight: height,
   },
   header: {
     alignItems: 'center',

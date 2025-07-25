@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Animated, 
   Dimensions, 
@@ -52,6 +52,7 @@ const RoleplaySimulationScreen = () => {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   // Animation effects
   useEffect(() => {
@@ -81,9 +82,26 @@ const RoleplaySimulationScreen = () => {
     }
   }, [user, authLoading]);
 
-  const loadScenarios = async () => {
+  // Reload scenarios when screen comes into focus (e.g., returning from evaluation)
+  useFocusEffect(
+    useCallback(() => {
+      if (user && !authLoading) {
+        const now = Date.now();
+        // Only refresh if it's been more than 1 second since last refresh
+        if (now - lastRefresh > 1000) {
+          console.log("🔄 [ROLEPLAY] Screen focused, reloading scenarios...");
+          setLastRefresh(now);
+          loadScenarios(false); // Don't show loading indicator for refresh
+        }
+      }
+    }, [user, authLoading, lastRefresh])
+  );
+
+  const loadScenarios = async (showLoading: boolean = true) => {
     console.log("🔄 [ROLEPLAY] Loading scenarios for user:", user?.id);
-    setIsLoading(true);
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
     
     try {
@@ -216,7 +234,7 @@ const RoleplaySimulationScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/practice/stage2' })} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
@@ -253,7 +271,7 @@ const RoleplaySimulationScreen = () => {
               <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
                 <Text style={styles.errorText}>{error}</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={loadScenarios}>
+                <TouchableOpacity style={styles.retryButton} onPress={() => loadScenarios()}>
                   <Text style={styles.retryButtonText}>Try Again</Text>
                 </TouchableOpacity>
               </View>

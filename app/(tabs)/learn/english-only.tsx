@@ -1647,7 +1647,7 @@ export default function EnglishOnlyScreen() {
   const getCurrentAnimation = () => {
     if (state.isListening) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1655,7 +1655,7 @@ export default function EnglishOnlyScreen() {
     
     if (isTalking) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: false,
       };
@@ -1663,7 +1663,7 @@ export default function EnglishOnlyScreen() {
 
     if (state.isUserReminded) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1671,7 +1671,7 @@ export default function EnglishOnlyScreen() {
 
     if (state.isNoSpeechDetected) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1679,7 +1679,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isNoSpeechAfterProcessing) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
@@ -1687,7 +1687,7 @@ export default function EnglishOnlyScreen() {
     
     if (state.isProcessingAudio) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: 'Processing your speech...',
         showMessage: !!state.currentMessageText
       };
@@ -1695,14 +1695,14 @@ export default function EnglishOnlyScreen() {
     
     if (state.isAISpeaking) {
       return {
-        animation: require('../../../assets/animations/ai_speaking_v2.json'),
+        animation: require('../../../assets/animations/ai_speaking_green.json'),
         text: '',
         showMessage: !!state.currentMessageText
       };
     }
     
     return {
-      animation: require('../../../assets/animations/ai_speaking_v2.json'),
+      animation: require('../../../assets/animations/ai_speaking_green.json'),
       text: '',
       showMessage: false
     };
@@ -1823,7 +1823,7 @@ export default function EnglishOnlyScreen() {
               colors={
                 state.currentStep === 'listening'
                   ? ['#D32F2F', '#B71C1C']
-                  : ['#007AFF', '#5856D6']
+                  : ['#58D68D', '#45B7A8']
               }
               style={styles.micButtonGradient}
             >
