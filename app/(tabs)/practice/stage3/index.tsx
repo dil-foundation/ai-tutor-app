@@ -113,7 +113,7 @@ const Stage3Screen = () => {
           ]}
         >
           <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/practice' })} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>

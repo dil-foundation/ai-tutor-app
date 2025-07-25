@@ -61,7 +61,7 @@ const BeginnerLessonsScreen: React.FC = () => {
         // router.back() navigates back in the history stack
         // If coming from practice/index, this will go back there.
         if (router.canGoBack()) {
-            router.back();
+            router.push({ pathname: '/practice' });
         }
         console.log('Go back pressed');
     };

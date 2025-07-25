@@ -60,6 +60,8 @@ const RoleplayChatScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [conversationEnded, setConversationEnded] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<any>(null);
+  const [showEvaluationResults, setShowEvaluationResults] = useState(false);
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
@@ -308,9 +310,7 @@ const RoleplayChatScreen = () => {
         if (result.done) {
           console.log("🏁 [CHAT] Conversation ended");
           setConversationEnded(true);
-          setTimeout(() => {
-            showEvaluationDialog();
-          }, 2000);
+          // Don't automatically evaluate - let user choose when to evaluate
         }
 
         console.log("✅ [CHAT] Message sent and response received");
@@ -326,23 +326,7 @@ const RoleplayChatScreen = () => {
     }
   };
 
-  const showEvaluationDialog = () => {
-    Alert.alert(
-      'Conversation Complete!',
-      'Would you like to evaluate your conversation performance?',
-      [
-        {
-          text: 'Not Now',
-          style: 'cancel',
-          onPress: () => router.back()
-        },
-        {
-          text: 'Evaluate',
-          onPress: () => evaluateConversation()
-        }
-      ]
-    );
-  };
+  // Removed showEvaluationDialog function - evaluation now happens automatically
 
   const evaluateConversation = async () => {
     console.log("🔄 [CHAT] Starting conversation evaluation");
@@ -366,7 +350,7 @@ const RoleplayChatScreen = () => {
       console.log("📊 [CHAT] Evaluation result:", result);
 
       if (response.ok && result.success) {
-        showEvaluationResults(result);
+        handleEvaluationResults(result);
       } else {
         console.log("❌ [CHAT] Evaluation failed:", result.error);
         Alert.alert(
@@ -387,46 +371,17 @@ const RoleplayChatScreen = () => {
     }
   };
 
-  const showEvaluationResults = (evaluation: any) => {
+  const handleEvaluationResults = (evaluation: any) => {
     const score = evaluation.overall_score;
     const isGood = score >= 70;
     
-    Alert.alert(
-      isGood ? '🎉 Excellent Performance!' : '📈 Good Effort!',
-      `Your conversation score: ${score}/100\n\n${evaluation.suggested_improvement}`,
-      [
-        {
-          text: 'View Details',
-          onPress: () => showDetailedEvaluation(evaluation)
-        },
-        {
-          text: 'Done',
-          onPress: () => router.back()
-        }
-      ]
-    );
+    // Show detailed evaluation directly on screen
+    showDetailedEvaluation(evaluation);
   };
 
   const showDetailedEvaluation = (evaluation: any) => {
-    const details = `
-Conversation Flow: ${evaluation.conversation_flow_score}/100
-Keyword Usage: ${evaluation.keywords_used_count}/${evaluation.total_keywords_expected}
-Grammar & Fluency: ${evaluation.grammar_fluency_score}/100
-Cultural Appropriateness: ${evaluation.cultural_appropriateness_score}/100
-Engagement: ${evaluation.engagement_score}/100
-
-Strengths:
-${evaluation.strengths.join('\n')}
-
-Areas for Improvement:
-${evaluation.areas_for_improvement.join('\n')}
-    `.trim();
-
-    Alert.alert(
-      'Detailed Evaluation',
-      details,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    setEvaluationResult(evaluation);
+    setShowEvaluationResults(true);
   };
 
   if (authLoading) {
@@ -640,7 +595,7 @@ ${evaluation.areas_for_improvement.join('\n')}
               </Animated.View>
             )}
 
-            {conversationEnded && (
+            {conversationEnded && !showEvaluationResults && (
               <Animated.View
                 style={[
                   styles.conversationEndedContainer,
@@ -651,21 +606,160 @@ ${evaluation.areas_for_improvement.join('\n')}
                 ]}
               >
                 <Text style={styles.conversationEndedText}>
-                  Conversation completed! Tap to evaluate your performance.
+                  Conversation completed! Ready to evaluate your performance?
                 </Text>
                 <TouchableOpacity
                   style={styles.evaluateButton}
                   onPress={evaluateConversation}
+                  disabled={showEvaluatingAnimation}
                 >
                   <LinearGradient
                     colors={['#58D68D', '#45B7A8']}
                     style={styles.evaluateButtonGradient}
                   >
                     <Ionicons name="analytics-outline" size={20} color="#FFFFFF" />
-                    <Text style={styles.evaluateButtonText}>Evaluate Performance</Text>
+                    <Text style={styles.evaluateButtonText}>Evaluate Conversation</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
+            )}
+
+            {showEvaluationResults && evaluationResult && (
+              <View style={styles.evaluationResultsOverlay}>
+                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <SafeAreaView style={styles.evaluationSafeArea}>
+                  <ScrollView 
+                    style={styles.evaluationResultsScrollView}
+                    contentContainerStyle={styles.evaluationResultsContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.evaluationResultsContainer,
+                        {
+                          opacity: fadeAnim,
+                          transform: [{ translateY: slideAnim }],
+                        },
+                      ]}
+                    >
+                    {/* Header with Performance Badge */}
+                    <View style={styles.evaluationHeader}>
+                      <LinearGradient
+                        colors={['#58D68D', '#45B7A8']}
+                        style={styles.evaluationHeaderGradient}
+                      >
+                        <View style={styles.performanceBadge}>
+                          <Ionicons 
+                            name={evaluationResult.overall_score >= 70 ? 'trophy' : 'star'} 
+                            size={32} 
+                            color="#FFFFFF" 
+                          />
+                        </View>
+                        <Text style={styles.evaluationTitle}>
+                          {evaluationResult.overall_score >= 70 ? '🎉 Excellent Performance!' : '📈 Good Effort!'}
+                        </Text>
+                        <Text style={styles.evaluationSubtitle}>
+                          Keep practicing to improve your skills!
+                        </Text>
+                      </LinearGradient>
+                    </View>
+                    
+                    {/* Overall Score Card */}
+                    <View style={styles.overallScoreCard}>
+                      <Text style={styles.overallScoreLabel}>Overall Score</Text>
+                      <View style={styles.scoreCircle}>
+                        <LinearGradient
+                          colors={['#58D68D', '#45B7A8']}
+                          style={styles.scoreCircleGradient}
+                        >
+                          <Text style={styles.scoreCircleText}>{evaluationResult.overall_score}</Text>
+                          <Text style={styles.scoreCircleMax}>/100</Text>
+                        </LinearGradient>
+                      </View>
+                    </View>
+                    
+                    {/* Detailed Scores Grid */}
+                    <View style={styles.scoresSection}>
+                      <Text style={styles.scoresSectionTitle}>Detailed Breakdown</Text>
+                      <View style={styles.scoresGrid}>
+                        <View style={styles.scoreCard}>
+                          <View style={styles.scoreCardHeader}>
+                            <Ionicons name="chatbubbles-outline" size={20} color="#58D68D" />
+                            <Text style={styles.scoreCardTitle}>Conversation Flow</Text>
+                          </View>
+                          <Text style={styles.scoreCardValue}>{evaluationResult.conversation_flow_score}/100</Text>
+                        </View>
+                        
+                        <View style={styles.scoreCard}>
+                          <View style={styles.scoreCardHeader}>
+                            <Ionicons name="key-outline" size={20} color="#58D68D" />
+                            <Text style={styles.scoreCardTitle}>Keyword Usage</Text>
+                          </View>
+                          <Text style={styles.scoreCardValue}>{evaluationResult.keywords_used_count}/{evaluationResult.total_keywords_expected}</Text>
+                        </View>
+                        
+                        <View style={styles.scoreCard}>
+                          <View style={styles.scoreCardHeader}>
+                            <Ionicons name="school-outline" size={20} color="#58D68D" />
+                            <Text style={styles.scoreCardTitle}>Grammar & Fluency</Text>
+                          </View>
+                          <Text style={styles.scoreCardValue}>{evaluationResult.grammar_fluency_score}/100</Text>
+                        </View>
+                        
+                        <View style={styles.scoreCard}>
+                          <View style={styles.scoreCardHeader}>
+                            <Ionicons name="globe-outline" size={20} color="#58D68D" />
+                            <Text style={styles.scoreCardTitle}>Cultural Appropriateness</Text>
+                          </View>
+                          <Text style={styles.scoreCardValue}>{evaluationResult.cultural_appropriateness_score}/100</Text>
+                        </View>
+                        
+                        <View style={styles.scoreCard}>
+                          <View style={styles.scoreCardHeader}>
+                            <Ionicons name="heart-outline" size={20} color="#58D68D" />
+                            <Text style={styles.scoreCardTitle}>Engagement</Text>
+                          </View>
+                          <Text style={styles.scoreCardValue}>{evaluationResult.engagement_score}/100</Text>
+                        </View>
+                      </View>
+                    </View>
+                    
+                    {/* Feedback Section */}
+                    <View style={styles.feedbackSection}>
+                      <View style={styles.feedbackHeader}>
+                        <Ionicons name="bulb-outline" size={24} color="#58D68D" />
+                        <Text style={styles.feedbackTitle}>Feedback & Suggestions</Text>
+                      </View>
+                      <View style={styles.feedbackCard}>
+                        <Text style={styles.feedbackText}>{evaluationResult.suggested_improvement}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Back to Scenarios Button */}
+                    <View style={styles.backButtonContainer}>
+                      <TouchableOpacity
+                        style={styles.backToScenariosButton}
+                        onPress={() => {
+                          // Navigate to roleplay simulation screen to trigger refresh
+                          // Add a small delay to ensure evaluation is complete
+                          setTimeout(() => {
+                            router.push('/(tabs)/practice/stage2/roleplay-simulation');
+                          }, 100);
+                        }}
+                      >
+                        <LinearGradient
+                          colors={['#58D68D', '#45B7A8']}
+                          style={styles.backToScenariosGradient}
+                        >
+                          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                          <Text style={styles.backToScenariosText}>Back to Scenarios</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </View>
+                                      </Animated.View>
+                  </ScrollView>
+                </SafeAreaView>
+              </View>
             )}
           </View>
         </KeyboardAvoidingView>
@@ -904,17 +998,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   evaluateButton: {
     borderRadius: 20,
     overflow: 'hidden',
+    marginTop: 8,
   },
   evaluateButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderRadius: 20,
   },
   evaluateButtonText: {
@@ -981,6 +1077,187 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginTop: 16,
     fontWeight: '600',
+  },
+
+  evaluationResultsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    zIndex: 1000,
+  },
+  evaluationSafeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  evaluationResultsScrollView: {
+    flex: 1,
+  },
+  evaluationResultsContent: {
+    paddingBottom: 40,
+    paddingTop: 20,
+  },
+  evaluationResultsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  evaluationHeader: {
+    marginBottom: 30,
+  },
+  evaluationHeaderGradient: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  performanceBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  evaluationTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  evaluationSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    opacity: 0.9,
+    textAlign: 'center',
+  },
+  overallScoreCard: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  overallScoreLabel: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+  scoreCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scoreCircleGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreCircleText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  scoreCircleMax: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
+  scoresSection: {
+    marginBottom: 30,
+  },
+  scoresSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 16,
+  },
+  scoresGrid: {
+    gap: 12,
+  },
+  scoreCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#58D68D',
+  },
+  scoreCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  scoreCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    marginLeft: 8,
+    flex: 1,
+  },
+  scoreCardValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#58D68D',
+  },
+  feedbackSection: {
+    marginBottom: 30,
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  feedbackTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginLeft: 8,
+  },
+  feedbackCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#58D68D',
+  },
+  feedbackText: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+  },
+  backButtonContainer: {
+    alignItems: 'center',
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  backToScenariosButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    minWidth: 200,
+  },
+  backToScenariosGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 20,
+  },
+  backToScenariosText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
 
