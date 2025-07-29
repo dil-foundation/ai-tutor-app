@@ -164,20 +164,51 @@ export default function EnglishOnlyScreen() {
 
   const [vadThreshold, setVadThreshold] = useState(Platform.OS === 'ios' ? -70 : -45);
 
-  // Pre-generated processing audio URL - using faster CDN
-  const PROCESSING_AUDIO_URL = "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3";
+  // Pre-generated processing audio URLs - multiple options for variety
+  const PROCESSING_AUDIO_URLS = [
+    "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_1.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_2.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_3.mp3"
+  ];
+  
+  // Function to get a random processing audio URL
+  const getRandomProcessingAudioURL = () => {
+    const randomIndex = Math.floor(Math.random() * PROCESSING_AUDIO_URLS.length);
+    const selectedURL = PROCESSING_AUDIO_URLS[randomIndex];
+    console.log(`🎲 Selected processing audio ${randomIndex + 1}/${PROCESSING_AUDIO_URLS.length}: ${selectedURL}`);
+    return selectedURL;
+  };
   
   // Alternative: Local audio file for instant playback (if you have the file)
-  // const PROCESSING_AUDIO_URL = require('../../../assets/audio/processing_audio.mp3');
-  
+  // const PROCESSING_AUDIO_URLS = [
+  //   require('../../../assets/audio/processing_audio_1.mp3'),
+  //   require('../../../assets/audio/processing_audio_2.mp3'),
+  //   require('../../../assets/audio/processing_audio_3.mp3'),
+  //   require('../../../assets/audio/processing_audio_4.mp3')
+  // ];
+
   // Pre-load processing audio for faster playback
   const preloadProcessingAudio = async () => {
     try {
-      console.log('🔄 Pre-loading processing audio...');
-      await audioManager.playAudio('processing_audio', PROCESSING_AUDIO_URL);
-      // Immediately stop it to pre-load
-      audioManager.stopCurrentAudio();
-      console.log('✅ Processing audio pre-loaded successfully');
+      console.log('🔄 Pre-loading all processing audio files...');
+      
+      // Pre-load all processing audio files for variety
+      for (let i = 0; i < PROCESSING_AUDIO_URLS.length; i++) {
+        const audioURL = PROCESSING_AUDIO_URLS[i];
+        console.log(`🔄 Pre-loading processing audio ${i + 1}/${PROCESSING_AUDIO_URLS.length}...`);
+        
+        try {
+          await audioManager.playAudio(`processing_audio_${i}`, audioURL);
+          // Immediately stop it to pre-load
+          audioManager.stopCurrentAudio();
+          console.log(`✅ Processing audio ${i + 1} pre-loaded successfully`);
+        } catch (error) {
+          console.log(`⚠️ Failed to pre-load processing audio ${i + 1}:`, error);
+        }
+      }
+      
+      console.log('✅ All processing audio files pre-loaded successfully');
     } catch (error) {
       console.log('⚠️ Failed to pre-load processing audio:', error);
     }
@@ -736,7 +767,11 @@ export default function EnglishOnlyScreen() {
           soundRef.current = null;
         }
         // Stop processing audio if it's playing
-        if (audioManager.isAudioPlaying('processing_audio')) {
+        if (audioManager.isAudioPlaying('processing_audio') ||
+            audioManager.isAudioPlaying('processing_audio_0') ||
+            audioManager.isAudioPlaying('processing_audio_1') ||
+            audioManager.isAudioPlaying('processing_audio_2') ||
+            audioManager.isAudioPlaying('processing_audio_3')) {
           console.log('🎵 [High Priority] Stopping processing audio for new message.');
           audioManager.stopCurrentAudio();
         }
@@ -1506,7 +1541,7 @@ export default function EnglishOnlyScreen() {
       // Use audio manager to prevent multiple instances and improve performance
       const success = await audioManager.playAudio(
         'processing_audio',
-        PROCESSING_AUDIO_URL
+        getRandomProcessingAudioURL()
       );
       
       if (success) {
@@ -1550,7 +1585,11 @@ export default function EnglishOnlyScreen() {
     }
     
     // Stop processing audio using audioManager
-    if (audioManager.isAudioPlaying('processing_audio')) {
+    if (audioManager.isAudioPlaying('processing_audio') || 
+        audioManager.isAudioPlaying('processing_audio_0') ||
+        audioManager.isAudioPlaying('processing_audio_1') ||
+        audioManager.isAudioPlaying('processing_audio_2') ||
+        audioManager.isAudioPlaying('processing_audio_3')) {
       console.log('🔇 Stopping processing audio...');
       audioManager.stopCurrentAudio();
     }
@@ -1602,7 +1641,11 @@ export default function EnglishOnlyScreen() {
     }
     
     // Stop processing audio using audioManager
-    if (audioManager.isAudioPlaying('processing_audio')) {
+    if (audioManager.isAudioPlaying('processing_audio') || 
+        audioManager.isAudioPlaying('processing_audio_0') ||
+        audioManager.isAudioPlaying('processing_audio_1') ||
+        audioManager.isAudioPlaying('processing_audio_2') ||
+        audioManager.isAudioPlaying('processing_audio_3')) {
       console.log('🔇 Stopping processing audio immediately...');
       audioManager.stopCurrentAudio();
     }
