@@ -45,6 +45,7 @@ import { closeEnglishOnlySocket, connectEnglishOnlySocket, isEnglishOnlySocketCo
 import { useAuth } from '../../../context/AuthContext';
 import { getUserDisplayName, getUserFirstNameSync } from '../../../utils/userUtils';
 import CHATGPT_TIMING_CONFIG, { getSilenceDuration, logTimingInfo } from '../../../utils/chatgptTimingConfig';
+import audioManager from '../../utils/audioManager';
 
 const { width, height } = Dimensions.get('window');
 
@@ -163,6 +164,25 @@ export default function EnglishOnlyScreen() {
 
   const [vadThreshold, setVadThreshold] = useState(Platform.OS === 'ios' ? -70 : -45);
 
+  // Pre-generated processing audio URL - using faster CDN
+  const PROCESSING_AUDIO_URL = "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3";
+  
+  // Alternative: Local audio file for instant playback (if you have the file)
+  // const PROCESSING_AUDIO_URL = require('../../../assets/audio/processing_audio.mp3');
+  
+  // Pre-load processing audio for faster playback
+  const preloadProcessingAudio = async () => {
+    try {
+      console.log('🔄 Pre-loading processing audio...');
+      await audioManager.playAudio('processing_audio', PROCESSING_AUDIO_URL);
+      // Immediately stop it to pre-load
+      audioManager.stopCurrentAudio();
+      console.log('✅ Processing audio pre-loaded successfully');
+    } catch (error) {
+      console.log('⚠️ Failed to pre-load processing audio:', error);
+    }
+  };
+
   // Handle screen focus and blur events
   useFocusEffect(
     useCallback(() => {
@@ -170,6 +190,9 @@ export default function EnglishOnlyScreen() {
       isScreenFocusedRef.current = true;
       
       initializeAudio();
+      
+      // Pre-load processing audio for faster playback
+      preloadProcessingAudio();
       
       // Set initial loading state
       setState(prev => ({ 
@@ -590,17 +613,13 @@ export default function EnglishOnlyScreen() {
     const isPausePrompt = data.step === 'pause_detected';
     const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
     const isNoSpeechAfterProcessing = data.step === 'no_speech_detected_after_processing';
-    const isProcessingStarted = data.step === 'processing_started';
     const isUserReminded = data.step === 'user_reminded';
 
     // Immediately update the last message step ref to prevent race conditions
     lastMessageStepRef.current = data.step;
 
-    // Handle processing_started step - keep processing state until correction
-    if (isProcessingStarted) {
-      console.log('🔄 Processing started - keeping processing state until correction response');
-      isProcessingAudioRef.current = true; // Set ref immediately
-    }
+    // 🎯 REMOVED: No longer handling processing_started step from backend
+    // Frontend now plays pre-generated audio immediately when processing starts
 
     setState(prev => ({
       ...prev,
@@ -611,8 +630,8 @@ export default function EnglishOnlyScreen() {
       isNoSpeechDetected: isNoSpeechDetected,
       isNoSpeechAfterProcessing: isNoSpeechAfterProcessing,
       isUserReminded: isUserReminded,
-      isProcessingAudio: isProcessingStarted, // Keep processing state for processing_started
-      currentMessageText: isProcessingStarted ? 'Processing your speech...' : (data.conversation_text || data.response || 'AI response'),
+      isProcessingAudio: false, // Clear processing state for all responses
+      currentMessageText: data.conversation_text || data.response || 'AI response',
       // Don't set isAISpeaking to false here - let handleAudioData manage it
       // Update lastUserInput if this is a response to user speech
       lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
@@ -716,6 +735,11 @@ export default function EnglishOnlyScreen() {
           await soundRef.current.unloadAsync();
           soundRef.current = null;
         }
+        // Stop processing audio if it's playing
+        if (audioManager.isAudioPlaying('processing_audio')) {
+          console.log('🎵 [High Priority] Stopping processing audio for new message.');
+          audioManager.stopCurrentAudio();
+        }
         isPlayingAudioRef.current = false;
       }
 
@@ -724,9 +748,8 @@ export default function EnglishOnlyScreen() {
       const isNoSpeechDetected = state.isNoSpeechDetected;
       const isNoSpeechAfterProcessing = state.isNoSpeechAfterProcessing;
       const isUserReminded = state.isUserReminded;
-      const isProcessingStarted = isProcessingAudioRef.current || state.isProcessingAudio || state.currentMessageText.includes('Processing your speech');
 
-      console.log(`🎵 [Audio Data] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}, isProcessingStarted: ${isProcessingStarted}, ref: ${isProcessingAudioRef.current}, state: ${state.isProcessingAudio}, currentMessageText: "${state.currentMessageText}"`);
+      console.log(`🎵 [Audio Data] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
 
       // Only update state if not already speaking to prevent unnecessary re-renders
       setState(prev => {
@@ -738,29 +761,17 @@ export default function EnglishOnlyScreen() {
           };
         } else {
           // Not speaking, set all speaking-related states
-          // For processing audio, don't set speaking state - keep it in waiting
-          if (isProcessingStarted) {
-            return {
-              ...prev,
-              currentAudioUri: audioUri,
-              currentStep: 'waiting', // Keep in waiting state for processing
-              isAISpeaking: false, // Not AI speaking, just processing feedback
-              isListening: false, // Ensure listening is stopped
-            };
-          } else {
-            // Normal AI speaking
-            return {
-              ...prev,
-              currentAudioUri: audioUri,
-              currentStep: 'speaking',
-              isAISpeaking: true,
-              isListening: false, // Ensure listening is stopped
-            };
-          }
+          return {
+            ...prev,
+            currentAudioUri: audioUri,
+            currentStep: 'speaking',
+            isAISpeaking: true,
+            isListening: false, // Ensure listening is stopped
+          };
         }
       });
 
-      await playAudio(audioUri, isGreeting, isNoSpeechDetected, isProcessingStarted, isNoSpeechAfterProcessing, isUserReminded);
+      await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
     } catch (error) {
       console.error('Failed to handle audio data:', error);
     }
@@ -782,8 +793,8 @@ export default function EnglishOnlyScreen() {
     }));
   };
 
-  const playAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false, isProcessingStarted = false, isNoSpeechAfterProcessing = false, isUserReminded = false) => {
-    console.log(`🎵 [PlayAudio] Starting with isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isProcessingStarted: ${isProcessingStarted}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
+  const playAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false, isNoSpeechAfterProcessing = false, isUserReminded = false) => {
+    console.log(`🎵 [PlayAudio] Starting with isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
     
     if (!isScreenFocusedRef.current) {
       console.log('Screen not focused, skipping audio playback');
@@ -822,7 +833,7 @@ export default function EnglishOnlyScreen() {
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
-          console.log(`🎵 [Audio Finished] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isProcessingStarted: ${isProcessingStarted}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
+          console.log(`🎵 [Audio Finished] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
           // Reset audio playing flag
           isPlayingAudioRef.current = false;
           
@@ -860,18 +871,6 @@ export default function EnglishOnlyScreen() {
                 startRecording();
               }
             }, 1000); // 1 second delay before restarting recording
-          } else if (isProcessingStarted) {
-            console.log('🎵 [Audio Branch] "Please wait" audio finished playing. Now waiting for final backend response.');
-            // This was just the initial feedback audio. The main processing is still
-            // happening. We only need to update the speaking state.
-            // Critically, we DO NOT modify isProcessingAudio or currentMessageText,
-            // as that would cause a race condition and overwrite the state set by
-            // the final response message (e.g., 'correction' or 'no_speech_detected_after_processing').
-            setState(prev => ({
-              ...prev, 
-              isAISpeaking: false,
-            }));
-            // Don't restart recording here - wait for the actual response from backend
           } else if (isNoSpeechAfterProcessing) {
             console.log('🎵 [Audio Branch] No speech after processing audio finished playing, restarting recording with 5-second silence detection');
             setState(prev => ({
@@ -1469,6 +1468,9 @@ export default function EnglishOnlyScreen() {
         currentMessageText: 'Processing your speech...',
       }));
 
+      // 🎯 NEW: Play pre-generated processing audio immediately
+      await playProcessingAudio();
+
       // Send the audio directly to backend for processing
       const messagePayload = {
         audio_base64: base64Audio,
@@ -1479,9 +1481,8 @@ export default function EnglishOnlyScreen() {
       console.log('📤 Sending audio to backend for processing...');
       sendEnglishOnlyMessage(JSON.stringify(messagePayload));
 
-      // 🎯 NEW: The backend will now immediately send "processing_started" 
-      // with the pre-generated "Please wait... Your audio is processing..." audio
-      // This will be handled in handleWebSocketMessage() and handleAudioData()
+      // 🎯 REMOVED: No longer waiting for "processing_started" from backend
+      // Backend will directly send the final response
 
     } catch (error) {
       console.error('Failed to process user speech:', error);
@@ -1494,6 +1495,30 @@ export default function EnglishOnlyScreen() {
         isPauseDetected: false,
         currentMessageText: '',
       }));
+    }
+  };
+
+  // 🎯 NEW: Function to play pre-generated processing audio
+  const playProcessingAudio = async () => {
+    console.log('🔊 Playing pre-generated processing audio...');
+    
+    try {
+      // Use audio manager to prevent multiple instances and improve performance
+      const success = await audioManager.playAudio(
+        'processing_audio',
+        PROCESSING_AUDIO_URL
+      );
+      
+      if (success) {
+        console.log('✅ Processing audio started successfully');
+        isPlayingAudioRef.current = true;
+      } else {
+        console.log('⚠️ Processing audio already playing or failed to start');
+      }
+      
+    } catch (error) {
+      console.error('Failed to play processing audio:', error);
+      isPlayingAudioRef.current = false;
     }
   };
 
@@ -1522,6 +1547,12 @@ export default function EnglishOnlyScreen() {
         console.warn('Error unloading sound:', error);
       });
       soundRef.current = null;
+    }
+    
+    // Stop processing audio using audioManager
+    if (audioManager.isAudioPlaying('processing_audio')) {
+      console.log('🔇 Stopping processing audio...');
+      audioManager.stopCurrentAudio();
     }
     
     // Stop Speech synthesis
@@ -1568,6 +1599,12 @@ export default function EnglishOnlyScreen() {
       soundRef.current.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
       });
+    }
+    
+    // Stop processing audio using audioManager
+    if (audioManager.isAudioPlaying('processing_audio')) {
+      console.log('🔇 Stopping processing audio immediately...');
+      audioManager.stopCurrentAudio();
     }
     
     // Stop Speech synthesis immediately
