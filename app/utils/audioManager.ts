@@ -32,8 +32,9 @@ class AudioManager {
       
       // Clean up any existing sound
       if (this.currentSound) {
-        await this.currentSound.unloadAsync();
-        this.currentSound = null;
+        const existingSound = this.currentSound;
+        this.currentSound = null; // Clear reference first to prevent race conditions
+        await existingSound.unloadAsync();
       }
 
       const { sound } = await Audio.Sound.createAsync(
@@ -74,8 +75,11 @@ class AudioManager {
   async stopCurrentAudio(): Promise<void> {
     if (this.currentSound && this.isPlaying) {
       try {
-        await this.currentSound.stopAsync();
-        await this.currentSound.unloadAsync();
+        const currentSound = this.currentSound;
+        this.currentSound = null; // Clear reference first to prevent race conditions
+        
+        await currentSound.stopAsync();
+        await currentSound.unloadAsync();
       } catch (error) {
         console.error('Error stopping current audio:', error);
       }
