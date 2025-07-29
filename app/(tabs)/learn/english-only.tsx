@@ -54,8 +54,6 @@ interface Message {
   isAI: boolean;
   timestamp: Date;
   audioUri?: string;
-  correction?: string;
-  feedback?: string;
 }
 
 interface EnglishOnlyState {
@@ -585,8 +583,6 @@ export default function EnglishOnlyScreen() {
       text: data.conversation_text || data.response || 'AI response',
       isAI: true,
       timestamp: new Date(),
-      correction: data.correction,
-      feedback: data.feedback,
     };
 
     // Track if this is a response to user speech (not greeting or pause)
@@ -1724,17 +1720,6 @@ export default function EnglishOnlyScreen() {
           ]}>
             {message.text}
           </Text>
-          {message.correction && (
-            <View style={styles.correctionContainer}>
-              <Text style={styles.correctionLabel}>Correction:</Text>
-              <Text style={styles.correctionText}>{message.correction}</Text>
-            </View>
-          )}
-          {message.feedback && (
-            <View style={styles.feedbackContainer}>
-              <Text style={styles.feedbackText}>{message.feedback}</Text>
-            </View>
-          )}
           <Text style={styles.timestamp}>
             {message.timestamp.toLocaleTimeString()}
           </Text>
@@ -1897,33 +1882,6 @@ const styles = StyleSheet.create({
   },
   userText: {
     color: '#1C1C1E',
-  },
-  correctionContainer: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  correctionLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  correctionText: {
-    fontSize: 14,
-    color: 'white',
-    fontStyle: 'italic',
-  },
-  feedbackContainer: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-  },
-  feedbackText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
   },
   timestamp: {
     fontSize: 12,
