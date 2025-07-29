@@ -167,9 +167,9 @@ export default function EnglishOnlyScreen() {
   // Pre-generated processing audio URLs - multiple options for variety
   const PROCESSING_AUDIO_URLS = [
     "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3",
-    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_1.mp3",
-    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_2.mp3",
-    "https://dil-lms.s3.us-east-1.amazonaws.com/processing_audio_3.mp3"
+    "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3"
   ];
   
   // Function to get a random processing audio URL
