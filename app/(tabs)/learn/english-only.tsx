@@ -628,6 +628,16 @@ export default function EnglishOnlyScreen() {
     }
 
     console.log('Received English-Only WebSocket message:', data);
+    
+    // Log the new analysis data if available
+    if (data.analysis) {
+      console.log('🔍 [ANALYSIS]', {
+        is_correct: data.analysis.is_correct,
+        intent: data.analysis.intent,
+        should_continue: data.analysis.should_continue_conversation,
+        step: data.step
+      });
+    }
 
     // Stop any existing recording when AI responds
     if (recordingRef.current && state.isListening) {
@@ -643,7 +653,8 @@ export default function EnglishOnlyScreen() {
     };
 
     // Track if this is a response to user speech (not greeting or pause)
-    const isResponseToUserSpeech = data.step === 'correction' && data.original_text;
+    // Updated to handle both 'correction' and 'conversation' steps from the new conversational AI
+    const isResponseToUserSpeech = (data.step === 'correction' || data.step === 'conversation') && data.original_text;
     const isPausePrompt = data.step === 'pause_detected';
     const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
     const isNoSpeechAfterProcessing = data.step === 'no_speech_detected_after_processing';
@@ -702,10 +713,10 @@ export default function EnglishOnlyScreen() {
       // The audio will be handled in handleAudioData and playAudio functions
     }
 
-    // Handle final correction response - clear processing state
+    // Handle final AI response (correction or conversation) - clear processing state
     if (isResponseToUserSpeech) {
-      console.log('✅ Received final correction response, clearing processing state');
-      console.log('🔍 [Correction] Clearing isProcessingAudio, proceeding with correction');
+      console.log(`✅ Received final AI response (${data.step}), clearing processing state`);
+      console.log(`🔍 [${data.step}] Clearing isProcessingAudio, proceeding with response`);
       isProcessingAudioRef.current = false; // Clear ref immediately
       setState(prev => ({
         ...prev,
