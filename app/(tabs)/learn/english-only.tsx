@@ -311,7 +311,9 @@ export default function EnglishOnlyScreen() {
 
       // Unload any previous sound
       if (soundRef.current) {
-        await soundRef.current.unloadAsync();
+        const currentSound = soundRef.current;
+        soundRef.current = null; // Clear reference first to prevent race conditions
+        await currentSound.unloadAsync();
       }
 
       // Set audio mode for playback
@@ -372,8 +374,9 @@ export default function EnglishOnlyScreen() {
     // Stop current recording if any
     if (recordingRef.current) {
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        recordingRef.current = null;
+        const currentRecording = recordingRef.current;
+        recordingRef.current = null; // Clear reference first to prevent race conditions
+        await currentRecording.stopAndUnloadAsync();
       } catch (error) {
         console.error('Error stopping recording for silence after AI:', error);
       }
@@ -401,8 +404,9 @@ export default function EnglishOnlyScreen() {
     // Stop current recording
     if (recordingRef.current) {
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        recordingRef.current = null;
+        const currentRecording = recordingRef.current;
+        recordingRef.current = null; // Clear reference first to prevent race conditions
+        await currentRecording.stopAndUnloadAsync();
       } catch (error) {
         console.error('Error stopping recording for first time silence:', error);
       }
@@ -1107,22 +1111,24 @@ export default function EnglishOnlyScreen() {
     
     if (recordingRef.current) {
       console.log('🛑 Stopping existing recording...');
+      const currentRecording = recordingRef.current;
+      recordingRef.current = null; // Clear reference first to prevent race conditions
       cleanupPromises.push(
-        recordingRef.current.stopAndUnloadAsync().catch(e => {
+        currentRecording.stopAndUnloadAsync().catch(e => {
           console.log('Error stopping existing recording:', e);
         })
       );
-      recordingRef.current = null;
     }
 
     if (soundRef.current) {
       console.log('🔇 Stopping existing audio...');
+      const currentSound = soundRef.current;
+      soundRef.current = null; // Clear reference first to prevent race conditions
       cleanupPromises.push(
-        soundRef.current.stopAsync().then(() => soundRef.current?.unloadAsync()).catch(e => {
+        currentSound.stopAsync().then(() => currentSound.unloadAsync()).catch(e => {
           console.log('Error stopping existing audio:', e);
         })
       );
-      soundRef.current = null;
     }
 
     // Wait for cleanup to complete (but don't block if it takes too long)
@@ -1407,9 +1413,10 @@ export default function EnglishOnlyScreen() {
         currentMessageText: '',
       }));
 
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
-      recordingRef.current = null;
+      const currentRecording = recordingRef.current;
+      recordingRef.current = null; // Clear reference first to prevent race conditions
+      await currentRecording.stopAndUnloadAsync();
+      const uri = currentRecording.getURI();
 
       const speechStartedAt = speechStartTimeRef.current;
       const speechEndedAt = Date.now();
@@ -1571,10 +1578,11 @@ export default function EnglishOnlyScreen() {
     
     if (recordingRef.current) {
       console.log('🛑 Stopping recording...');
-      recordingRef.current.stopAndUnloadAsync().catch(error => {
+      const currentRecording = recordingRef.current;
+      recordingRef.current = null; // Clear reference first to prevent race conditions
+      currentRecording.stopAndUnloadAsync().catch(error => {
         console.warn('Error stopping recording during cleanup:', error);
       });
-      recordingRef.current = null;
     }
     
     if (soundRef.current) {
@@ -1665,10 +1673,11 @@ export default function EnglishOnlyScreen() {
     
     if (recordingRef.current) {
       console.log('🛑 Stopping recording immediately...');
-      recordingRef.current.stopAndUnloadAsync().catch(error => {
+      const currentRecording = recordingRef.current;
+      recordingRef.current = null; // Clear reference first to prevent race conditions
+      currentRecording.stopAndUnloadAsync().catch(error => {
         console.warn('Error stopping recording during manual cleanup:', error);
       });
-      recordingRef.current = null;
     }
     
     if (silenceTimerRef.current) {
