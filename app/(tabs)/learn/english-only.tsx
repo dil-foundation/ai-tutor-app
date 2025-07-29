@@ -762,9 +762,11 @@ export default function EnglishOnlyScreen() {
       if (isHighPriority && isPlayingAudioRef.current) {
         console.log('🎵 [High Priority] Interrupting current audio for new message.');
         if (soundRef.current) {
-          await soundRef.current.stopAsync();
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
+          const currentSound = soundRef.current;
+          soundRef.current = null; // Clear reference first to prevent race conditions
+          
+          await currentSound.stopAsync();
+          await currentSound.unloadAsync();
         }
         // Stop processing audio if it's playing
         if (audioManager.isAudioPlaying('processing_audio') ||
@@ -849,12 +851,14 @@ export default function EnglishOnlyScreen() {
       // Stop any existing audio playback
       if (soundRef.current) {
         try {
-          await soundRef.current.stopAsync();
-          await soundRef.current.unloadAsync();
+          const currentSound = soundRef.current;
+          soundRef.current = null; // Clear reference first to prevent race conditions
+          
+          await currentSound.stopAsync();
+          await currentSound.unloadAsync();
         } catch (error) {
           console.log('Error stopping existing audio:', error);
         }
-        soundRef.current = null;
       }
 
       // Clear any existing timers
@@ -1575,13 +1579,15 @@ export default function EnglishOnlyScreen() {
     
     if (soundRef.current) {
       console.log('🔇 Stopping and unloading sound...');
-      soundRef.current.stopAsync().catch(error => {
+      const currentSound = soundRef.current;
+      soundRef.current = null; // Clear reference first to prevent race conditions
+      
+      currentSound.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
       });
-      soundRef.current.unloadAsync().catch(error => {
+      currentSound.unloadAsync().catch(error => {
         console.warn('Error unloading sound:', error);
       });
-      soundRef.current = null;
     }
     
     // Stop processing audio using audioManager
@@ -1635,7 +1641,10 @@ export default function EnglishOnlyScreen() {
     isScreenFocusedRef.current = false;
     
     if (soundRef.current) {
-      soundRef.current.stopAsync().catch(error => {
+      const currentSound = soundRef.current;
+      soundRef.current = null; // Clear reference first to prevent race conditions
+      
+      currentSound.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
       });
     }
