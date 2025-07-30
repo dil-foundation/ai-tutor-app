@@ -145,6 +145,7 @@ export default function EnglishOnlyScreen() {
   const isStoppingRef = useRef(false);
   const isProcessingAudioRef = useRef(false); // Track processing state immediately
   const lastMessageStepRef = useRef<string | null>(null);
+  const greetingInitiatedRef = useRef(false);
 
   // Voice Activity Detection threshold
   const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
@@ -279,10 +280,12 @@ export default function EnglishOnlyScreen() {
   };
 
   const playGreeting = async () => {
-    if (!isScreenFocusedRef.current) {
-      console.log('Screen not focused, skipping greeting');
+    if (greetingInitiatedRef.current) {
+      console.log('Greeting already initiated, skipping.');
       return;
     }
+    greetingInitiatedRef.current = true;
+
 
     // Check if WebSocket is connected before sending greeting
     if (!isEnglishOnlySocketConnected()) {
@@ -1649,6 +1652,8 @@ export default function EnglishOnlyScreen() {
     hasUserSpokenRef.current = false; // Reset user spoken flag
     isPlayingAudioRef.current = false; // Reset audio playing flag
     isProcessingAudioRef.current = false; // Reset processing audio flag
+    greetingInitiatedRef.current = false;
+
     
     console.log('✅ Cleanup completed');
   };
@@ -1718,6 +1723,8 @@ export default function EnglishOnlyScreen() {
     speechStartTimeRef.current = null;
     setIsTalking(false);
     isProcessingAudioRef.current = false; // Reset processing audio flag
+    greetingInitiatedRef.current = false;
+
     
     console.log('✅ Immediate manual cleanup completed');
   };
