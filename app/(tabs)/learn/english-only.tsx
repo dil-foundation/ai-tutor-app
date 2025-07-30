@@ -796,6 +796,11 @@ export default function EnglishOnlyScreen() {
         }
         isPlayingAudioRef.current = false;
       }
+      if (isProcessingAudioRef.current) {
+        console.log('Interrupting filler audio to play AI response immediately.');
+        await audioManager.stopCurrentAudio();
+        isProcessingAudioRef.current = false;
+      }
 
       // Check if this is greeting audio, no speech detected audio, or processing audio
       const isGreeting = state.isGreeting;
