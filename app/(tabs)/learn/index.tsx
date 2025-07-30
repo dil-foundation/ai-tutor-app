@@ -194,7 +194,7 @@ export default function LearnScreen() {
                       color={'#000000'}
                       style={{ marginRight: 8 }}
                     />
-                    <Text style={[styles.toggleOptionText, { color: '#000000' }]}>Eng-Eng</Text>
+                    <Text style={[styles.toggleOptionText, { color: '#000000' }]}>Eng Only</Text>
                   </TouchableOpacity>
                 </LinearGradient>
               ) : (

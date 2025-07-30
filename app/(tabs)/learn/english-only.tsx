@@ -145,6 +145,7 @@ export default function EnglishOnlyScreen() {
   const isStoppingRef = useRef(false);
   const isProcessingAudioRef = useRef(false); // Track processing state immediately
   const lastMessageStepRef = useRef<string | null>(null);
+  const greetingInitiatedRef = useRef(false);
 
   // Voice Activity Detection threshold
   const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
@@ -166,9 +167,9 @@ export default function EnglishOnlyScreen() {
 
   // Pre-generated processing audio URLs - multiple options for variety
   const PROCESSING_AUDIO_URLS = [
-    "https://dil-lms.s3.us-east-1.amazonaws.com/Pre-thinking-how-to-say-that.mp3.mp3",
+    "https://dil-lms.s3.us-east-1.amazonaws.com/pre_response_great_effort_user.mp3",
     "https://dil-lms.s3.us-east-1.amazonaws.com/Pre-lets-fix-your-sentence-gently.mp3",
-    "https://dil-lms.s3.us-east-1.amazonaws.com/Pre-give-me-a-moment.mp3"
+    "https://dil-lms.s3.us-east-1.amazonaws.com/pre_think_let_me_think_for_a_second.mp3"
   ];
   
   // Function to get a random processing audio URL
@@ -279,10 +280,12 @@ export default function EnglishOnlyScreen() {
   };
 
   const playGreeting = async () => {
-    if (!isScreenFocusedRef.current) {
-      console.log('Screen not focused, skipping greeting');
+    if (greetingInitiatedRef.current) {
+      console.log('Greeting already initiated, skipping.');
       return;
     }
+    greetingInitiatedRef.current = true;
+
 
     // Check if WebSocket is connected before sending greeting
     if (!isEnglishOnlySocketConnected()) {
@@ -792,6 +795,11 @@ export default function EnglishOnlyScreen() {
           audioManager.stopCurrentAudio();
         }
         isPlayingAudioRef.current = false;
+      }
+      if (isProcessingAudioRef.current) {
+        console.log('Interrupting filler audio to play AI response immediately.');
+        await audioManager.stopCurrentAudio();
+        isProcessingAudioRef.current = false;
       }
 
       // Check if this is greeting audio, no speech detected audio, or processing audio
@@ -1649,6 +1657,8 @@ export default function EnglishOnlyScreen() {
     hasUserSpokenRef.current = false; // Reset user spoken flag
     isPlayingAudioRef.current = false; // Reset audio playing flag
     isProcessingAudioRef.current = false; // Reset processing audio flag
+    greetingInitiatedRef.current = false;
+
     
     console.log('✅ Cleanup completed');
   };
@@ -1718,6 +1728,8 @@ export default function EnglishOnlyScreen() {
     speechStartTimeRef.current = null;
     setIsTalking(false);
     isProcessingAudioRef.current = false; // Reset processing audio flag
+    greetingInitiatedRef.current = false;
+
     
     console.log('✅ Immediate manual cleanup completed');
   };
