@@ -365,6 +365,14 @@ const AbstractTopicScreen = () => {
     setIsEvaluating(true);
     setShowEvaluatingAnimation(true);
     
+    // Stop speaking timer and clear it when evaluation starts
+    if (speakingTimerRef.current) {
+      clearInterval(speakingTimerRef.current);
+      speakingTimerRef.current = null;
+    }
+    setShowSpeakingTimer(false);
+    setIsSpeakingPhase(false);
+    
     // Start rotation animation
     Animated.loop(
       Animated.timing(rotateAnim, {
@@ -492,7 +500,9 @@ const AbstractTopicScreen = () => {
     if (evaluationResult?.success) {
       await moveToNextTopic();
     }
-    setEvaluationResult(null);
+    
+    // Complete reset to fresh state
+    console.log('🔄 [RESET] Resetting to fresh state in handleFeedbackReturn...');
     
     // Reset all state to initial values
     setShowFeedback(false);
@@ -522,6 +532,11 @@ const AbstractTopicScreen = () => {
       clearInterval(speakingTimerRef.current);
       speakingTimerRef.current = null;
     }
+    
+    // Reset evaluation result to ensure fresh start
+    setEvaluationResult(null);
+    
+    console.log('✅ [RESET] Successfully reset to fresh state in handleFeedbackReturn');
   };
   
   // Start exercise
@@ -605,7 +620,10 @@ const AbstractTopicScreen = () => {
         }
       }
       
-      // Reset all state to initial values when returning from feedback
+      // Complete reset to fresh state when returning from feedback
+      console.log('🔄 [RESET] Resetting to fresh state after feedback return...');
+      
+      // Reset all state to initial values
       setShowFeedback(false);
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
@@ -633,6 +651,11 @@ const AbstractTopicScreen = () => {
         clearInterval(speakingTimerRef.current);
         speakingTimerRef.current = null;
       }
+      
+      // Reset evaluation result to ensure fresh start
+      setEvaluationResult(null);
+      
+      console.log('✅ [RESET] Successfully reset to fresh state');
     };
     
     handleFeedbackReturn();
