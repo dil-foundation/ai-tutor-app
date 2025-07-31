@@ -19,7 +19,8 @@ export default function TabLayout() {
   const isInStage1 = pathname.includes('/stage1/');
   const isInStage2 = pathname.includes('/stage2/');
   const isInStage3 = pathname.includes('/stage3/');
-  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInStage3 || isInEnglishOnly || isInGreeting;
+  const isInStage4 = pathname.includes('/stage4/');
+  const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInStage3 || isInStage4 || isInEnglishOnly || isInGreeting;
 
   return (
     <Tabs
