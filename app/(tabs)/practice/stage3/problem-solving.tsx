@@ -417,22 +417,50 @@ const ProblemSolvingScreen = () => {
   };
 
   // Move to next scenario
-  const moveToNextScenario = () => {
-    if (currentScenarioId < totalScenarios) {
-      const nextId = currentScenarioId + 1;
-      setCurrentScenarioId(nextId);
-      loadScenario(nextId);
-      console.log('🔄 [NAVIGATION] Moving to next scenario:', nextId);
-    } else {
-      console.log('🎉 [NAVIGATION] All scenarios completed!');
-      setIsExerciseCompleted(true);
+  const moveToNextScenario = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('🔄 [NAVIGATION] Getting next scenario from backend...');
+      
+      // Get the current topic from backend (which should be the next topic after completion)
+      const response = await fetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        const nextTopicId = result.current_topic_id;
+        console.log('🔄 [NAVIGATION] Backend returned topic ID:', nextTopicId);
+        
+        if (nextTopicId <= totalScenarios) {
+          setCurrentScenarioId(nextTopicId);
+          await loadScenario(nextTopicId);
+          console.log('🔄 [NAVIGATION] Moved to scenario:', nextTopicId);
+        } else {
+          console.log('🎉 [NAVIGATION] All scenarios completed!');
+          setIsExerciseCompleted(true);
+        }
+      } else {
+        console.log('⚠️ [NAVIGATION] Failed to get next topic, staying on current scenario');
+      }
+    } catch (error) {
+      console.error('❌ [NAVIGATION] Error moving to next scenario:', error);
+      // Fallback: try to increment manually
+      if (currentScenarioId < totalScenarios) {
+        const nextId = currentScenarioId + 1;
+        setCurrentScenarioId(nextId);
+        loadScenario(nextId);
+        console.log('🔄 [NAVIGATION] Fallback: Moving to next scenario:', nextId);
+      } else {
+        console.log('🎉 [NAVIGATION] All scenarios completed!');
+        setIsExerciseCompleted(true);
+      }
     }
   };
 
   // Handle feedback return
-  const handleFeedbackReturn = () => {
+  const handleFeedbackReturn = async () => {
     if (evaluationResult?.success) {
-      moveToNextScenario();
+      await moveToNextScenario();
     }
     setEvaluationResult(null);
   };
@@ -495,13 +523,17 @@ const ProblemSolvingScreen = () => {
 
   // Handle feedback return from navigation
   useEffect(() => {
-    if (params.evaluationResult) {
-      const result = JSON.parse(params.evaluationResult as string);
-      setEvaluationResult(result);
-      if (result.success) {
-        moveToNextScenario();
+    const handleFeedbackReturn = async () => {
+      if (params.evaluationResult) {
+        const result = JSON.parse(params.evaluationResult as string);
+        setEvaluationResult(result);
+        if (result.success) {
+          await moveToNextScenario();
+        }
       }
-    }
+    };
+    
+    handleFeedbackReturn();
   }, [params.evaluationResult]);
 
   return (
