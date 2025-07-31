@@ -536,57 +536,9 @@ const GroupDialogueScreen = () => {
     }
   }, [params.evaluationResult]);
 
-  if (isLoading) {
-    return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradient}>
-        <StatusBar barStyle="light-content" />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.loadingContainer}>
-            <LottieView
-              source={require('../../../../assets/animations/loading.json')}
-              autoPlay
-              loop
-              style={styles.loadingAnimation}
-            />
-            <Text style={styles.loadingText}>Loading Group Dialogue...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    );
-  }
 
-  if (isExerciseCompleted) {
-    return (
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradient}>
-        <StatusBar barStyle="light-content" />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.completedContainer}>
-            <LottieView
-              source={require('../../../../assets/animations/sparkle.json')}
-              autoPlay
-              loop
-              style={styles.completedAnimation}
-            />
-            <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
-            <Text style={styles.completedText}>
-              You've successfully completed all Group Dialogue scenarios!
-            </Text>
-            <TouchableOpacity
-              style={styles.completedButton}
-              onPress={() => router.back()}
-            >
-              <LinearGradient
-                colors={["#58D68D", "#45B7A8"]}
-                style={styles.completedButtonGradient}
-              >
-                <Text style={styles.completedButtonText}>Return to Practice</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    );
-  }
+
+
 
   return (
     <LinearGradient
@@ -646,7 +598,32 @@ const GroupDialogueScreen = () => {
               colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
               style={styles.mainCardGradient}
             >
-              {currentScenario ? (
+              {isExerciseCompleted ? (
+                <View style={styles.completedContainer}>
+                  <Ionicons name="trophy" size={64} color="#58D68D" />
+                  <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
+                  <Text style={styles.completedText}>
+                    Congratulations! You have successfully completed all Group Dialogue exercises.
+                  </Text>
+                  <Text style={styles.completedText}>Great job on your progress!</Text>
+                  <TouchableOpacity
+                    style={styles.completedButton}
+                    onPress={() => router.back()}
+                  >
+                    <LinearGradient
+                      colors={["#58D68D", "#45B7A8"]}
+                      style={styles.completedButtonGradient}
+                    >
+                      <Text style={styles.completedButtonText}>Return to Practice</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              ) : isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Ionicons name="hourglass-outline" size={48} color="#58D68D" />
+                  <Text style={styles.loadingText}>Loading group dialogue scenario...</Text>
+                </View>
+              ) : currentScenario ? (
                 <ScrollView 
                   style={styles.scrollContainer}
                   contentContainerStyle={styles.scrollContent}
@@ -1095,45 +1072,38 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  loadingAnimation: {
-    width: 200,
-    height: 200,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   loadingText: {
     fontSize: 18,
-    color: '#FFFFFF',
-    marginTop: 20,
-    fontWeight: '600',
+    color: '#58D68D',
+    textAlign: 'center',
+    marginTop: 16,
   },
   completedContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-  },
-  completedAnimation: {
-    width: 200,
-    height: 200,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   completedTitle: {
-    fontSize: 28,
-    color: '#FFFFFF',
+    fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 20,
+    color: '#58D68D',
+    marginTop: 16,
+    marginBottom: 16,
     textAlign: 'center',
   },
   completedText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#666666',
     textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 24,
+    marginBottom: 8,
+    lineHeight: 22,
   },
   completedButton: {
-    marginTop: 30,
+    marginTop: 20,
     borderRadius: 25,
     overflow: 'hidden',
   },
