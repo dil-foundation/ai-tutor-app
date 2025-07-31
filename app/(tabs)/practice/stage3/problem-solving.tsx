@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
-  TouchableOpacity,
+    Text,
+    TouchableOpacity,
   StyleSheet,
   Alert,
   ScrollView,
@@ -558,7 +558,7 @@ const ProblemSolvingScreen = () => {
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
-            </TouchableOpacity>
+        </TouchableOpacity>
             
             <View style={styles.titleContainer}>
               <LinearGradient
@@ -567,13 +567,13 @@ const ProblemSolvingScreen = () => {
               >
                 <Ionicons name="construct" size={32} color="#FFFFFF" />
               </LinearGradient>
-              <Text style={styles.headerTitle}>Problem Solving</Text>
+        <Text style={styles.headerTitle}>Problem Solving</Text>
               <Text style={styles.headerSubtitle}>Handle Real-Life Situations</Text>
               
               {/* Scenario Counter */}
               <Text style={styles.scenarioCounter}>
                 Scenario: {currentScenarioId} of {totalScenarios}
-              </Text>
+            </Text>
             </View>
           </Animated.View>
 
@@ -681,9 +681,9 @@ const ProblemSolvingScreen = () => {
                             <Text style={styles.sampleText}>{response}</Text>
                           </View>
                         ))}
-                      </View>
-                    </View>
-                    
+            </View>
+        </View>
+
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
@@ -764,7 +764,7 @@ const ProblemSolvingScreen = () => {
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
-        </View>
+              </View>
 
         {/* Evaluating Animation Overlay */}
         {showEvaluatingAnimation && (
@@ -779,10 +779,10 @@ const ProblemSolvingScreen = () => {
             </View>
             <View style={styles.evaluatingTextContainer}>
               <Text style={styles.evaluatingTitle}>Evaluating...</Text>
-            </View>
-          </View>
+        </View>
+        </View>
         )}
-      </SafeAreaView>
+    </SafeAreaView>
     </LinearGradient>
   );
 };
