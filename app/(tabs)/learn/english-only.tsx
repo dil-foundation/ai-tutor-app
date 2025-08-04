@@ -1187,16 +1187,16 @@ export default function EnglishOnlyScreen() {
         let timingType: 'initial' | 'post-speech' | 'ai-delay' | 'user-delay';
         
         if (isFirstRecordingRef.current && !hasUserSpokenRef.current) {
-          // First time recording - 6 seconds silence
-          silenceTimeout = 6000; // 6 seconds
+          // First time recording - 5 seconds silence
+          silenceTimeout = 4000; // 5 seconds
           timingType = 'initial';
         } else if (isNewSessionAfterAI.current && !hasUserSpokenRef.current) {
-          // New session after AI spoke - 7 seconds silence (play "Would you be there?")
-          silenceTimeout = 7000; // 7 seconds
+          // New session after AI spoke - 5 seconds silence (play "Would you be there?")
+          silenceTimeout = 4000; // 5 seconds
           timingType = 'ai-delay';
         } else if (hasUserSpokenRef.current) {
-          // User has spoken in this session - 2 seconds silence (send to backend)
-          silenceTimeout = 2000; // 2 seconds
+          // User has spoken in this session - 1.2 seconds silence (send to backend)
+          silenceTimeout = 1000; // 1.2 seconds
           timingType = 'post-speech';
         } else {
           // Fallback to ChatGPT timing
