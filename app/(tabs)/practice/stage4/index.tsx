@@ -91,7 +91,7 @@ const Stage4Screen = () => {
       }),
     ]).start();
 
-    router.push(activityScreen);
+    // router.push(activityScreen);
   };
 
   return (
