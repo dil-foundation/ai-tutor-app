@@ -5,9 +5,9 @@ let BASE_API_URL: string;
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  BASE_API_URL = 'https://api.dil.lms-staging.com';
+  // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
-  // BASE_API_URL = 'http://192.168.1.3:8000';
+  BASE_API_URL = 'http://192.168.1.3:8000';
 
   // BASE_API_URL = 'https://bda6-2401-4900-4df1-bc03-f029-886d-1f7c-9add.ngrok-free.app';
 } else {
