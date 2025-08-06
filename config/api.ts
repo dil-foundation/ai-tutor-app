@@ -146,6 +146,12 @@ export const API_ENDPOINTS = {
   CRITICAL_THINKING_DIALOGUE: (dialogueId: number) => `${BASE_API_URL}/api/critical-thinking-topics/${dialogueId}`,
   EVALUATE_CRITICAL_THINKING: `${BASE_API_URL}/api/evaluate-critical-thinking`,
   
+  // Stage 6 endpoints
+  SPONTANEOUS_SPEECH_TOPICS: `${BASE_API_URL}/api/spontaneous-speech-topics`,
+  SPONTANEOUS_SPEECH_TOPIC: (topicId: number) => `${BASE_API_URL}/api/spontaneous-speech-topics/${topicId}`,
+  SPONTANEOUS_SPEECH: (topicId: number) => `${BASE_API_URL}/api/spontaneous-speech/${topicId}`,
+  EVALUATE_SPONTANEOUS_SPEECH: `${BASE_API_URL}/api/evaluate-spontaneous-speech`,
+  
   // Health check
   HEALTH_CHECK: `${BASE_API_URL}/api/healthcheck`,
 } as const;
