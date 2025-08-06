@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -141,7 +142,7 @@ const NewsSummaryScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ const NewsSummaryScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -191,7 +192,7 @@ const NewsSummaryScreen = () => {
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +229,7 @@ const NewsSummaryScreen = () => {
     try {
       console.log('🔄 [NEWS] Loading total news items count');
       
-      const response = await fetch(`${BASE_API_URL}/api/news-summary-items`);
+      const response = await authenticatedFetch(API_ENDPOINTS.NEWS_SUMMARIES);
       const result = await response.json();
       
       if (result.news_items) {
@@ -247,7 +248,7 @@ const NewsSummaryScreen = () => {
       setIsLoading(true);
       console.log('🔄 [NEWS] Loading news item with ID:', newsId);
       
-      const response = await fetch(`${BASE_API_URL}/api/news-summary-items/${newsId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.NEWS_SUMMARY(newsId));
       const result = await response.json();
       
       if (response.ok) {
@@ -275,7 +276,7 @@ const NewsSummaryScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await fetch(`${BASE_API_URL}/api/news-summary/${currentNewsId}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/news-summary/${currentNewsId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -366,7 +367,7 @@ const NewsSummaryScreen = () => {
       console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-news-summary`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_NEWS_SUMMARY, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

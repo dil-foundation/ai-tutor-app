@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -153,7 +154,7 @@ const AbstractTopicScreen = () => {
     if (!user?.id) return;
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/abstract-topic-progress/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/abstract-topic-progress/${user.id}`);
       const result = await response.json();
       
       if (result.success) {
@@ -174,7 +175,7 @@ const AbstractTopicScreen = () => {
     if (!user?.id) return;
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/abstract-topic-current-topic/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/abstract-topic-current-topic/${user.id}`);
       const result = await response.json();
       
       if (result.success) {
@@ -206,7 +207,7 @@ const AbstractTopicScreen = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/abstract-topics/${topicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.ABSTRACT_TOPIC(topicId));
       const topic = await response.json();
       
       if (topic.id) {
@@ -232,7 +233,7 @@ const AbstractTopicScreen = () => {
     setIsPlayingAudio(true);
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/abstract-topic/${currentTopic.id}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/abstract-topic/${currentTopic.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -398,7 +399,7 @@ const AbstractTopicScreen = () => {
       console.log('📊 [PROCESSING] Audio converted to base64');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-abstract-topic`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_ABSTRACT_TOPIC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -453,7 +454,7 @@ const AbstractTopicScreen = () => {
       console.log('🔄 [NAVIGATION] Getting next topic from backend...');
       
       // Get the current topic from backend (which should be the next topic after completion)
-      const response = await fetch(`${BASE_API_URL}/api/abstract-topic-current-topic/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/abstract-topic-current-topic/${user.id}`);
       const result = await response.json();
       
       if (result.success) {

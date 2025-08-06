@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -166,7 +167,7 @@ const MockInterviewScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +196,7 @@ const MockInterviewScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -215,7 +216,7 @@ const MockInterviewScreen = () => {
     try {
       console.log('🔄 [QUESTION] Loading current question for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +252,7 @@ const MockInterviewScreen = () => {
     try {
       console.log('🔄 [QUESTIONS] Loading total questions count');
       
-      const response = await fetch(`${BASE_API_URL}/api/mock-interview-questions`);
+      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEWS);
       const result = await response.json();
       
       if (result.questions) {
@@ -270,7 +271,7 @@ const MockInterviewScreen = () => {
       setIsLoading(true);
       console.log('🔄 [QUESTION] Loading question with ID:', questionId);
       
-      const response = await fetch(`${BASE_API_URL}/api/mock-interview-questions/${questionId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW(questionId));
       const result = await response.json();
       
       if (response.ok) {
@@ -296,7 +297,7 @@ const MockInterviewScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await fetch(`${BASE_API_URL}/api/mock-interview/${currentQuestionId}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/mock-interview/${currentQuestionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -503,7 +504,7 @@ const MockInterviewScreen = () => {
       console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-mock-interview`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_MOCK_INTERVIEW, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
 import { useAuth } from '../../../../context/AuthContext';
 import LoadingScreen from '../../../../components/LoadingScreen';
@@ -124,14 +125,16 @@ const RoleplayChatScreen = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/roleplay/start`, {
+      if (!user?.id) {
+        console.log("❌ [CHAT] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/roleplay/start`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           scenario_id: parseInt(params.scenarioId),
-          user_id: user?.id
+          user_id: user.id
         })
       });
 
@@ -262,19 +265,21 @@ const RoleplayChatScreen = () => {
     setError(null);
 
     try {
+      if (!user?.id) {
+        console.log("❌ [CHAT] User ID not available");
+        return;
+      }
+      
       const requestBody = {
         session_id: sessionId,
         user_input: text,
-        user_id: user?.id,
+        user_id: user.id,
         input_type: inputType,
         audio_base64: audioBase64
       };
 
-      const response = await fetch(`${BASE_API_URL}/api/roleplay/respond`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/roleplay/respond`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(requestBody)
       });
 
@@ -333,14 +338,16 @@ const RoleplayChatScreen = () => {
     setShowEvaluatingAnimation(true);
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/roleplay/evaluate`, {
+      if (!user?.id) {
+        console.log("❌ [CHAT] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/roleplay/evaluate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           session_id: sessionId,
-          user_id: user?.id,
+          user_id: user.id,
           time_spent_seconds: 300, // Estimate 5 minutes
           urdu_used: false
         })

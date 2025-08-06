@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -118,7 +119,7 @@ const AcademicPresentationScreen = () => {
     }
 
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-user-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -149,7 +150,7 @@ const AcademicPresentationScreen = () => {
     }
 
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}/5/2`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}/5/2`);
       if (response.ok) {
         const data = await response.json();
         console.log('✅ [PROGRESS] User progress loaded:', data);
@@ -175,7 +176,7 @@ const AcademicPresentationScreen = () => {
   const loadCurrentTopic = async () => {
     console.log('🔄 [TOPIC] Loading current topic...');
     try {
-      const response = await fetch(`${BASE_API_URL}/api/academic-presentation-topics/${currentTopicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.ACADEMIC_PRESENTATION(currentTopicId));
       if (response.ok) {
         const topicData = await response.json();
         console.log('✅ [TOPIC] Topic loaded:', topicData);
@@ -194,7 +195,7 @@ const AcademicPresentationScreen = () => {
   const loadTotalTopics = async () => {
     console.log('🔄 [TOPICS] Loading total topics count...');
     try {
-      const response = await fetch(`${BASE_API_URL}/api/academic-presentation-topics`);
+      const response = await authenticatedFetch(API_ENDPOINTS.ACADEMIC_PRESENTATIONS);
       if (response.ok) {
         const data = await response.json();
         setTotalTopics(data.topics.length);
@@ -211,7 +212,7 @@ const AcademicPresentationScreen = () => {
   const loadTopic = async (topicId: number) => {
     console.log(`🔄 [TOPIC] Loading topic ${topicId}...`);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/academic-presentation-topics/${topicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.ACADEMIC_PRESENTATION(topicId));
       if (response.ok) {
         const topicData = await response.json();
         console.log('✅ [TOPIC] Topic loaded:', topicData);
@@ -236,7 +237,7 @@ const AcademicPresentationScreen = () => {
     }
 
     try {
-      const response = await fetch(`${BASE_API_URL}/api/academic-presentation/${currentTopic.id}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/academic-presentation/${currentTopic.id}`, {
         method: 'POST',
       });
 
@@ -320,7 +321,7 @@ const AcademicPresentationScreen = () => {
       setTimeSpent(timeSpent);
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-academic-presentation`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_ACADEMIC_PRESENTATION, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

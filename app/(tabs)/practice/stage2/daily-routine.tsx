@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
 import { useAuth } from '../../../../context/AuthContext';
 import { progressTracker, ProgressHelpers } from '../../../../utils/progressTracker';
@@ -157,13 +158,15 @@ const DailyRoutineScreen = () => {
   const initializeProgressTracking = async () => {
     console.log("🔄 [PROGRESS] Initializing progress tracking for Daily Routine");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id
+          user_id: user.id
         })
       });
 
@@ -191,7 +194,12 @@ const DailyRoutineScreen = () => {
   const loadUserProgress = async () => {
     console.log("🔄 [PROGRESS] Loading user progress for Daily Routine");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user?.id}`);
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       console.log("📊 [PROGRESS] User progress result:", result);
 
@@ -209,13 +217,15 @@ const DailyRoutineScreen = () => {
   const loadCurrentTopic = async () => {
     console.log("🔄 [PROGRESS] Loading current topic for Daily Routine");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id,
+          user_id: user.id,
           stage_id: 2,
           exercise_id: 1  // Exercise 1 (Daily Routine)
         })
@@ -244,7 +254,7 @@ const DailyRoutineScreen = () => {
   const loadTotalPhrases = async () => {
     console.log("🔄 [PHRASES] Loading total phrases count");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/daily-routine-phrases`);
+      const response = await authenticatedFetch(API_ENDPOINTS.DAILY_ROUTINES);
       const result = await response.json();
       console.log("📊 [PHRASES] Total phrases result:", result);
 
@@ -263,7 +273,7 @@ const DailyRoutineScreen = () => {
     console.log("🔄 [PHRASE] Loading phrase with ID:", currentTopicId);
     setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/daily-routine-phrases/${currentTopicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.DAILY_ROUTINE_PHRASE(currentTopicId));
       const result = await response.json();
       console.log("📊 [PHRASE] Phrase result:", result);
 
@@ -287,11 +297,8 @@ const DailyRoutineScreen = () => {
 
     console.log("🔄 [AUDIO] Playing phrase audio for ID:", currentTopicId);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/daily-routine/${currentTopicId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const response = await authenticatedFetch(API_ENDPOINTS.DAILY_ROUTINE(currentTopicId), {
+        method: 'POST'
       });
 
       const result = await response.json();
@@ -397,14 +404,10 @@ const DailyRoutineScreen = () => {
         urdu_used: false
       };
 
-      const evaluationUrl = `${BASE_API_URL}/api/evaluate-daily-routine`;
-      console.log('📡 [SCREEN] Sending evaluation request to:', evaluationUrl);
+      console.log('📡 [SCREEN] Sending evaluation request to:', API_ENDPOINTS.EVALUATE_DAILY_ROUTINE);
       
-      const evaluationResponse = await fetch(evaluationUrl, {
+      const evaluationResponse = await authenticatedFetch(API_ENDPOINTS.EVALUATE_DAILY_ROUTINE, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(evaluationRequest),
       });
 
