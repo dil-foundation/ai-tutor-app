@@ -158,6 +158,12 @@ export const API_ENDPOINTS = {
   SENSITIVE_SCENARIO: (scenarioId: number) => `${BASE_API_URL}/api/sensitive-scenario/${scenarioId}`,
   EVALUATE_SENSITIVE_SCENARIO: `${BASE_API_URL}/api/evaluate-sensitive-scenario`,
   
+  // Stage 6 Exercise 3 - Critical Opinion Builder endpoints
+  CRITICAL_OPINION_TOPICS: `${BASE_API_URL}/api/critical-opinion-topics`,
+  CRITICAL_OPINION_TOPIC: (topicId: number) => `${BASE_API_URL}/api/critical-opinion-topics/${topicId}`,
+  CRITICAL_OPINION_BUILDER: (topicId: number) => `${BASE_API_URL}/api/critical-opinion-builder/${topicId}`,
+  EVALUATE_CRITICAL_OPINION: `${BASE_API_URL}/api/evaluate-critical-opinion`,
+  
   // Health check
   HEALTH_CHECK: `${BASE_API_URL}/api/healthcheck`,
 } as const;
