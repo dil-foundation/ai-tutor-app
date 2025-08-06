@@ -152,6 +152,12 @@ export const API_ENDPOINTS = {
   SPONTANEOUS_SPEECH: (topicId: number) => `${BASE_API_URL}/api/spontaneous-speech/${topicId}`,
   EVALUATE_SPONTANEOUS_SPEECH: `${BASE_API_URL}/api/evaluate-spontaneous-speech`,
   
+  // Stage 6 Exercise 2 - Sensitive Scenario endpoints
+  SENSITIVE_SCENARIO_SCENARIOS: `${BASE_API_URL}/api/sensitive-scenario-scenarios`,
+  SENSITIVE_SCENARIO_SCENARIO: (scenarioId: number) => `${BASE_API_URL}/api/sensitive-scenario-scenarios/${scenarioId}`,
+  SENSITIVE_SCENARIO: (scenarioId: number) => `${BASE_API_URL}/api/sensitive-scenario/${scenarioId}`,
+  EVALUATE_SENSITIVE_SCENARIO: `${BASE_API_URL}/api/evaluate-sensitive-scenario`,
+  
   // Health check
   HEALTH_CHECK: `${BASE_API_URL}/api/healthcheck`,
 } as const;
