@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -141,7 +142,7 @@ const CriticalThinkingDialoguesScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ const CriticalThinkingDialoguesScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/critical-thinking-progress/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/critical-thinking-progress/${user.id}`);
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -191,7 +192,7 @@ const CriticalThinkingDialoguesScreen = () => {
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/critical-thinking-current-topic/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/critical-thinking-current-topic/${user.id}`);
 
       const result = await response.json();
       
@@ -218,7 +219,7 @@ const CriticalThinkingDialoguesScreen = () => {
     try {
       console.log('🔄 [TOPICS] Loading total topics count');
       
-      const response = await fetch(`${BASE_API_URL}/api/critical-thinking-topics`);
+      const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_THINKING_DIALOGUES);
       const result = await response.json();
       
       if (result.topics) {
@@ -237,7 +238,7 @@ const CriticalThinkingDialoguesScreen = () => {
       setIsLoading(true);
       console.log('🔄 [TOPIC] Loading topic with ID:', topicId);
       
-      const response = await fetch(`${BASE_API_URL}/api/critical-thinking-topics/${topicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_THINKING_DIALOGUE(topicId));
       const result = await response.json();
       
       if (response.ok) {
@@ -265,7 +266,7 @@ const CriticalThinkingDialoguesScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await fetch(`${BASE_API_URL}/api/critical-thinking/${currentTopicId}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/critical-thinking/${currentTopicId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -356,7 +357,7 @@ const CriticalThinkingDialoguesScreen = () => {
       console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-critical-thinking`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_CRITICAL_THINKING, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

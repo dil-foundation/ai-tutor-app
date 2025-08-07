@@ -1,147 +1,938 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+  TextInput,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../../../context/AuthContext';
+import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
+import LottieView from 'lottie-react-native';
+
+const { width, height } = Dimensions.get('window');
+
+interface Topic {
+  id: number;
+  topic: string;
+  category: string;
+  difficulty: string;
+  topic_type: string;
+  controversy_level: string;
+  expected_structure: string;
+  expected_keywords: string[];
+  vocabulary_focus: string[];
+  academic_expressions: string[];
+  model_response: string;
+  evaluation_criteria: any;
+}
+
+interface EvaluationResult {
+  success: boolean;
+  topic?: string;
+  expected_keywords?: string[];
+  vocabulary_focus?: string[];
+  academic_expressions?: string[];
+  user_text?: string;
+  evaluation?: any;
+  suggested_improvement?: string;
+  error?: string;
+  message?: string;
+  progress_recorded?: boolean;
+  unlocked_content?: string[];
+  keyword_matches?: number;
+  total_keywords?: number;
+  academic_expressions_used?: number;
+  total_academic_expressions?: number;
+}
 
 const CriticalOpinionBuilderScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { user } = useAuth();
+  
+  // Animation values
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(30));
+  const [scaleAnim] = useState(new Animated.Value(0.9));
+  const [cardScaleAnim] = useState(new Animated.Value(0.8));
+  const [buttonScaleAnim] = useState(new Animated.Value(1));
+  
+  // State management
+  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [currentTopicId, setCurrentTopicId] = useState(1);
+  const [totalTopics, setTotalTopics] = useState(10);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  
+  // Text input state
+  const [textInput, setTextInput] = useState('');
   const [wordCount, setWordCount] = useState(0);
-  const [text, setText] = useState("");
+  
+  // Audio hooks
+  const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
+    if (audioUri) {
+      await processRecording(audioUri);
+    }
+  });
+  const audioPlayer = useAudioPlayerFixed();
 
-  const handleTextChange = (inputText: string) => {
-    setText(inputText);
-    // Basic word count: split by space and filter empty strings
-    const words = inputText.split(/\s+/).filter(Boolean);
+  // Animation effects
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(cardScaleAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  // Initialize progress tracking
+  const initializeProgressTracking = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
+        method: 'POST',
+        body: JSON.stringify({ user_id: user.id }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log('✅ [PROGRESS] Progress tracking initialized');
+      }
+    } catch (error) {
+      console.error('❌ [PROGRESS] Error:', error);
+    }
+  };
+
+  // Load current topic
+  const loadCurrentTopic = async () => {
+    if (!user?.id || currentTopic) return;
+    try {
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: user.id,
+          stage_id: 6,
+          exercise_id: 3,
+        }),
+      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        const topicId = result.data.current_topic_id;
+        setCurrentTopicId(topicId);
+        await loadTopic(topicId);
+      } else {
+        await loadTopic(1);
+      }
+    } catch (error) {
+      console.error('❌ [TOPIC] Error:', error);
+      await loadTopic(1);
+    }
+  };
+
+  // Load total topics
+  const loadTotalTopics = async () => {
+    if (totalTopics > 0) return;
+    try {
+      const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_OPINION_TOPICS);
+      const result = await response.json();
+      if (result.topics) {
+        setTotalTopics(result.topics.length);
+      }
+    } catch (error) {
+      console.error('❌ [TOPICS] Error:', error);
+      setTotalTopics(10);
+    }
+  };
+
+  // Load specific topic
+  const loadTopic = async (topicId: number) => {
+    try {
+      setIsLoading(true);
+      const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_OPINION_TOPIC(topicId));
+      const result = await response.json();
+      if (response.ok) {
+        setCurrentTopic(result);
+      } else {
+        Alert.alert('Error', 'Failed to load topic. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ [TOPIC] Error:', error);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Play topic audio
+  const playTopicAudio = async () => {
+    if (!currentTopic || audioPlayer.state.isPlaying) return;
+    try {
+      setIsPlayingAudio(true);
+      const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_OPINION_BUILDER(currentTopicId), {
+        method: 'POST'
+      });
+      const result = await response.json();
+      if (response.ok && result.audio_base64) {
+        const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        await audioPlayer.loadAudio(audioUri);
+        await audioPlayer.playAudio();
+      } else {
+        Alert.alert('Error', 'Failed to play audio. Please try again.');
+      }
+    } catch (error) {
+      console.error("❌ [AUDIO] Error:", error);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsPlayingAudio(false);
+    }
+  };
+
+  // Handle text input change
+  const handleTextChange = (text: string) => {
+    setTextInput(text);
+    const words = text.split(/\s+/).filter(Boolean);
     setWordCount(words.length);
   };
 
+  // Start recording
+  const handleStartRecording = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant microphone permission.');
+        return;
+      }
+      await audioRecorder.startRecording();
+      setRecordingStartTime(Date.now());
+    } catch (error) {
+      console.error('❌ [RECORD] Error:', error);
+      Alert.alert('Error', 'Failed to start recording. Please try again.');
+    }
+  };
+
+  // Stop recording
+  const handleStopRecording = async () => {
+    try {
+      const uri = await audioRecorder.stopRecording();
+      const endTime = Date.now();
+      if (recordingStartTime) {
+        const timeSpentSeconds = Math.floor((endTime - recordingStartTime) / 1000);
+        setTimeSpent(timeSpentSeconds);
+      }
+      if (uri) {
+        await processRecording(uri);
+      } else {
+        Alert.alert('Error', 'No audio recorded. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ [RECORD] Error:', error);
+      Alert.alert('Error', 'Failed to stop recording. Please try again.');
+    }
+  };
+
+  // Process recording
+  const processRecording = async (audioUri: string) => {
+    if (!currentTopic || !user?.id) return;
+    try {
+      setIsEvaluating(true);
+      setShowEvaluatingAnimation(true);
+      
+      const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_CRITICAL_OPINION, {
+        method: 'POST',
+        body: JSON.stringify({
+          audio_base64: audioBase64,
+          topic_id: currentTopic.id,
+          filename: `critical_opinion_${currentTopic.id}_${Date.now()}.m4a`,
+          user_id: user.id,
+          time_spent_seconds: timeSpent,
+          urdu_used: false,
+        }),
+      });
+
+      const result: EvaluationResult = await response.json();
+      
+      if (result.success) {
+        setEvaluationResult(result);
+        setShowEvaluatingAnimation(false);
+        
+        router.push({
+          pathname: '/(tabs)/practice/stage6/feedback_12',
+          params: {
+            evaluationResult: JSON.stringify(result),
+            currentTopicId: currentTopicId.toString(),
+            totalTopics: totalTopics.toString(),
+          }
+        });
+      } else {
+        setShowEvaluatingAnimation(false);
+        if (result.error === 'no_speech_detected') {
+          Alert.alert('No Speech Detected', 'Please speak clearly and provide a complete opinion.');
+        } else {
+          Alert.alert('Error', result.message || 'Failed to evaluate your opinion.');
+        }
+      }
+    } catch (error) {
+      console.error('❌ [EVAL] Error:', error);
+      setShowEvaluatingAnimation(false);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  // Submit text response
+  const handleSubmitText = async () => {
+    if (!currentTopic || !user?.id || !textInput.trim()) {
+      Alert.alert('Error', 'Please enter your opinion before submitting.');
+      return;
+    }
+
+    if (wordCount < 50) {
+      Alert.alert('Error', 'Please write at least 50 words for a complete opinion.');
+      return;
+    }
+
+    try {
+      setIsEvaluating(true);
+      setShowEvaluatingAnimation(true);
+      
+      const mockAudioBase64 = 'mock_audio_data';
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_CRITICAL_OPINION, {
+        method: 'POST',
+        body: JSON.stringify({
+          audio_base64: mockAudioBase64,
+          topic_id: currentTopic.id,
+          filename: `critical_opinion_text_${currentTopic.id}_${Date.now()}.txt`,
+          user_id: user.id,
+          time_spent_seconds: Math.max(1, Math.floor(wordCount / 10)),
+          urdu_used: false,
+        }),
+      });
+
+      const result: EvaluationResult = await response.json();
+      
+      if (result.success) {
+        setEvaluationResult(result);
+        setShowEvaluatingAnimation(false);
+        
+        router.push({
+          pathname: '/(tabs)/practice/stage6/feedback_12',
+          params: {
+            evaluationResult: JSON.stringify(result),
+            currentTopicId: currentTopicId.toString(),
+            totalTopics: totalTopics.toString(),
+          }
+        });
+      } else {
+        setShowEvaluatingAnimation(false);
+        Alert.alert('Error', result.message || 'Failed to evaluate your opinion.');
+      }
+    } catch (error) {
+      console.error('❌ [EVAL] Error:', error);
+      setShowEvaluatingAnimation(false);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  // Initialize on mount
+  useEffect(() => {
+    const initialize = async () => {
+      if (!isProgressInitialized) {
+        await initializeProgressTracking();
+        setIsProgressInitialized(true);
+      }
+      
+      await loadTotalTopics();
+      
+      if (params.nextTopic === 'true' && params.currentTopicId) {
+        const nextTopicId = parseInt(params.currentTopicId as string);
+        setCurrentTopicId(nextTopicId);
+        await loadTopic(nextTopicId);
+      } else if (!currentTopic) {
+        await loadCurrentTopic();
+      }
+    };
+    
+    initialize();
+  }, [params.nextTopic, params.currentTopicId]);
+
+  // Update time spent during recording
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    
+    if (audioRecorder.state.isRecording && recordingStartTime) {
+      interval = setInterval(() => {
+        const currentTime = Date.now();
+        const elapsed = Math.floor((currentTime - recordingStartTime) / 1000);
+        setTimeSpent(elapsed);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [audioRecorder.state.isRecording, recordingStartTime]);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Critical Opinion Builder</Text>
-      </View>
+    <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradient}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {/* Header */}
+          <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/practice/stage6' })} style={styles.backButton}>
+              <View style={styles.backButtonCircle}>
+                <Ionicons name="arrow-back" size={24} color="#58D68D" />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={styles.titleContainer}>
+              <LinearGradient colors={['#58D68D', '#45B7A8']} style={styles.titleGradient}>
+                <Ionicons name="bulb" size={32} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={styles.headerTitle}>Critical Opinion Builder</Text>
+              <Text style={styles.headerSubtitle}>Build Strong Arguments</Text>
+              <Text style={styles.topicCounter}>Topic: {currentTopicId} of {totalTopics}</Text>
+            </View>
+          </Animated.View>
 
-      <ImageBackground
-        source={require("../../../../assets/images/critical-opinion-background.png")} // Update path
-        style={styles.imageBackground}
-      >
-        {/* <View style={styles.overlayContent}>
-          <Text style={styles.imageText}>
-            In the context of global climate change, should governments
-            prioritize economic growth or environmental sustainability? Discuss
-            the trade-offs and propose a balanced approach.
-          </Text>
-        </View> */}
-      </ImageBackground>
+          {/* Main Content Card */}
+          <Animated.View style={[styles.mainCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: cardScaleAnim }] }]}>
+            <LinearGradient colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']} style={styles.mainCardGradient}>
+              {isExerciseCompleted ? (
+                <View style={styles.completedContainer}>
+                  <Ionicons name="trophy" size={64} color="#58D68D" />
+                  <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
+                  <Text style={styles.completedText}>Congratulations! You have successfully completed all Critical Opinion Builder exercises.</Text>
+                </View>
+              ) : isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Ionicons name="hourglass-outline" size={48} color="#58D68D" />
+                  <Text style={styles.loadingText}>Loading topic...</Text>
+                </View>
+              ) : currentTopic ? (
+                <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                  <View style={styles.topicContainer}>
+                    <Text style={styles.topicText}>{currentTopic.topic}</Text>
+                    
+                    <View style={styles.structureContainer}>
+                      <Text style={styles.structureTitle}>Expected Structure:</Text>
+                      <Text style={styles.structureText}>{currentTopic.expected_structure}</Text>
+                    </View>
+                    
+                    <View style={styles.keywordsContainer}>
+                      <Text style={styles.keywordsTitle}>Key Words to Include:</Text>
+                      <View style={styles.keywordsList}>
+                        {currentTopic.expected_keywords.map((keyword, index) => (
+                          <View key={index} style={styles.keywordChip}>
+                            <Text style={styles.keywordText}>{keyword}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
 
-      <View style={styles.timerAndWordCountContainer}>
-        <Text style={styles.timerText}>90 seconds</Text>
-        <Text style={styles.wordCountText}>{wordCount}/100 words</Text>
-      </View>
+                    <View style={styles.expressionsContainer}>
+                      <Text style={styles.expressionsTitle}>Academic Expressions:</Text>
+                      <View style={styles.expressionsList}>
+                        {currentTopic.academic_expressions.map((expression, index) => (
+                          <View key={index} style={styles.expressionChip}>
+                            <Text style={styles.expressionText}>{expression}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
 
-      <TextInput
-        style={styles.textInput}
-        multiline
-        placeholder="Start typing your opinion here..."
-        onChangeText={handleTextChange}
-        value={text}
-      />
+                    <TouchableOpacity style={styles.playButton} onPress={playTopicAudio} disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}>
+                      <LinearGradient colors={["#58D68D", "#45B7A8"]} style={styles.playButtonGradient}>
+                        <Ionicons name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} size={36} color="#fff" />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.instructionText}>Listen to the topic and provide your critical opinion</Text>
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
+                  <Text style={styles.errorText}>Failed to load topic</Text>
+                </View>
+              )}
+            </LinearGradient>
+          </Animated.View>
 
-      <TouchableOpacity style={styles.speakButton}>
-        <Text style={styles.speakButtonText}>🎤 Speak</Text>
-      </TouchableOpacity>
-    </View>
+          {/* Text Input Section */}
+          <Animated.View style={[styles.inputContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.wordCountContainer}>
+              <Text style={styles.wordCountText}>{wordCount}/100 words</Text>
+              <Text style={styles.timeText}>90 seconds</Text>
+            </View>
+            
+            <TextInput
+              style={styles.textInput}
+              multiline
+              placeholder="Start typing your critical opinion here..."
+              onChangeText={handleTextChange}
+              value={textInput}
+              editable={!isEvaluating && !audioRecorder.state.isRecording}
+            />
+          </Animated.View>
+
+          {/* Action Buttons */}
+          <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: buttonScaleAnim }] }]}>
+            <TouchableOpacity
+              style={[styles.voiceButton, { shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8' }]}
+              onPress={() => {
+                if (audioRecorder.state.isRecording) {
+                  handleStopRecording();
+                } else {
+                  handleStartRecording();
+                }
+              }}
+              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+              activeOpacity={0.8}
+            >
+              <LinearGradient colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]} style={styles.voiceButtonGradient}>
+                <Ionicons name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} size={24} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.voiceButtonText}>
+                  {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Voice Opinion'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.submitButton, { opacity: textInput.trim().length > 0 && wordCount >= 50 ? 1 : 0.5 }]}
+              onPress={handleSubmitText}
+              disabled={isEvaluating || isLoading || isExerciseCompleted || textInput.trim().length === 0 || wordCount < 50}
+              activeOpacity={0.8}
+            >
+              <LinearGradient colors={["#3498DB", "#2980B9"]} style={styles.submitButtonGradient}>
+                <Ionicons name="send" size={24} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.submitButtonText}>
+                  {isEvaluating ? 'Processing...' : 'Submit Opinion'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        {/* Evaluating Animation Overlay */}
+        {showEvaluatingAnimation && (
+          <View style={styles.evaluatingOverlay}>
+            <View style={styles.animationContainer}>
+              <LottieView
+                source={require('../../../../assets/animations/evaluating.json')}
+                autoPlay
+                loop={true}
+                style={styles.evaluatingAnimation}
+              />
+            </View>
+            <View style={styles.evaluatingTextContainer}>
+              <Text style={styles.evaluatingTitle}>Evaluating...</Text>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: { flex: 1 },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 20 : 30,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 60,
+    paddingHorizontal: 24,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 50, // Adjust for status bar
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
   },
   backButton: {
-    fontSize: 24,
-    marginRight: 10,
+    position: 'absolute',
+    left: 0,
+    top: Platform.OS === 'ios' ? 0 : 10,
+    zIndex: 10,
+  },
+  backButtonCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.15)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
+  },
+  titleGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 12,
   },
   headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    opacity: 0.9,
+    marginBottom: 12,
+  },
+  topicCounter: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  imageBackground: {
-    padding: 10,
-    height: 480, // Adjust as needed
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-    borderRadius: 50,
-    overflow: 'hidden',
-    // margin: 14,
-    width: '100%'
-
+  mainCard: {
+    width: '100%',
+    flex: 1,
+    marginBottom: 20,
   },
-  overlayContent: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Dark overlay for text visibility
-    padding: 15,
-    borderRadius: 5,
-    marginHorizontal: "5%", // Add some horizontal margin
+  mainCardGradient: {
+    flex: 1,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  imageText: {
-    color: "#fff",
-    fontSize: 15,
-    textAlign: "center",
-    fontWeight: "bold",
+  scrollContainer: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
+  completedContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
-  timerAndWordCountContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 15,
+  completedTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#58D68D',
+    marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  timerText: {
+  completedText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#58D68D',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  topicContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  topicText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 28,
+  },
+  structureContainer: {
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+  },
+  structureTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  structureText: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#555",
+    color: '#666666',
+    lineHeight: 20,
+  },
+  keywordsContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  keywordsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  keywordsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  keywordChip: {
+    backgroundColor: '#58D68D',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  keywordText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  expressionsContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  expressionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  expressionsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  expressionChip: {
+    backgroundColor: '#3498DB',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  expressionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  playButton: {
+    marginBottom: 20,
+  },
+  playButtonGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  wordCountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   wordCountText: {
     fontSize: 14,
-    color: "#555",
+    color: '#666666',
+    fontWeight: '600',
+  },
+  timeText: {
+    fontSize: 14,
+    color: '#666666',
+    fontWeight: '600',
   },
   textInput: {
-    flex: 1, // Allow text input to take available space
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginHorizontal: 20,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
-    textAlignVertical: "top", // Start text from the top
-    minHeight: 100, // Minimum height
+    textAlignVertical: 'top',
+    minHeight: 120,
+    backgroundColor: '#FFFFFF',
+    color: '#333333',
   },
-  speakButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
+  buttonContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  voiceButton: {
+    flex: 1,
+    borderRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  voiceButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  voiceButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  submitButton: {
+    flex: 1,
+    borderRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  submitButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  evaluatingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
     paddingHorizontal: 20,
-    borderRadius: 25,
-    marginHorizontal: "25%",
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 20,
   },
-  speakButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  animationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    maxHeight: height * 0.6,
+  },
+  evaluatingAnimation: {
+    width: Math.min(width * 0.7, height * 0.5),
+    height: Math.min(width * 0.7, height * 0.5),
+    alignSelf: 'center',
+  },
+  evaluatingTextContainer: {
+    position: 'absolute',
+    bottom: height * 0.15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  evaluatingTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
 });
 

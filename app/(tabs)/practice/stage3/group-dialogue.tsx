@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -126,7 +127,7 @@ const GroupDialogueScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,14 +157,14 @@ const GroupDialogueScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       
       if (result.success && result.data) {
         console.log('✅ [PROGRESS] User progress loaded successfully');
         
         // Check if exercise is completed
-        const topicProgress = await fetch(`${BASE_API_URL}/api/group-dialogue-progress/${user.id}`);
+        const topicProgress = await authenticatedFetch(`${BASE_API_URL}/api/group-dialogue-progress/${user.id}`);
         const topicResult = await topicProgress.json();
         
         if (topicResult.success && topicResult.topic_progress) {
@@ -190,7 +191,7 @@ const GroupDialogueScreen = () => {
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +228,7 @@ const GroupDialogueScreen = () => {
     try {
       console.log('🔄 [SCENARIOS] Loading total scenarios count');
       
-      const response = await fetch(`${BASE_API_URL}/api/group-dialogue-scenarios`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GROUP_DIALOGUES);
       const result = await response.json();
       
       if (result.scenarios) {
@@ -246,7 +247,7 @@ const GroupDialogueScreen = () => {
       setIsLoading(true);
       console.log('🔄 [SCENARIO] Loading scenario with ID:', scenarioId);
       
-      const response = await fetch(`${BASE_API_URL}/api/group-dialogue-scenarios/${scenarioId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GROUP_DIALOGUE(scenarioId));
       const result = await response.json();
       
       if (response.ok) {
@@ -274,7 +275,7 @@ const GroupDialogueScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await fetch(`${BASE_API_URL}/api/group-dialogue/${currentScenarioId}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/group-dialogue/${currentScenarioId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -401,7 +402,7 @@ const GroupDialogueScreen = () => {
       console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-group-dialogue`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_GROUP_DIALOGUE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

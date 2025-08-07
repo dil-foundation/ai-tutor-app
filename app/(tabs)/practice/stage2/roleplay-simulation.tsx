@@ -15,7 +15,8 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import { useAuth } from '../../../../context/AuthContext';
 import LoadingScreen from '../../../../components/LoadingScreen';
 
@@ -105,7 +106,12 @@ const RoleplaySimulationScreen = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${BASE_API_URL}/api/roleplay-scenarios?user_id=${user?.id}`);
+      if (!user?.id) {
+        console.log("❌ [ROLEPLAY] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(`${API_ENDPOINTS.ROLEPLAY_SCENARIOS}?user_id=${user.id}`);
       const result = await response.json();
       
       console.log("📊 [ROLEPLAY] Scenarios response:", result);

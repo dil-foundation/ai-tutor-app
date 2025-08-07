@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
 import { useAuth } from '../../../../context/AuthContext';
 import { progressTracker, ProgressHelpers } from '../../../../utils/progressTracker';
@@ -156,13 +157,15 @@ const QuickAnswerScreen = () => {
   const initializeProgressTracking = async () => {
     console.log("🔄 [PROGRESS] Initializing progress tracking for Quick Answer");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id
+          user_id: user.id
         })
       });
 
@@ -190,7 +193,12 @@ const QuickAnswerScreen = () => {
   const loadUserProgress = async () => {
     console.log("🔄 [PROGRESS] Loading user progress for Quick Answer");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user?.id}`);
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       console.log("📊 [PROGRESS] User progress result:", result);
 
@@ -208,13 +216,15 @@ const QuickAnswerScreen = () => {
   const loadCurrentTopic = async () => {
     console.log("🔄 [PROGRESS] Loading current topic for Quick Answer");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id,
+          user_id: user.id,
           stage_id: 2,
           exercise_id: 2  // Exercise 2 (Quick Answer)
         })
@@ -243,7 +253,7 @@ const QuickAnswerScreen = () => {
   const loadTotalQuestions = async () => {
     console.log("🔄 [QUESTIONS] Loading total questions count");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/quick-answer-questions`);
+      const response = await authenticatedFetch(API_ENDPOINTS.QUICK_ANSWERS);
       const result = await response.json();
       console.log("📊 [QUESTIONS] Total questions result:", result);
 
@@ -262,7 +272,7 @@ const QuickAnswerScreen = () => {
     console.log("🔄 [QUESTION] Loading question with ID:", currentTopicId);
     setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/quick-answer-questions/${currentTopicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.QUICK_ANSWER_QUESTION(currentTopicId));
       const result = await response.json();
       console.log("📊 [QUESTION] Question result:", result);
 
@@ -286,11 +296,8 @@ const QuickAnswerScreen = () => {
 
     console.log("🔄 [AUDIO] Playing question audio for ID:", currentTopicId);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/quick-answer/${currentTopicId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const response = await authenticatedFetch(API_ENDPOINTS.QUICK_ANSWER(currentTopicId), {
+        method: 'POST'
       });
 
       const result = await response.json();
@@ -396,14 +403,10 @@ const QuickAnswerScreen = () => {
         urdu_used: false
       };
 
-      const evaluationUrl = `${BASE_API_URL}/api/evaluate-quick-answer`;
-      console.log('📡 [SCREEN] Sending evaluation request to:', evaluationUrl);
+      console.log('📡 [SCREEN] Sending evaluation request to:', API_ENDPOINTS.EVALUATE_QUICK_ANSWER);
       
-      const evaluationResponse = await fetch(evaluationUrl, {
+      const evaluationResponse = await authenticatedFetch(API_ENDPOINTS.EVALUATE_QUICK_ANSWER, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(evaluationRequest),
       });
 

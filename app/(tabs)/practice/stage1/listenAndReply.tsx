@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
 import { useAuth } from '../../../../context/AuthContext';
 import { progressTracker, ProgressHelpers } from '../../../../utils/progressTracker';
@@ -152,13 +153,15 @@ const ListenAndReplyScreen = () => {
   const initializeProgressTracking = async () => {
     console.log("🔄 [PROGRESS] Initializing progress tracking for Listen and Reply");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id
+          user_id: user.id
         })
       });
 
@@ -186,7 +189,12 @@ const ListenAndReplyScreen = () => {
   const loadUserProgress = async () => {
     console.log("🔄 [PROGRESS] Loading user progress for Listen and Reply");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user?.id}`);
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       console.log("📊 [PROGRESS] User progress result:", result);
 
@@ -204,13 +212,15 @@ const ListenAndReplyScreen = () => {
   const loadCurrentTopic = async () => {
     console.log("🔄 [PROGRESS] Loading current topic for Listen and Reply");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/progress/get-current-topic`, {
+      if (!user?.id) {
+        console.log("❌ [PROGRESS] User ID not available");
+        return;
+      }
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          user_id: user?.id,
+          user_id: user.id,
           stage_id: 1,
           exercise_id: 3  // Exercise 3 (Listen and Reply)
         })
@@ -239,7 +249,7 @@ const ListenAndReplyScreen = () => {
   const loadTotalDialogues = async () => {
     console.log("🔄 [DIALOGUES] Loading total dialogues count");
     try {
-      const response = await fetch(`${BASE_API_URL}/api/dialogues`);
+      const response = await authenticatedFetch(API_ENDPOINTS.DIALOGUES);
       const result = await response.json();
       console.log("📊 [DIALOGUES] Total dialogues result:", result);
 
@@ -258,7 +268,7 @@ const ListenAndReplyScreen = () => {
     console.log("🔄 [DIALOGUE] Loading dialogue with ID:", currentTopicId);
     setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/dialogues/${currentTopicId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.DIALOGUE(currentTopicId));
       const result = await response.json();
       console.log("📊 [DIALOGUE] Dialogue result:", result);
 
@@ -282,11 +292,8 @@ const ListenAndReplyScreen = () => {
 
     console.log("🔄 [AUDIO] Playing dialogue audio for ID:", currentTopicId);
     try {
-      const response = await fetch(`${BASE_API_URL}/api/listen-and-reply/${currentTopicId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const response = await authenticatedFetch(API_ENDPOINTS.LISTEN_AND_REPLY(currentTopicId), {
+        method: 'POST'
       });
 
       const result = await response.json();
@@ -392,14 +399,10 @@ const ListenAndReplyScreen = () => {
         urdu_used: false
       };
 
-      const evaluationUrl = `${BASE_API_URL}/api/evaluate-listen-reply`;
-      console.log('📡 [SCREEN] Sending evaluation request to:', evaluationUrl);
+      console.log('📡 [SCREEN] Sending evaluation request to:', API_ENDPOINTS.EVALUATE_LISTEN_REPLY);
       
-      const evaluationResponse = await fetch(evaluationUrl, {
+      const evaluationResponse = await authenticatedFetch(API_ENDPOINTS.EVALUATE_LISTEN_REPLY, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(evaluationRequest),
       });
 

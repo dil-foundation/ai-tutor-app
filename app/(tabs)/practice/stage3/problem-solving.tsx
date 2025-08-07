@@ -20,7 +20,8 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL from '../../../../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -120,7 +121,7 @@ const ProblemSolvingScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/initialize-progress`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,14 +151,14 @@ const ProblemSolvingScreen = () => {
     try {
       console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
       const result = await response.json();
       
       if (result.success && result.data) {
         console.log('✅ [PROGRESS] User progress loaded successfully');
         
         // Check if exercise is completed
-        const topicProgress = await fetch(`${BASE_API_URL}/api/problem-solving-progress/${user.id}`);
+        const topicProgress = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-progress/${user.id}`);
         const topicResult = await topicProgress.json();
         
         if (topicResult.success && topicResult.topic_progress) {
@@ -184,7 +185,7 @@ const ProblemSolvingScreen = () => {
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
       
-      const response = await fetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
 
       const result = await response.json();
       
@@ -211,7 +212,7 @@ const ProblemSolvingScreen = () => {
     try {
       console.log('🔄 [SCENARIOS] Loading total scenarios count');
       
-      const response = await fetch(`${BASE_API_URL}/api/problem-solving-scenarios`);
+      const response = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_SCENARIOS);
       const result = await response.json();
       
       if (result.scenarios) {
@@ -230,7 +231,7 @@ const ProblemSolvingScreen = () => {
       setIsLoading(true);
       console.log('🔄 [SCENARIO] Loading scenario with ID:', scenarioId);
       
-      const response = await fetch(`${BASE_API_URL}/api/problem-solving-scenarios/${scenarioId}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_SCENARIO(scenarioId));
       const result = await response.json();
       
       if (response.ok) {
@@ -258,7 +259,7 @@ const ProblemSolvingScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await fetch(`${BASE_API_URL}/api/problem-solving/${currentScenarioId}`, {
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving/${currentScenarioId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -369,7 +370,7 @@ const ProblemSolvingScreen = () => {
       console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
       
       // Send for evaluation
-      const response = await fetch(`${BASE_API_URL}/api/evaluate-problem-solving`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_PROBLEM_SOLVING, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -424,7 +425,7 @@ const ProblemSolvingScreen = () => {
       console.log('🔄 [NAVIGATION] Getting next scenario from backend...');
       
       // Get the current topic from backend (which should be the next topic after completion)
-      const response = await fetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
+      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
       const result = await response.json();
       
       if (result.success) {

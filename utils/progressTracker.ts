@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
-import BASE_API_URL from '../config/api';
+import BASE_API_URL, { API_ENDPOINTS } from '../config/api';
+import { authenticatedFetch } from './authUtils';
 
 // Types for progress tracking
 export interface TopicAttempt {
@@ -181,12 +182,12 @@ class ProgressTracker {
     try {
       console.log(`📡 [FRONTEND] API Request: ${options.method || 'GET'} ${url}`);
       
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
+        ...options,
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
         },
-        ...options,
       });
 
       console.log(`📥 [FRONTEND] Response status: ${response.status}`);
@@ -258,10 +259,10 @@ class ProgressTracker {
       }
 
       console.log('🔄 [FRONTEND] Initializing progress for user:', this.currentUser.id);
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/initialize-progress`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.INITIALIZE_PROGRESS);
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/initialize-progress`,
+        API_ENDPOINTS.INITIALIZE_PROGRESS,
         {
         method: 'POST',
         body: JSON.stringify({
@@ -319,10 +320,10 @@ class ProgressTracker {
         throw new Error('Invalid topic attempt data');
       }
 
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/record-topic-attempt`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.RECORD_TOPIC_ATTEMPT);
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/record-topic-attempt`,
+        API_ENDPOINTS.RECORD_TOPIC_ATTEMPT,
         {
         method: 'POST',
         body: JSON.stringify({
@@ -375,10 +376,10 @@ class ProgressTracker {
       }
 
       console.log('📈 [FRONTEND] Getting progress for user:', this.currentUser.id);
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/user-progress/${this.currentUser.id}`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.GET_USER_PROGRESS(this.currentUser.id));
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/user-progress/${this.currentUser.id}`,
+        API_ENDPOINTS.GET_USER_PROGRESS(this.currentUser.id),
         { method: 'GET' }
       );
 
@@ -430,10 +431,10 @@ class ProgressTracker {
       }
 
       console.log('📈 [FRONTEND] Getting comprehensive progress for user:', this.currentUser.id);
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/comprehensive-progress`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.COMPREHENSIVE_PROGRESS);
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/comprehensive-progress`,
+        API_ENDPOINTS.COMPREHENSIVE_PROGRESS,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -496,10 +497,10 @@ class ProgressTracker {
         throw new Error('Invalid exercise_id (must be 1-3)');
       }
 
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/get-current-topic`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.GET_CURRENT_TOPIC);
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/get-current-topic`,
+        API_ENDPOINTS.GET_CURRENT_TOPIC,
         {
         method: 'POST',
         body: JSON.stringify({
@@ -551,10 +552,10 @@ class ProgressTracker {
       }
 
       console.log('🔓 [FRONTEND] Checking content unlocks for user:', this.currentUser.id);
-      console.log('📡 [FRONTEND] API URL:', `${BASE_API_URL}/api/progress/check-unlocks/${this.currentUser.id}`);
+      console.log('📡 [FRONTEND] API URL:', API_ENDPOINTS.CHECK_UNLOCKS(this.currentUser.id));
 
       const result = await this.makeApiRequest<ProgressResponse>(
-        `${BASE_API_URL}/api/progress/check-unlocks/${this.currentUser.id}`,
+        API_ENDPOINTS.CHECK_UNLOCKS(this.currentUser.id),
         { method: 'POST' }
       );
 
