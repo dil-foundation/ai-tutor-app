@@ -78,7 +78,7 @@ export const API_ENDPOINTS = {
   PHRASES: `${BASE_API_URL}/api/phrases`,
   PHRASE: (phraseId: number) => `${BASE_API_URL}/api/phrases/${phraseId}`,
   REPEAT_AFTER_ME: (topicId: number) => `${BASE_API_URL}/api/repeat-after-me/${topicId}`,
-  EVALUATE_REPEAT_AFTER_ME: `${BASE_API_URL}/api/evaluate-repeat-after-me`,
+  EVALUATE_REPEAT_AFTER_ME: `${BASE_API_URL}/api/evaluate-audio`,
   
   // Quick Response endpoints
   PROMPTS: `${BASE_API_URL}/api/prompts`,

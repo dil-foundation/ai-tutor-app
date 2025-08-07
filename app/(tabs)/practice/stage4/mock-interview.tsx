@@ -22,6 +22,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
 import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
+import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,6 +63,13 @@ interface EvaluationResult {
   answer_relevance_score?: number;
   confidence_tone_score?: number;
   interview_vocabulary_score?: number;
+  score?: number;
+  is_correct?: boolean;
+  completed?: boolean;
+  response_type?: string;
+  vocabulary_matches?: string[];
+  total_vocabulary?: number;
+  matched_vocabulary_count?: number;
 }
 
 const MockInterviewScreen = () => {
@@ -69,14 +77,12 @@ const MockInterviewScreen = () => {
   const params = useLocalSearchParams();
   const { user } = useAuth();
   
-  // Animation values
+  // Animation values - matching storytelling.tsx pattern
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.9));
   const [cardScaleAnim] = useState(new Animated.Value(0.8));
   const [buttonScaleAnim] = useState(new Animated.Value(1));
-  const [pulseAnim] = useState(new Animated.Value(1));
-  const [rotateAnim] = useState(new Animated.Value(0));
   
   // State management
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
@@ -93,32 +99,9 @@ const MockInterviewScreen = () => {
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
   
-  // Timer states
-  const [showThinkingTimer, setShowThinkingTimer] = useState(false);
-  const [showSpeakingTimer, setShowSpeakingTimer] = useState(false);
-  const [isThinkingPhase, setIsThinkingPhase] = useState(false);
-  const [isSpeakingPhase, setIsSpeakingPhase] = useState(false);
-  const [thinkingTimeLeft, setThinkingTimeLeft] = useState(15);
-  const [speakingTimeLeft, setSpeakingTimeLeft] = useState(90);
-  
-  // Timer refs
-  const thinkingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const speakingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  
-  // Audio hooks
+  // Audio hooks - matching storytelling.tsx pattern
   const audioRecorder = useAudioRecorder(90000, async (audioUri) => {
-    console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
-    
-    // Clear any active timers
-    if (speakingTimerRef.current) {
-      clearInterval(speakingTimerRef.current);
-      speakingTimerRef.current = null;
-    }
-    
-    // Reset speaking phase states
-    setShowSpeakingTimer(false);
-    setIsSpeakingPhase(false);
-    
+    console.log('🔄 [AUTO-STOP] Auto-stop callback triggered for mock interview!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
       await processRecording(audioUri);
@@ -132,9 +115,10 @@ const MockInterviewScreen = () => {
       });
     }
   });
+  
   const audioPlayer = useAudioPlayerFixed();
 
-  // Animation effects
+  // Animation effects - matching storytelling.tsx
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -160,7 +144,7 @@ const MockInterviewScreen = () => {
     ]).start();
   }, []);
 
-  // Initialize progress tracking
+  // Initialize progress tracking - matching storytelling.tsx pattern
   const initializeProgressTracking = async () => {
     if (!user?.id) return;
     
@@ -169,9 +153,6 @@ const MockInterviewScreen = () => {
       
       const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: user.id,
         }),
@@ -189,7 +170,7 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Load user progress
+  // Load user progress - matching storytelling.tsx pattern
   const loadUserProgress = async () => {
     if (!user?.id) return;
     
@@ -201,6 +182,7 @@ const MockInterviewScreen = () => {
       
       if (result.success && result.data) {
         console.log('✅ [PROGRESS] User progress loaded successfully');
+        // Handle progress data if needed
       } else {
         console.log('⚠️ [PROGRESS] Failed to load user progress:', result.error);
       }
@@ -209,18 +191,15 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Load current question
+  // Load current question - matching storytelling.tsx pattern
   const loadCurrentQuestion = async () => {
-    if (!user?.id || currentQuestion) return;
+    if (!user?.id || currentQuestion) return; // Skip if we already have a question
     
     try {
       console.log('🔄 [QUESTION] Loading current question for user:', user.id);
       
       const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: user.id,
           stage_id: 4,
@@ -245,8 +224,9 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Load total questions
+  // Load total questions - matching storytelling.tsx pattern
   const loadTotalQuestions = async () => {
+    // Only load if we don't already have the total questions
     if (totalQuestions > 0) return;
     
     try {
@@ -265,7 +245,7 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Load specific question
+  // Load specific question - matching storytelling.tsx pattern
   const loadQuestion = async (questionId: number) => {
     try {
       setIsLoading(true);
@@ -277,6 +257,8 @@ const MockInterviewScreen = () => {
       if (response.ok) {
         setCurrentQuestion(result);
         console.log('✅ [QUESTION] Question loaded successfully:', result.question);
+        
+        // Audio will be loaded when play button is clicked
       } else {
         console.log('❌ [QUESTION] Failed to load question:', result.detail);
         Alert.alert('Error', 'Failed to load question. Please try again.');
@@ -289,7 +271,7 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Play question audio
+  // Play question audio - matching storytelling.tsx pattern
   const playQuestionAudio = async () => {
     if (!currentQuestion || audioPlayer.state.isPlaying) return;
 
@@ -297,11 +279,8 @@ const MockInterviewScreen = () => {
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(`${BASE_API_URL}/api/mock-interview/${currentQuestionId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW(currentQuestionId), {
+        method: 'POST'
       });
 
       const result = await response.json();
@@ -324,103 +303,14 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Start thinking phase
-  const startThinkingPhase = async () => {
-    console.log('🔄 [THINKING] Starting thinking phase...');
-    
-    // Clear any existing timers
-    if (thinkingTimerRef.current) {
-      clearInterval(thinkingTimerRef.current);
-      thinkingTimerRef.current = null;
-    }
-    if (speakingTimerRef.current) {
-      clearInterval(speakingTimerRef.current);
-      speakingTimerRef.current = null;
-    }
-    
-    // Reset states
-    setShowSpeakingTimer(false);
-    setIsSpeakingPhase(false);
-    setSpeakingTimeLeft(90);
-    
-    // Start thinking phase
-    setShowThinkingTimer(true);
-    setIsThinkingPhase(true);
-    setThinkingTimeLeft(15);
-    
-    // Start thinking timer
-    thinkingTimerRef.current = setInterval(() => {
-      setThinkingTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(thinkingTimerRef.current!);
-          thinkingTimerRef.current = null;
-          setShowThinkingTimer(false);
-          setIsThinkingPhase(false);
-          
-          // Automatically start speaking phase after thinking
-          setTimeout(() => {
-            startSpeakingPhase();
-          }, 500); // Small delay for smooth transition
-          
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Start speaking phase
-  const startSpeakingPhase = async () => {
-    console.log('🔄 [SPEAKING] Starting speaking phase...');
-    
-    // Clear any existing timers
-    if (speakingTimerRef.current) {
-      clearInterval(speakingTimerRef.current);
-      speakingTimerRef.current = null;
-    }
-    
-    // Start recording first
-    try {
-      await handleStartRecording();
-    } catch (error) {
-      console.error('❌ [SPEAKING] Failed to start recording:', error);
-      return;
-    }
-    
-    // Start speaking phase
-    setShowSpeakingTimer(true);
-    setIsSpeakingPhase(true);
-    setSpeakingTimeLeft(90);
-    
-    // Start speaking timer
-    speakingTimerRef.current = setInterval(() => {
-      setSpeakingTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(speakingTimerRef.current!);
-          speakingTimerRef.current = null;
-          setShowSpeakingTimer(false);
-          setIsSpeakingPhase(false);
-          
-          // Automatically stop recording when time is up
-          setTimeout(() => {
-            handleStopRecording();
-          }, 500); // Small delay for smooth transition
-          
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Start recording
+  // Start recording - matching storytelling.tsx pattern
   const handleStartRecording = async () => {
     try {
       console.log('🔄 [RECORD] Starting recording...');
       
       const { status } = await Audio.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant microphone permission to record your interview response.');
+        Alert.alert('Permission Required', 'Please grant microphone permission to record your answer.');
         return;
       }
 
@@ -433,20 +323,10 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Stop recording
+  // Stop recording - matching storytelling.tsx pattern
   const handleStopRecording = async () => {
     try {
       console.log('🔄 [RECORD] Stopping recording...');
-      
-      // Clear speaking timer if it's running
-      if (speakingTimerRef.current) {
-        clearInterval(speakingTimerRef.current);
-        speakingTimerRef.current = null;
-      }
-      
-      // Reset speaking phase states
-      setShowSpeakingTimer(false);
-      setIsSpeakingPhase(false);
       
       const uri = await audioRecorder.stopRecording();
       const endTime = Date.now();
@@ -470,7 +350,7 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Process recording
+  // Process recording - matching storytelling.tsx pattern
   const processRecording = async (audioUri: string) => {
     if (!currentQuestion || !user?.id) return;
     
@@ -478,23 +358,6 @@ const MockInterviewScreen = () => {
       setIsEvaluating(true);
       setShowEvaluatingAnimation(true);
       console.log('🔄 [EVAL] Processing recording...');
-      
-      // Stop speaking timer and clear it when evaluation starts
-      if (speakingTimerRef.current) {
-        clearInterval(speakingTimerRef.current);
-        speakingTimerRef.current = null;
-      }
-      setShowSpeakingTimer(false);
-      setIsSpeakingPhase(false);
-      
-      // Start rotation animation
-      Animated.loop(
-        Animated.timing(rotateAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        })
-      ).start();
       
       // Read audio file as base64
       const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
@@ -506,9 +369,6 @@ const MockInterviewScreen = () => {
       // Send for evaluation
       const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_MOCK_INTERVIEW, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           audio_base64: audioBase64,
           question_id: currentQuestion.id,
@@ -522,14 +382,33 @@ const MockInterviewScreen = () => {
       const result: EvaluationResult = await response.json();
       console.log('📊 [EVAL] Evaluation result:', result);
       
-      if (result.success !== undefined) {
+      // Debug the evaluation condition
+      console.log('🔍 [EVAL] Checking evaluation condition:');
+      console.log('  - result.success:', result.success);
+      console.log('  - result.evaluation:', !!result.evaluation);
+      console.log('  - result.score:', result.score);
+      console.log('  - result.score !== undefined:', result.score !== undefined);
+      
+      // Check if evaluation was successful (has evaluation data or score)
+      const hasEvaluationData = result.success || result.evaluation || result.score !== undefined || result.fluency_score !== undefined;
+      console.log('🔍 [EVAL] Has evaluation data:', hasEvaluationData);
+      
+      if (hasEvaluationData) {
         setEvaluationResult(result);
         setShowEvaluatingAnimation(false);
         console.log('✅ [EVAL] Evaluation completed successfully');
         
         // Navigate to feedback screen
+        console.log('🔄 [NAV] Navigating to feedback screen...');
+        console.log('🔄 [NAV] Pathname: /(tabs)/practice/stage4/feedback_5');
+        console.log('🔄 [NAV] Params:', {
+          evaluationResult: JSON.stringify(result).substring(0, 100) + '...',
+          currentQuestionId: currentQuestionId.toString(),
+          totalQuestions: totalQuestions.toString(),
+        });
+        
         router.push({
-          pathname: '/(tabs)/practice/stage4/feedback_5' as any,
+          pathname: '/(tabs)/practice/stage4/feedback_5',
           params: {
             evaluationResult: JSON.stringify(result),
             currentQuestionId: currentQuestionId.toString(),
@@ -559,7 +438,7 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Move to next question
+  // Move to next question - matching storytelling.tsx pattern
   const moveToNextQuestion = () => {
     if (currentQuestionId < totalQuestions) {
       const nextQuestionId = currentQuestionId + 1;
@@ -578,46 +457,18 @@ const MockInterviewScreen = () => {
     }
   };
 
-  // Handle feedback return
-  const handleFeedbackReturn = async () => {
-    if (evaluationResult?.success) {
-      await moveToNextQuestion();
-    }
+  // Handle navigation back from feedback screen - matching storytelling.tsx pattern
+  const handleFeedbackReturn = () => {
+    // Reset evaluation result when returning from feedback
     setEvaluationResult(null);
     
-    // Reset all state to initial values
-    setShowFeedback(false);
-    setShowEvaluatingAnimation(false);
-    setIsEvaluating(false);
-    setShowThinkingTimer(false);
-    setShowSpeakingTimer(false);
-    setIsThinkingPhase(false);
-    setIsSpeakingPhase(false);
-    setThinkingTimeLeft(15);
-    setSpeakingTimeLeft(90);
-    setTimeSpent(0);
-    setRecordingStartTime(null);
-    
-    // Stop any ongoing animations
-    pulseAnim.stopAnimation();
-    pulseAnim.setValue(1);
-    rotateAnim.stopAnimation();
-    rotateAnim.setValue(0);
-    
-    // Clear any active timers
-    if (thinkingTimerRef.current) {
-      clearInterval(thinkingTimerRef.current);
-      thinkingTimerRef.current = null;
+    // Check if we should move to next question
+    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+      moveToNextQuestion();
     }
-    if (speakingTimerRef.current) {
-      clearInterval(speakingTimerRef.current);
-      speakingTimerRef.current = null;
-    }
-    
-    console.log('🔄 [RESET] All state reset to initial values');
   };
 
-  // Animate button press
+  // Animate button press - matching storytelling.tsx pattern
   const animateButtonPress = () => {
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -633,7 +484,7 @@ const MockInterviewScreen = () => {
     ]).start();
   };
 
-  // Initialize on mount
+  // Initialize on mount - matching storytelling.tsx pattern
   useEffect(() => {
     const initialize = async () => {
       // Only initialize progress tracking and load user progress once
@@ -659,55 +510,7 @@ const MockInterviewScreen = () => {
     initialize();
   }, [params.nextQuestion, params.currentQuestionId]);
 
-  // Handle feedback return from navigation
-  useEffect(() => {
-    const handleFeedbackReturn = async () => {
-      if (params.evaluationResult) {
-        const result = JSON.parse(params.evaluationResult as string);
-        setEvaluationResult(result);
-        if (result.success) {
-          await moveToNextQuestion();
-        }
-      }
-      
-      // Reset all state to initial values when returning from feedback
-      setShowFeedback(false);
-      setShowEvaluatingAnimation(false);
-      setIsEvaluating(false);
-      setShowThinkingTimer(false);
-      setShowSpeakingTimer(false);
-      setIsThinkingPhase(false);
-      setIsSpeakingPhase(false);
-      setThinkingTimeLeft(15);
-      setSpeakingTimeLeft(90);
-      setTimeSpent(0);
-      setRecordingStartTime(null);
-      
-      // Stop any ongoing animations
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(1);
-      rotateAnim.stopAnimation();
-      rotateAnim.setValue(0);
-      
-      // Clear any active timers
-      if (thinkingTimerRef.current) {
-        clearInterval(thinkingTimerRef.current);
-        thinkingTimerRef.current = null;
-      }
-      if (speakingTimerRef.current) {
-        clearInterval(speakingTimerRef.current);
-        speakingTimerRef.current = null;
-      }
-      
-      console.log('🔄 [RESET] All state reset to initial values from navigation');
-    };
-    
-    if (params.evaluationResult && !showFeedback) {
-      handleFeedbackReturn();
-    }
-  }, [params.evaluationResult]);
-
-  // Update time spent during recording
+  // Update time spent during recording - matching storytelling.tsx pattern
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     
@@ -724,21 +527,13 @@ const MockInterviewScreen = () => {
     };
   }, [audioRecorder.state.isRecording, recordingStartTime]);
 
-  // Cleanup effect when component unmounts
+  // Cleanup effect when component unmounts - matching storytelling.tsx pattern
   useEffect(() => {
     return () => {
       // Reset states when component unmounts
       setEvaluationResult(null);
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
-      
-      // Clear timers
-      if (thinkingTimerRef.current) {
-        clearInterval(thinkingTimerRef.current);
-      }
-      if (speakingTimerRef.current) {
-        clearInterval(speakingTimerRef.current);
-      }
     };
   }, []);
 
@@ -760,11 +555,11 @@ const MockInterviewScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.push({ pathname: '/practice/stage4' })} style={styles.backButton}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
             
             <View style={styles.titleContainer}>
               <LinearGradient
@@ -773,7 +568,7 @@ const MockInterviewScreen = () => {
               >
                 <Ionicons name="business" size={32} color="#FFFFFF" />
               </LinearGradient>
-        <Text style={styles.headerTitle}>Mock Interview</Text>
+              <Text style={styles.headerTitle}>Mock Interview</Text>
               <Text style={styles.headerSubtitle}>Professional Communication</Text>
               
               {/* Question Counter */}
@@ -859,7 +654,7 @@ const MockInterviewScreen = () => {
                           </View>
                         ))}
                       </View>
-      </View>
+                    </View>
 
                     {/* Play Button */}
                     <TouchableOpacity
@@ -880,9 +675,9 @@ const MockInterviewScreen = () => {
                     </TouchableOpacity>
                     
                     <Text style={styles.instructionText}>
-                      Listen to the question and prepare your professional response
-            </Text>
-        </View>
+                      Listen to the question and provide your professional response
+                    </Text>
+                  </View>
                 </ScrollView>
               ) : (
                 <View style={styles.errorContainer}>
@@ -892,33 +687,6 @@ const MockInterviewScreen = () => {
               )}
             </LinearGradient>
           </Animated.View>
-
-          {/* Timer Display */}
-          {(showThinkingTimer || showSpeakingTimer) && (
-            <Animated.View
-              style={[
-                styles.timerContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ scale: pulseAnim }],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={showThinkingTimer ? ['#F39C12', '#E67E22'] : ['#58D68D', '#45B7A8']}
-                style={styles.timerGradient}
-              >
-                <Ionicons 
-                  name={showThinkingTimer ? 'time-outline' : 'mic-outline'} 
-                  size={24} 
-                  color="#FFFFFF" 
-                />
-                <Text style={styles.timerText}>
-                  {showThinkingTimer ? `Think: ${thinkingTimeLeft}s` : `Speak: ${speakingTimeLeft}s`}
-                </Text>
-              </LinearGradient>
-            </Animated.View>
-          )}
 
           {/* Action Button */}
           <Animated.View
@@ -940,62 +708,29 @@ const MockInterviewScreen = () => {
                   shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
                 }
               ]}
-              onPress={async () => {
+              onPress={() => {
                 animateButtonPress();
-                
-                // Prevent actions during evaluation
-                if (isEvaluating) {
-                  console.log('⚠️ [BUTTON] Action blocked - evaluation in progress');
-                  return;
+                if (audioRecorder.state.isRecording) {
+                  handleStopRecording();
+                } else {
+                  handleStartRecording();
                 }
-                
-                // Allow stopping during speaking phase
-                if (isSpeakingPhase || audioRecorder.state.isRecording) {
-                  console.log('🔄 [BUTTON] Stopping recording...');
-                  await handleStopRecording();
-                  return;
-                }
-                
-                // Prevent actions during thinking phase
-                if (isThinkingPhase) {
-                  console.log('⚠️ [BUTTON] Action blocked - thinking phase in progress');
-                  return;
-                }
-                
-                // Start interview process
-                console.log('🔄 [BUTTON] Starting interview process...');
-                await startThinkingPhase();
               }}
               disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={
-                  isEvaluating ? ["#9B59B6", "#8E44AD"] :
-                  isThinkingPhase ? ["#F39C12", "#E67E22"] :
-                  isSpeakingPhase ? ["#FF6B6B", "#FF5252"] :
-                  ["#58D68D", "#45B7A8"]
-                }
+                colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
                 style={styles.speakButtonGradient}
               >
                 <Ionicons 
-                  name={
-                    isEvaluating ? 'hourglass-outline' : 
-                    isThinkingPhase ? 'time-outline' : 
-                    isSpeakingPhase ? 'stop-outline' : 
-                    'play-outline'
-                  } 
+                  name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
                   size={24} 
                   color="#fff" 
                   style={{ marginRight: 8 }} 
                 />
                 <Text style={styles.speakButtonText}>
-                  {
-                    isEvaluating ? 'Processing...' : 
-                    isThinkingPhase ? 'Thinking...' : 
-                    isSpeakingPhase ? 'Stop Recording' : 
-                    'Start Interview'
-                  }
+                  {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Answer Question'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -1006,30 +741,19 @@ const MockInterviewScreen = () => {
         {showEvaluatingAnimation && (
           <View style={styles.evaluatingOverlay}>
             <View style={styles.animationContainer}>
-              <Animated.View
-                style={[
-                  styles.rotatingIcon,
-                  {
-                    transform: [
-                      {
-                        rotate: rotateAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['0deg', '360deg'],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <Ionicons name="sync" size={64} color="#58D68D" />
-              </Animated.View>
-              </View>
+              <LottieView
+                source={require('../../../../assets/animations/evaluating.json')}
+                autoPlay
+                loop={true}
+                style={styles.evaluatingAnimation}
+              />
+            </View>
             <View style={styles.evaluatingTextContainer}>
               <Text style={styles.evaluatingTitle}>Evaluating...</Text>
             </View>
-        </View>
+          </View>
         )}
-    </SafeAreaView>
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -1315,30 +1039,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
-  timerContainer: {
-    position: 'absolute',
-    top: height * 0.4,
-    alignSelf: 'center',
-    zIndex: 100,
-  },
-  timerGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  timerText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
   buttonContainer: {
     width: '100%',
   },
@@ -1382,11 +1082,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxHeight: height * 0.6,
   },
-  rotatingIcon: {
-    width: 80,
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
+  evaluatingAnimation: {
+    width: Math.min(width * 0.7, height * 0.5),
+    height: Math.min(width * 0.7, height * 0.5),
+    alignSelf: 'center',
   },
   evaluatingTextContainer: {
     position: 'absolute',
