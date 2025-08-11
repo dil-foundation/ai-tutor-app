@@ -12,7 +12,6 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -86,10 +85,6 @@ const CriticalOpinionBuilderScreen = () => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
-  
-  // Text input state
-  const [textInput, setTextInput] = useState('');
-  const [wordCount, setWordCount] = useState(0);
   
   // Audio hooks
   const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
@@ -210,13 +205,6 @@ const CriticalOpinionBuilderScreen = () => {
     }
   };
 
-  // Handle text input change
-  const handleTextChange = (text: string) => {
-    setTextInput(text);
-    const words = text.split(/\s+/).filter(Boolean);
-    setWordCount(words.length);
-  };
-
   // Start recording
   const handleStartRecording = async () => {
     try {
@@ -297,63 +285,6 @@ const CriticalOpinionBuilderScreen = () => {
         } else {
           Alert.alert('Error', result.message || 'Failed to evaluate your opinion.');
         }
-      }
-    } catch (error) {
-      console.error('❌ [EVAL] Error:', error);
-      setShowEvaluatingAnimation(false);
-      Alert.alert('Error', 'Network error. Please check your connection.');
-    } finally {
-      setIsEvaluating(false);
-    }
-  };
-
-  // Submit text response
-  const handleSubmitText = async () => {
-    if (!currentTopic || !user?.id || !textInput.trim()) {
-      Alert.alert('Error', 'Please enter your opinion before submitting.');
-      return;
-    }
-
-    if (wordCount < 50) {
-      Alert.alert('Error', 'Please write at least 50 words for a complete opinion.');
-      return;
-    }
-
-    try {
-      setIsEvaluating(true);
-      setShowEvaluatingAnimation(true);
-      
-      const mockAudioBase64 = 'mock_audio_data';
-      
-      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_CRITICAL_OPINION, {
-        method: 'POST',
-        body: JSON.stringify({
-          audio_base64: mockAudioBase64,
-          topic_id: currentTopic.id,
-          filename: `critical_opinion_text_${currentTopic.id}_${Date.now()}.txt`,
-          user_id: user.id,
-          time_spent_seconds: Math.max(1, Math.floor(wordCount / 10)),
-          urdu_used: false,
-        }),
-      });
-
-      const result: EvaluationResult = await response.json();
-      
-      if (result.success) {
-        setEvaluationResult(result);
-        setShowEvaluatingAnimation(false);
-        
-        router.push({
-          pathname: '/(tabs)/practice/stage6/feedback_12',
-          params: {
-            evaluationResult: JSON.stringify(result),
-            currentTopicId: currentTopicId.toString(),
-            totalTopics: totalTopics.toString(),
-          }
-        });
-      } else {
-        setShowEvaluatingAnimation(false);
-        Alert.alert('Error', result.message || 'Failed to evaluate your opinion.');
       }
     } catch (error) {
       console.error('❌ [EVAL] Error:', error);
@@ -490,24 +421,7 @@ const CriticalOpinionBuilderScreen = () => {
             </LinearGradient>
           </Animated.View>
 
-          {/* Text Input Section */}
-          <Animated.View style={[styles.inputContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={styles.wordCountContainer}>
-              <Text style={styles.wordCountText}>{wordCount}/100 words</Text>
-              <Text style={styles.timeText}>90 seconds</Text>
-            </View>
-            
-            <TextInput
-              style={styles.textInput}
-              multiline
-              placeholder="Start typing your critical opinion here..."
-              onChangeText={handleTextChange}
-              value={textInput}
-              editable={!isEvaluating && !audioRecorder.state.isRecording}
-            />
-          </Animated.View>
-
-          {/* Action Buttons */}
+          {/* Action Button */}
           <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: buttonScaleAnim }] }]}>
             <TouchableOpacity
               style={[styles.voiceButton, { shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8' }]}
@@ -525,20 +439,6 @@ const CriticalOpinionBuilderScreen = () => {
                 <Ionicons name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} size={24} color="#fff" style={{ marginRight: 8 }} />
                 <Text style={styles.voiceButtonText}>
                   {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Voice Opinion'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.submitButton, { opacity: textInput.trim().length > 0 && wordCount >= 50 ? 1 : 0.5 }]}
-              onPress={handleSubmitText}
-              disabled={isEvaluating || isLoading || isExerciseCompleted || textInput.trim().length === 0 || wordCount < 50}
-              activeOpacity={0.8}
-            >
-              <LinearGradient colors={["#3498DB", "#2980B9"]} style={styles.submitButtonGradient}>
-                <Ionicons name="send" size={24} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.submitButtonText}>
-                  {isEvaluating ? 'Processing...' : 'Submit Opinion'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -817,43 +717,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  wordCountContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  wordCountText: {
-    fontSize: 14,
-    color: '#666666',
-    fontWeight: '600',
-  },
-  timeText: {
-    fontSize: 14,
-    color: '#666666',
-    fontWeight: '600',
-  },
-  textInput: {
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    textAlignVertical: 'top',
-    minHeight: 120,
-    backgroundColor: '#FFFFFF',
-    color: '#333333',
-  },
   buttonContainer: {
     width: '100%',
-    flexDirection: 'row',
-    gap: 12,
   },
   voiceButton: {
-    flex: 1,
+    width: '100%',
     borderRadius: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
@@ -866,33 +734,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     borderRadius: 16,
   },
   voiceButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  submitButton: {
-    flex: 1,
-    borderRadius: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  submitButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-  },
-  submitButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
