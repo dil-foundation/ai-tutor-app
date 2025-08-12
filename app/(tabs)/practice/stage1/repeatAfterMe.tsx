@@ -72,6 +72,7 @@ const RepeatAfterMeScreen = () => {
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState<boolean>(false);
   const [isTopicLoaded, setIsTopicLoaded] = useState<boolean>(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
@@ -139,6 +140,17 @@ const RepeatAfterMeScreen = () => {
       }),
     ]).start();
   }, []);
+
+  // Cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
+    };
+  }, [audioPlayer, isNavigatingAway]);
 
   const initializeProgressTracking = async () => {
     console.log("🔄 [PROGRESS] Initializing progress tracking for Repeat After Me");
@@ -489,6 +501,16 @@ const RepeatAfterMeScreen = () => {
     ]).start();
   };
 
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage1' });
+  };
+
   if (authLoading) {
     return <LoadingScreen />;
   }
@@ -511,7 +533,7 @@ const RepeatAfterMeScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>

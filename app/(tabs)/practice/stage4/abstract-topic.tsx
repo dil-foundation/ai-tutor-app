@@ -99,6 +99,7 @@ const AbstractTopicScreen = () => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks - matching storytelling.tsx pattern
   const audioRecorder = useAudioRecorder(90000, async (audioUri) => {
@@ -454,7 +455,7 @@ const AbstractTopicScreen = () => {
       Alert.alert(
         'Congratulations! 🎉',
         'You\'ve completed all abstract topics!',
-        [{ text: 'Finish', onPress: () => router.back() }]
+        [{ text: 'Finish', onPress: handleBackPress }]
       );
     }
   };
@@ -532,12 +533,27 @@ const AbstractTopicScreen = () => {
   // Cleanup effect when component unmounts - matching storytelling.tsx pattern
   useEffect(() => {
     return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
       // Reset states when component unmounts
       setEvaluationResult(null);
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
     };
-  }, []);
+  }, [audioPlayer, isNavigatingAway]);
+
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage4' });
+  };
 
   return (
     <LinearGradient
@@ -557,7 +573,7 @@ const AbstractTopicScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
