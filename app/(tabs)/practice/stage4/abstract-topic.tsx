@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
@@ -99,6 +99,7 @@ const AbstractTopicScreen = () => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks - matching storytelling.tsx pattern
   const audioRecorder = useAudioRecorder(90000, async (audioUri) => {
@@ -274,22 +275,42 @@ const AbstractTopicScreen = () => {
 
   // Play topic audio - matching storytelling.tsx pattern
   const playTopicAudio = async () => {
-    if (!currentTopic || audioPlayer.state.isPlaying) return;
+    console.log("🎯 [AUDIO] playTopicAudio function called");
+    console.log("📊 [AUDIO] Current topic:", currentTopic ? "exists" : "null");
+    console.log("📊 [AUDIO] Audio player state:", audioPlayer.state.isPlaying ? "playing" : "not playing");
+    
+    if (!currentTopic) {
+      console.log("❌ [AUDIO] No current topic available");
+      return;
+    }
+    
+    if (audioPlayer.state.isPlaying) {
+      console.log("❌ [AUDIO] Audio already playing");
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing topic audio for ID:", currentTopicId);
+    console.log("🔗 [AUDIO] Using endpoint:", API_ENDPOINTS.ABSTRACT_TOPIC_AUDIO(currentTopicId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(API_ENDPOINTS.ABSTRACT_TOPIC(currentTopicId), {
+      const response = await authenticatedFetch(API_ENDPOINTS.ABSTRACT_TOPIC_AUDIO(currentTopicId), {
         method: 'POST'
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response ok:", response.ok);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", result);
 
       if (response.ok && result.audio_base64) {
+        console.log("✅ [AUDIO] Audio base64 received, length:", result.audio_base64.length);
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        console.log("🔄 [AUDIO] Loading audio into player...");
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
@@ -434,7 +455,7 @@ const AbstractTopicScreen = () => {
       Alert.alert(
         'Congratulations! 🎉',
         'You\'ve completed all abstract topics!',
-        [{ text: 'Finish', onPress: () => router.back() }]
+        [{ text: 'Finish', onPress: handleBackPress }]
       );
     }
   };
@@ -512,12 +533,27 @@ const AbstractTopicScreen = () => {
   // Cleanup effect when component unmounts - matching storytelling.tsx pattern
   useEffect(() => {
     return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
       // Reset states when component unmounts
       setEvaluationResult(null);
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
     };
-  }, []);
+  }, [audioPlayer, isNavigatingAway]);
+
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage4' });
+  };
 
   return (
     <LinearGradient
@@ -537,7 +573,7 @@ const AbstractTopicScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
@@ -631,7 +667,10 @@ const AbstractTopicScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playTopicAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playTopicAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient

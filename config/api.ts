@@ -1,21 +1,29 @@
 import * as FileSystem from 'expo-file-system';
 
 let BASE_API_URL: string;
+let FRONTEND_URL: string;
 
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  BASE_API_URL = 'https://api.dil.lms-staging.com';
+  // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
-  // BASE_API_URL = 'http://192.168.1.3:8000';
+  BASE_API_URL = 'http://192.168.1.3:8000';
+
+  FRONTEND_URL = 'https://dil-dev.lms-staging.com';
 
   // BASE_API_URL = 'https://bda6-2401-4900-4df1-bc03-f029-886d-1f7c-9add.ngrok-free.app';
 } else {
   // Production URL
   BASE_API_URL = 'https://api-prod.dil.lms-staging.com';
+
+  FRONTEND_URL = 'https://dil-prod.lms-staging.com';
 }
 
-export const WORDPRESS_API_URL = 'https://dil.lms-staging.com';
+export const WORDPRESS_API_URL = FRONTEND_URL;
+
+// Export frontend URL for authentication flows
+export { FRONTEND_URL };
 
 /**
  * Send text to backend and receive TTS audio (.wav) file
@@ -114,10 +122,14 @@ export const API_ENDPOINTS = {
   // Stage 3 endpoints
   STORYTELLING_PROMPTS: `${BASE_API_URL}/api/storytelling-prompts`,
   STORYTELLING_PROMPT: (promptId: number) => `${BASE_API_URL}/api/storytelling-prompts/${promptId}`,
+  STORYTELLING_AUDIO: (promptId: number) => `${BASE_API_URL}/api/storytelling/${promptId}`,
   EVALUATE_STORYTELLING: `${BASE_API_URL}/api/evaluate-storytelling`,
   
   PROBLEM_SOLVING_SCENARIOS: `${BASE_API_URL}/api/problem-solving-scenarios`,
   PROBLEM_SOLVING_SCENARIO: (scenarioId: number) => `${BASE_API_URL}/api/problem-solving-scenarios/${scenarioId}`,
+  PROBLEM_SOLVING_AUDIO: (scenarioId: number) => `${BASE_API_URL}/api/problem-solving/${scenarioId}`,
+  PROBLEM_SOLVING_PROGRESS: (userId: string) => `${BASE_API_URL}/api/problem-solving-progress/${userId}`,
+  PROBLEM_SOLVING_CURRENT_TOPIC: (userId: string) => `${BASE_API_URL}/api/problem-solving-current-topic/${userId}`,
   EVALUATE_PROBLEM_SOLVING: `${BASE_API_URL}/api/evaluate-problem-solving`,
   
   GROUP_DIALOGUES: `${BASE_API_URL}/api/group-dialogue-scenarios`,
@@ -131,10 +143,12 @@ export const API_ENDPOINTS = {
   
   MOCK_INTERVIEWS: `${BASE_API_URL}/api/mock-interview-questions`,
   MOCK_INTERVIEW: (interviewId: number) => `${BASE_API_URL}/api/mock-interview-questions/${interviewId}`,
+  MOCK_INTERVIEW_AUDIO: (interviewId: number) => `${BASE_API_URL}/api/mock-interview/${interviewId}`,
   EVALUATE_MOCK_INTERVIEW: `${BASE_API_URL}/api/evaluate-mock-interview`,
   
   ABSTRACT_TOPICS: `${BASE_API_URL}/api/abstract-topics`,
   ABSTRACT_TOPIC: (topicId: number) => `${BASE_API_URL}/api/abstract-topics/${topicId}`,
+  ABSTRACT_TOPIC_AUDIO: (topicId: number) => `${BASE_API_URL}/api/abstract-topic/${topicId}`,
   EVALUATE_ABSTRACT_TOPIC: `${BASE_API_URL}/api/evaluate-abstract-topic`,
   
   // Stage 5 endpoints

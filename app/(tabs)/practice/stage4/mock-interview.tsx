@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
@@ -98,6 +98,7 @@ const MockInterviewScreen = () => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks - matching storytelling.tsx pattern
   const audioRecorder = useAudioRecorder(90000, async (audioUri) => {
@@ -275,24 +276,37 @@ const MockInterviewScreen = () => {
   const playQuestionAudio = async () => {
     if (!currentQuestion || audioPlayer.state.isPlaying) return;
 
-    console.log("🔄 [AUDIO] Playing question audio for ID:", currentQuestionId);
+    console.log("🎯 [AUDIO] playQuestionAudio function called");
+    console.log("🎯 [AUDIO] Current question ID:", currentQuestionId);
+    console.log("🎯 [AUDIO] Using endpoint:", API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW(currentQuestionId), {
+      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId), {
         method: 'POST'
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response headers:", response.headers);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", {
+        hasAudio: !!result.audio_base64,
+        audioLength: result.audio_base64 ? result.audio_base64.length : 0,
+        questionId: result.question_id,
+        question: result.question
+      });
 
       if (response.ok && result.audio_base64) {
+        console.log("🔄 [AUDIO] Loading audio into player...");
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
-        console.log("❌ [AUDIO] Failed to get audio:", result.detail);
+        console.log("❌ [AUDIO] Failed to get audio:", result.detail || result);
         Alert.alert('Error', 'Failed to play audio. Please try again.');
       }
     } catch (error) {
@@ -452,7 +466,7 @@ const MockInterviewScreen = () => {
       Alert.alert(
         'Congratulations! 🎉',
         'You\'ve completed all mock interview questions!',
-        [{ text: 'Finish', onPress: () => router.back() }]
+        [{ text: 'Finish', onPress: handleBackPress }]
       );
     }
   };
@@ -530,12 +544,27 @@ const MockInterviewScreen = () => {
   // Cleanup effect when component unmounts - matching storytelling.tsx pattern
   useEffect(() => {
     return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
       // Reset states when component unmounts
       setEvaluationResult(null);
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
     };
-  }, []);
+  }, [audioPlayer, isNavigatingAway]);
+
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage4' });
+  };
 
   return (
     <LinearGradient
@@ -555,7 +584,7 @@ const MockInterviewScreen = () => {
               },
             ]}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
@@ -659,7 +688,10 @@ const MockInterviewScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playQuestionAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playQuestionAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient

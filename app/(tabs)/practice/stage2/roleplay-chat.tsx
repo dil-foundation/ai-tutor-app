@@ -63,6 +63,7 @@ const RoleplayChatScreen = () => {
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [showEvaluationResults, setShowEvaluationResults] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
@@ -118,6 +119,17 @@ const RoleplayChatScreen = () => {
       }, 100);
     }
   }, [messages]);
+
+  // Cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
+    };
+  }, [audioPlayer, isNavigatingAway]);
 
   const initializeChatSession = async () => {
     console.log("🔄 [CHAT] Initializing chat session for scenario:", params.scenarioId);
@@ -363,7 +375,7 @@ const RoleplayChatScreen = () => {
         Alert.alert(
           'Evaluation Failed',
           'Unable to evaluate your conversation. Please try again.',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: handleBackPress }]
         );
       }
     } catch (error) {
@@ -371,7 +383,7 @@ const RoleplayChatScreen = () => {
       Alert.alert(
         'Evaluation Error',
         'Network error during evaluation. Please try again.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        [{ text: 'OK', onPress: handleBackPress }]
       );
     } finally {
       setShowEvaluatingAnimation(false);
@@ -389,6 +401,16 @@ const RoleplayChatScreen = () => {
   const showDetailedEvaluation = (evaluation: any) => {
     setEvaluationResult(evaluation);
     setShowEvaluationResults(true);
+  };
+
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage2' });
   };
 
   if (authLoading) {
@@ -417,7 +439,7 @@ const RoleplayChatScreen = () => {
                 },
               ]}
             >
-              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
                 <View style={styles.backButtonCircle}>
                   <Ionicons name="arrow-back" size={24} color="#58D68D" />
                 </View>

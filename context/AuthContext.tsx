@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { FRONTEND_URL } from '../config/api';
 
 interface SignUpData {
   email: string;
@@ -95,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: signUpData.email,
         password: signUpData.password,
         options: {
-          emailRedirectTo: `https://dil.lovable.app/dashboard`,
+          emailRedirectTo: `${FRONTEND_URL}/dashboard`,
           data: {
             role: 'student',
             first_name: signUpData.firstName,
