@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
@@ -275,24 +275,37 @@ const MockInterviewScreen = () => {
   const playQuestionAudio = async () => {
     if (!currentQuestion || audioPlayer.state.isPlaying) return;
 
-    console.log("🔄 [AUDIO] Playing question audio for ID:", currentQuestionId);
+    console.log("🎯 [AUDIO] playQuestionAudio function called");
+    console.log("🎯 [AUDIO] Current question ID:", currentQuestionId);
+    console.log("🎯 [AUDIO] Using endpoint:", API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW(currentQuestionId), {
+      const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId), {
         method: 'POST'
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response headers:", response.headers);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", {
+        hasAudio: !!result.audio_base64,
+        audioLength: result.audio_base64 ? result.audio_base64.length : 0,
+        questionId: result.question_id,
+        question: result.question
+      });
 
       if (response.ok && result.audio_base64) {
+        console.log("🔄 [AUDIO] Loading audio into player...");
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
-        console.log("❌ [AUDIO] Failed to get audio:", result.detail);
+        console.log("❌ [AUDIO] Failed to get audio:", result.detail || result);
         Alert.alert('Error', 'Failed to play audio. Please try again.');
       }
     } catch (error) {
@@ -659,7 +672,10 @@ const MockInterviewScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playQuestionAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playQuestionAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient

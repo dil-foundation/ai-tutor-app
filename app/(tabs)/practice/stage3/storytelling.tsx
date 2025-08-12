@@ -261,22 +261,42 @@ const StorytellingScreen = () => {
 
   // Play prompt audio
   const playPromptAudio = async () => {
-    if (!currentPrompt || audioPlayer.state.isPlaying) return;
+    console.log("🎯 [AUDIO] playPromptAudio function called");
+    console.log("📊 [AUDIO] Current prompt:", currentPrompt ? "exists" : "null");
+    console.log("📊 [AUDIO] Audio player state:", audioPlayer.state.isPlaying ? "playing" : "not playing");
+    
+    if (!currentPrompt) {
+      console.log("❌ [AUDIO] No current prompt available");
+      return;
+    }
+    
+    if (audioPlayer.state.isPlaying) {
+      console.log("❌ [AUDIO] Audio already playing");
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing prompt audio for ID:", currentPromptId);
+    console.log("🔗 [AUDIO] Using endpoint:", API_ENDPOINTS.STORYTELLING_AUDIO(currentPromptId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(API_ENDPOINTS.STORYTELLING_PROMPT(currentPromptId), {
+      const response = await authenticatedFetch(API_ENDPOINTS.STORYTELLING_AUDIO(currentPromptId), {
         method: 'POST'
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response ok:", response.ok);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", result);
 
       if (response.ok && result.audio_base64) {
+        console.log("✅ [AUDIO] Audio base64 received, length:", result.audio_base64.length);
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        console.log("🔄 [AUDIO] Loading audio into player...");
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
@@ -610,7 +630,10 @@ const StorytellingScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playPromptAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playPromptAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient

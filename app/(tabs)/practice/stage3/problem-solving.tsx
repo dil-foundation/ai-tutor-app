@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
@@ -158,7 +158,7 @@ const ProblemSolvingScreen = () => {
         console.log('✅ [PROGRESS] User progress loaded successfully');
         
         // Check if exercise is completed
-        const topicProgress = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-progress/${user.id}`);
+        const topicProgress = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_PROGRESS(user.id));
         const topicResult = await topicProgress.json();
         
         if (topicResult.success && topicResult.topic_progress) {
@@ -185,7 +185,7 @@ const ProblemSolvingScreen = () => {
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
       
-      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_CURRENT_TOPIC(user.id));
 
       const result = await response.json();
       
@@ -253,25 +253,45 @@ const ProblemSolvingScreen = () => {
 
   // Play scenario audio
   const playScenarioAudio = async () => {
-    if (!currentScenario || audioPlayer.state.isPlaying) return;
+    console.log("🎯 [AUDIO] playScenarioAudio function called");
+    console.log("📊 [AUDIO] Current scenario:", currentScenario ? "exists" : "null");
+    console.log("📊 [AUDIO] Audio player state:", audioPlayer.state.isPlaying ? "playing" : "not playing");
+    
+    if (!currentScenario) {
+      console.log("❌ [AUDIO] No current scenario available");
+      return;
+    }
+    
+    if (audioPlayer.state.isPlaying) {
+      console.log("❌ [AUDIO] Audio already playing");
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing scenario audio for ID:", currentScenarioId);
+    console.log("🔗 [AUDIO] Using endpoint:", API_ENDPOINTS.PROBLEM_SOLVING_AUDIO(currentScenarioId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving/${currentScenarioId}`, {
+      const response = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_AUDIO(currentScenarioId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         }
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response ok:", response.ok);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", result);
 
       if (response.ok && result.audio_base64) {
+        console.log("✅ [AUDIO] Audio base64 received, length:", result.audio_base64.length);
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        console.log("🔄 [AUDIO] Loading audio into player...");
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
@@ -425,7 +445,7 @@ const ProblemSolvingScreen = () => {
       console.log('🔄 [NAVIGATION] Getting next scenario from backend...');
       
       // Get the current topic from backend (which should be the next topic after completion)
-      const response = await authenticatedFetch(`${BASE_API_URL}/api/problem-solving-current-topic/${user.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.PROBLEM_SOLVING_CURRENT_TOPIC(user.id));
       const result = await response.json();
       
       if (result.success) {
@@ -688,7 +708,10 @@ const ProblemSolvingScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playScenarioAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playScenarioAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient

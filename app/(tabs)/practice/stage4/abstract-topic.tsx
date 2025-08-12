@@ -20,7 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { API_ENDPOINTS } from '../../../../config/api';
 import { authenticatedFetch } from '../../../../utils/authUtils';
 import LottieView from 'lottie-react-native';
 
@@ -274,22 +274,42 @@ const AbstractTopicScreen = () => {
 
   // Play topic audio - matching storytelling.tsx pattern
   const playTopicAudio = async () => {
-    if (!currentTopic || audioPlayer.state.isPlaying) return;
+    console.log("🎯 [AUDIO] playTopicAudio function called");
+    console.log("📊 [AUDIO] Current topic:", currentTopic ? "exists" : "null");
+    console.log("📊 [AUDIO] Audio player state:", audioPlayer.state.isPlaying ? "playing" : "not playing");
+    
+    if (!currentTopic) {
+      console.log("❌ [AUDIO] No current topic available");
+      return;
+    }
+    
+    if (audioPlayer.state.isPlaying) {
+      console.log("❌ [AUDIO] Audio already playing");
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing topic audio for ID:", currentTopicId);
+    console.log("🔗 [AUDIO] Using endpoint:", API_ENDPOINTS.ABSTRACT_TOPIC_AUDIO(currentTopicId));
+    
     try {
       setIsPlayingAudio(true);
       
-      const response = await authenticatedFetch(API_ENDPOINTS.ABSTRACT_TOPIC(currentTopicId), {
+      const response = await authenticatedFetch(API_ENDPOINTS.ABSTRACT_TOPIC_AUDIO(currentTopicId), {
         method: 'POST'
       });
 
+      console.log("📡 [AUDIO] Response status:", response.status);
+      console.log("📡 [AUDIO] Response ok:", response.ok);
+      
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", result);
 
       if (response.ok && result.audio_base64) {
+        console.log("✅ [AUDIO] Audio base64 received, length:", result.audio_base64.length);
         const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        console.log("🔄 [AUDIO] Loading audio into player...");
         await audioPlayer.loadAudio(audioUri);
+        console.log("🔄 [AUDIO] Playing audio...");
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
@@ -631,7 +651,10 @@ const AbstractTopicScreen = () => {
                     {/* Play Button */}
                     <TouchableOpacity
                       style={styles.playButton}
-                      onPress={playTopicAudio}
+                      onPress={() => {
+                        console.log("🎯 [UI] Play button clicked!");
+                        playTopicAudio();
+                      }}
                       disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
