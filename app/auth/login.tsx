@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { StatusBar } from 'expo-status-bar';
+import { FRONTEND_URL } from '../../config/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -125,7 +126,7 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = async () => {
-    const forgotPasswordUrl = 'https://dil.lovable.app/forgot-password?role=student';
+    const forgotPasswordUrl = `${FRONTEND_URL}/forgot-password?role=student`;
     
     try {
       const supported = await Linking.canOpenURL(forgotPasswordUrl);
