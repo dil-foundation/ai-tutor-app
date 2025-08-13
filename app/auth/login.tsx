@@ -26,7 +26,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, loading: authLoading } = useAuth();
+  const { signIn, loading: authLoading, signOut } = useAuth();
   
   // Form state
   const [email, setEmail] = useState('');
@@ -110,13 +110,31 @@ export default function LoginScreen() {
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email.trim(), password);
+      const result = await signIn(email.trim(), password);
       
-      if (error) {
-        Alert.alert('Login Failed', error.message || 'Invalid email or password');
+      if ('error' in result && result.error) {
+        Alert.alert('Login Failed', result.error.message || 'Invalid email or password');
+      } else if ('role' in result && result.role && result.role !== 'student') {
+        // Non-student users are not allowed in the mobile app
+        Alert.alert(
+          'Access Restricted',
+          `Only students can access this mobile app. Your account has the role: ${result.role.charAt(0).toUpperCase() + result.role.slice(1)}.\n\nPlease use the web dashboard instead.`,
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Sign out the non-student user
+                await signOut();
+                // Clear form
+                setEmail('');
+                setPassword('');
+              }
+            }
+          ]
+        );
       } else {
         // Success - navigation will be handled by auth state change
-        console.log('Login successful');
+        console.log('Login successful for student');
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');

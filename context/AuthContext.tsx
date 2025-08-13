@@ -15,10 +15,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  userRole: string | null;
+  isStudent: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any } | { error: null; role: string | undefined }>;
   signUp: (signUpData: SignUpData) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  checkUserRole: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +42,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Check if user is a student
+  const isStudent = userRole === 'student';
+
+  // Function to check user role from profiles table
+  const checkUserRole = async (): Promise<string | null> => {
+    try {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        // Fallback to user metadata
+        return user.user_metadata?.role || null;
+      }
+      
+      return data?.role || null;
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      // Fallback to user metadata
+      return user?.user_metadata?.role || null;
+    }
+  };
+
+  // Update user role when user changes
+  useEffect(() => {
+    if (user) {
+      checkUserRole().then(role => {
+        setUserRole(role);
+        console.log('User role set to:', role);
+      });
+    } else {
+      setUserRole(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     // Get initial session
@@ -84,7 +128,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
       
-      return { error: null };
+      // Check user role after successful sign in
+      if (data.user) {
+        const role = await checkUserRole();
+        return { error: null, role: role || undefined };
+      }
+      
+      return { error: null, role: undefined };
     } catch (error) {
       return { error };
     }
@@ -119,6 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setUserRole(null);
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -137,10 +188,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    userRole,
+    isStudent,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    checkUserRole,
   };
 
   return (
