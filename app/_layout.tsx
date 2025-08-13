@@ -9,11 +9,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LanguageModeProvider } from './context/LanguageModeContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import LoadingScreen from '../components/LoadingScreen';
+import RoleBasedAccess from '../components/RoleBasedAccess';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { user, loading } = useAuth();
+  const { user, loading, isStudent } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [hasNavigated, setHasNavigated] = useState(false);
@@ -62,11 +63,13 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="auth" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <RoleBasedAccess>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </RoleBasedAccess>
   );
 }
 
