@@ -385,7 +385,8 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     marginBottom: 16,
-    height: 120,
+    minHeight: 120,
+    flex: 1,
   },
   activityButton: {
     borderRadius: 20,
@@ -395,15 +396,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
+    minHeight: 120,
   },
   activityGradient: {
-    paddingHorizontal: 24,
-    height: '100%',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    minHeight: 120,
     justifyContent: 'center',
   },
   activityContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   activityIconContainer: {
     width: 56,
@@ -413,21 +417,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    flexShrink: 0,
   },
   activityTextContainer: {
     flex: 1,
+    marginRight: 12,
+    justifyContent: 'center',
   },
   activityTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   activityDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#FFFFFF',
     opacity: 0.9,
-    lineHeight: 20,
+    lineHeight: 18,
+    flexWrap: 'wrap',
   },
   arrowContainer: {
     width: 32,
@@ -436,6 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   progressCard: {
     marginTop: 20,

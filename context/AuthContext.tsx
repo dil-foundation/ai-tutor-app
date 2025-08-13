@@ -17,7 +17,8 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   isStudent: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any } | { error: null; role: string | undefined }>;
+  roleLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any } | { error: null }>;
   signUp: (signUpData: SignUpData) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -43,6 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(false);
 
   // Check if user is a student
   const isStudent = userRole === 'student';
@@ -75,14 +77,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Update user role when user changes
   useEffect(() => {
     if (user) {
+      // Set loading state for role checking
+      setRoleLoading(true);
+      setUserRole(null); // Reset role while checking
+      
       checkUserRole().then(role => {
-        setUserRole(role);
-        console.log('User role set to:', role);
+        // Only update if the user is still the same (prevent race conditions)
+        if (user && user.id === user.id) {
+          setUserRole(role);
+          setRoleLoading(false);
+          console.log('User role set to:', role);
+        }
+      }).catch(error => {
+        console.error('Error checking user role:', error);
+        // Fallback to user metadata if available
+        const fallbackRole = user?.user_metadata?.role || null;
+        if (user && user.id === user.id) {
+          setUserRole(fallbackRole);
+          setRoleLoading(false);
+          console.log('User role fallback to:', fallbackRole);
+        }
       });
     } else {
       setUserRole(null);
+      setRoleLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user ID, not the entire user object
 
   useEffect(() => {
     // Get initial session
@@ -128,13 +148,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
       
-      // Check user role after successful sign in
-      if (data.user) {
-        const role = await checkUserRole();
-        return { error: null, role: role || undefined };
-      }
-      
-      return { error: null, role: undefined };
+      // Don't check role here - it will be checked automatically by useEffect
+      // when the user state changes
+      return { error: null };
     } catch (error) {
       return { error };
     }
@@ -190,6 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     userRole,
     isStudent,
+    roleLoading,
     signIn,
     signUp,
     signOut,

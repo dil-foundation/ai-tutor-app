@@ -23,15 +23,16 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   children, 
   fallbackComponent 
 }) => {
-  const { user, userRole, isStudent, loading, signOut } = useAuth();
+  const { user, userRole, isStudent, loading, roleLoading, signOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Check role when component mounts or user changes
-    if (!loading && user && !isStudent) {
+    // Only handle non-student access when we have a definitive role
+    // and we're not loading anymore
+    if (!loading && !roleLoading && user && userRole && !isStudent) {
       handleNonStudentAccess();
     }
-  }, [user, userRole, loading, isStudent]);
+  }, [user, userRole, loading, roleLoading, isStudent]);
 
   const handleNonStudentAccess = () => {
     if (userRole === 'teacher') {
@@ -79,8 +80,8 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
     }
   };
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Show loading while checking authentication or role
+  if (loading || roleLoading || (user && userRole === null)) {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient
@@ -88,7 +89,9 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
           style={styles.loadingGradient}
         >
           <Ionicons name="school" size={48} color="#FFFFFF" />
-          <Text style={styles.loadingText}>Checking Access...</Text>
+          <Text style={styles.loadingText}>
+            {roleLoading ? 'Verifying Access...' : 'Checking Access...'}
+          </Text>
         </LinearGradient>
       </View>
     );
