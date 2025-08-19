@@ -74,6 +74,12 @@ interface EnglishOnlyState {
   isProcessingAudio: boolean; // New state for tracking audio processing
   isNoSpeechAfterProcessing: boolean; // New state for tracking no speech detected after processing
   isUserReminded: boolean;
+  // New correction-related states
+  needsCorrection: boolean;
+  correctedSentence: string;
+  correctionType: string;
+  isPlayingCorrection: boolean;
+  showRepeatAfterMe: boolean;
 }
 
 export default function EnglishOnlyScreen() {
@@ -122,6 +128,11 @@ export default function EnglishOnlyScreen() {
     isProcessingAudio: false,
     isNoSpeechAfterProcessing: false,
     isUserReminded: false,
+    needsCorrection: false,
+    correctedSentence: '',
+    correctionType: '',
+    isPlayingCorrection: false,
+    showRepeatAfterMe: false,
   });
 
   // Track connection attempts to prevent multiple simultaneous connections
@@ -135,6 +146,7 @@ export default function EnglishOnlyScreen() {
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const correctionSoundRef = useRef<Audio.Sound | null>(null); // New ref for correction audio
   const scrollViewRef = useRef<any>(null);
   const isPlayingAudioRef = useRef(false); // Prevent multiple audio sessions
   const [isTalking, setIsTalking] = useState(false);
@@ -532,6 +544,68 @@ export default function EnglishOnlyScreen() {
     }
   };
 
+  const playCorrectionAudio = async (audioUri: string) => {
+    console.log('🎯 Playing correction audio for repeat after me...');
+    
+    try {
+      // Set state to show correction is playing
+      setState(prev => ({
+        ...prev,
+        isPlayingCorrection: true,
+        showRepeatAfterMe: true,
+        currentStep: 'speaking',
+        isAISpeaking: true,
+      }));
+
+      // Stop any existing correction audio
+      if (correctionSoundRef.current) {
+        try {
+          const currentSound = correctionSoundRef.current;
+          correctionSoundRef.current = null;
+          await currentSound.stopAsync();
+          await currentSound.unloadAsync();
+        } catch (error) {
+          console.log('Error stopping existing correction audio:', error);
+        }
+      }
+
+      // Create and play correction audio
+      const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+      correctionSoundRef.current = sound;
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          console.log('🎯 Correction audio finished, showing repeat after me prompt');
+          setState(prev => ({
+            ...prev,
+            isPlayingCorrection: false,
+            isAISpeaking: false,
+            currentStep: 'waiting',
+            currentMessageText: `Now repeat after me: "${state.correctedSentence}"`,
+          }));
+
+          // Start listening for user to repeat
+          setTimeout(() => {
+            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
+              console.log('🎤 Starting to listen for user repetition');
+              startRecording();
+            }
+          }, 2000); // 2 second delay to let user prepare
+        }
+      });
+
+      await sound.playAsync();
+    } catch (error) {
+      console.error('Failed to play correction audio:', error);
+      setState(prev => ({
+        ...prev,
+        isPlayingCorrection: false,
+        showRepeatAfterMe: false,
+        currentStep: 'waiting',
+      }));
+    }
+  };
+
   const connectToWebSocket = () => {
     // Prevent multiple simultaneous connection attempts
     if (connectionAttemptsRef.current >= maxConnectionAttempts) {
@@ -620,6 +694,15 @@ export default function EnglishOnlyScreen() {
       });
     }
 
+    // Log correction data if available
+    if (data.needs_correction) {
+      console.log('🔍 [CORRECTION]', {
+        needs_correction: data.needs_correction,
+        corrected_sentence: data.corrected_sentence,
+        correction_type: data.correction_type
+      });
+    }
+
     // Stop any existing recording when AI responds
     if (recordingRef.current && state.isListening) {
       console.log('🛑 Stopping recording because AI is responding');
@@ -661,6 +744,11 @@ export default function EnglishOnlyScreen() {
       // Don't set isAISpeaking to false here - let handleAudioData manage it
       // Update lastUserInput if this is a response to user speech
       lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
+      // Update correction-related states
+      needsCorrection: data.needs_correction || false,
+      correctedSentence: data.corrected_sentence || '',
+      correctionType: data.correction_type || '',
+      showRepeatAfterMe: data.needs_correction && data.corrected_sentence ? true : false,
     }));
 
     // Handle no speech detected response from backend
@@ -809,7 +897,13 @@ export default function EnglishOnlyScreen() {
         }
       });
 
-      await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
+      // Check if this is correction audio (second audio buffer)
+      if (state.needsCorrection && state.correctedSentence && !state.isPlayingCorrection) {
+        console.log('🎯 Detected correction audio, playing with repeat after me behavior');
+        await playCorrectionAudio(audioUri);
+      } else {
+        await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
+      }
     } catch (error) {
       console.error('Failed to handle audio data:', error);
     }
@@ -1585,6 +1679,19 @@ export default function EnglishOnlyScreen() {
         console.warn('Error unloading sound:', error);
       });
     }
+
+    if (correctionSoundRef.current) {
+      console.log('🔇 Stopping and unloading correction sound...');
+      const currentCorrectionSound = correctionSoundRef.current;
+      correctionSoundRef.current = null;
+      
+      currentCorrectionSound.stopAsync().catch(error => {
+        console.warn('Error stopping correction sound:', error);
+      });
+      currentCorrectionSound.unloadAsync().catch(error => {
+        console.warn('Error unloading correction sound:', error);
+      });
+    }
     
     // Stop processing audio using audioManager (disabled for natural flow)
     // if (audioManager.isAudioPlaying('processing_audio') || 
@@ -1618,6 +1725,12 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
+      // Reset correction-related states
+      needsCorrection: false,
+      correctedSentence: '',
+      correctionType: '',
+      isPlayingCorrection: false,
+      showRepeatAfterMe: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -1644,6 +1757,15 @@ export default function EnglishOnlyScreen() {
       
       currentSound.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
+      });
+    }
+
+    if (correctionSoundRef.current) {
+      const currentCorrectionSound = correctionSoundRef.current;
+      correctionSoundRef.current = null;
+      
+      currentCorrectionSound.stopAsync().catch(error => {
+        console.warn('Error stopping correction sound immediately:', error);
       });
     }
     
@@ -1693,6 +1815,12 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
+      // Reset correction-related states
+      needsCorrection: false,
+      correctedSentence: '',
+      correctionType: '',
+      isPlayingCorrection: false,
+      showRepeatAfterMe: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -1847,6 +1975,27 @@ export default function EnglishOnlyScreen() {
           </>
         )}
       </View>
+
+      {/* Repeat After Me Overlay */}
+      {state.showRepeatAfterMe && (
+        <View style={styles.repeatAfterMeOverlay} pointerEvents="box-none">
+          <View style={styles.repeatAfterMeContainer}>
+            <LinearGradient
+              colors={['#4CAF50', '#45B7A8']}
+              style={styles.repeatAfterMeGradient}
+            >
+              <View style={styles.repeatAfterMeContent}>
+                <Ionicons name="repeat" size={32} color="white" style={styles.repeatIcon} />
+                <Text style={styles.repeatAfterMeTitle}>Repeat After Me</Text>
+                <Text style={styles.correctedSentenceText}>{state.correctedSentence}</Text>
+                {state.currentMessageText && (
+                  <Text style={styles.repeatInstructionText}>{state.currentMessageText}</Text>
+                )}
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      )}
 
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
@@ -2150,5 +2299,55 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#CED4DA',
     opacity: 0.25,
+  },
+  // Repeat After Me styles
+  repeatAfterMeOverlay: {
+    position: 'absolute',
+    top: height * 0.2,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  repeatAfterMeContainer: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  repeatAfterMeGradient: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  repeatAfterMeContent: {
+    alignItems: 'center',
+  },
+  repeatIcon: {
+    marginBottom: 12,
+  },
+  repeatAfterMeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  correctedSentenceText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 12,
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  repeatInstructionText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
 });

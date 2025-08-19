@@ -14,7 +14,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -341,8 +341,12 @@ const AcademicPresentationScreen = () => {
       console.log('✅ [PROCESS] Evaluation result received:', result);
       
       setEvaluationResult(result);
-      setShowEvaluatingAnimation(false);
-      setIsEvaluating(false);
+      console.log('✅ [EVAL] Evaluation completed successfully');
+      
+      // Keep evaluation animation visible until navigation
+      // The animation will be hidden when the component unmounts during navigation
+      console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+      console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
       
       if (result.success) {
         // Navigate to feedback screen
@@ -413,6 +417,13 @@ const AcademicPresentationScreen = () => {
     const initialize = async () => {
       console.log('🔄 [INIT] Initializing Academic Presentation screen...');
       
+      // Reset evaluation states on component mount to ensure clean state
+      console.log('🔄 [INIT] Component mounting, resetting evaluation states');
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      
       // Initialize progress tracking
       await initializeProgressTracking();
       
@@ -452,6 +463,29 @@ const AcademicPresentationScreen = () => {
     initialize();
   }, []);
 
+  // Add focus listener to reset evaluation states when component comes back into focus
+  // This handles cases where user navigates back from feedback page or other screens
+  // and ensures the evaluation animation doesn't persist
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 [FOCUS] Component is now in focus. Resetting evaluation states.');
+      
+      // Reset all evaluation-related states
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      
+      // Also check if we have any feedback-related parameters that indicate a return
+      if (params.returnFromFeedback || params.tryAgain || params.evaluationResult) {
+        console.log('🔄 [FOCUS] Detected feedback return parameters, ensuring clean state');
+        // Clear any evaluation-related parameters
+        setShowEvaluatingAnimation(false);
+        setIsEvaluating(false);
+      }
+    }, [params.returnFromFeedback, params.tryAgain, params.evaluationResult])
+  );
+
   // Handle next prompt from params
   useEffect(() => {
     if (params.nextTopic === 'true' && isProgressInitialized) {
@@ -488,14 +522,21 @@ const AcademicPresentationScreen = () => {
       }
       
       // Reset states when component unmounts
+      // Note: Don't hide evaluation animation when navigating to feedback page
+      // It will be hidden automatically when the component unmounts during navigation
       setEvaluationResult(null);
-      setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
     };
   }, [audioPlayer, isNavigatingAway]);
 
   // Handle back button press
   const handleBackPress = () => {
+    // Prevent navigation back during evaluation
+    if (isEvaluating || showEvaluatingAnimation) {
+      console.log('🎯 [NAVIGATION] Back button pressed during evaluation - ignoring');
+      return;
+    }
+    
     console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
     if (audioPlayer.state.isPlaying) {
       audioPlayer.stopAudio();

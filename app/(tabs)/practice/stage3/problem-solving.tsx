@@ -14,7 +14,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -411,8 +411,12 @@ const ProblemSolvingScreen = () => {
       
       if (result.success) {
         setEvaluationResult(result);
-        setShowEvaluatingAnimation(false);
         console.log('✅ [EVAL] Evaluation completed successfully');
+        
+        // Keep evaluation animation visible until navigation
+        // The animation will be hidden when the component unmounts during navigation
+        console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+        console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
         
         // Navigate to feedback screen
         router.push({
@@ -508,6 +512,13 @@ const ProblemSolvingScreen = () => {
     const initialize = async () => {
       console.log('🚀 [INIT] Initializing Problem Solving Screen...');
       
+      // Reset evaluation states on component mount to ensure clean state
+      console.log('🔄 [INIT] Component mounting, resetting evaluation states');
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      
       // Start animations
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -543,6 +554,29 @@ const ProblemSolvingScreen = () => {
     initialize();
   }, []);
 
+  // Add focus listener to reset evaluation states when component comes back into focus
+  // This handles cases where user navigates back from feedback page or other screens
+  // and ensures the evaluation animation doesn't persist
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 [FOCUS] Component is now in focus. Resetting evaluation states.');
+      
+      // Reset all evaluation-related states
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      
+      // Also check if we have any feedback-related parameters that indicate a return
+      if (params.returnFromFeedback || params.tryAgain || params.evaluationResult) {
+        console.log('🔄 [FOCUS] Detected feedback return parameters, ensuring clean state');
+        // Clear any evaluation-related parameters
+        setShowEvaluatingAnimation(false);
+        setIsEvaluating(false);
+      }
+    }, [params.returnFromFeedback, params.tryAgain, params.evaluationResult])
+  );
+
   // Handle feedback return from navigation
   useEffect(() => {
     const handleFeedbackReturn = async () => {
@@ -568,14 +602,21 @@ const ProblemSolvingScreen = () => {
       }
       
       // Reset states when component unmounts
+      // Note: Don't hide evaluation animation when navigating to feedback page
+      // It will be hidden automatically when the component unmounts during navigation
       setEvaluationResult(null);
-      setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
     };
   }, [audioPlayer, isNavigatingAway]);
 
   // Handle back button press
   const handleBackPress = () => {
+    // Prevent navigation back during evaluation
+    if (isEvaluating || showEvaluatingAnimation) {
+      console.log('🎯 [NAVIGATION] Back button pressed during evaluation - ignoring');
+      return;
+    }
+    
     console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
     if (audioPlayer.state.isPlaying) {
       audioPlayer.stopAudio();
@@ -818,6 +859,9 @@ const ProblemSolvingScreen = () => {
               </View>
 
         {/* Evaluating Animation Overlay */}
+        {/* This animation will continue showing until navigation to the feedback page */}
+        {/* The animation will be automatically hidden when the component unmounts during navigation */}
+        {/* When returning from feedback page, the animation state is automatically reset */}
         {showEvaluatingAnimation && (
           <View style={styles.evaluatingOverlay}>
             <View style={styles.animationContainer}>
@@ -830,8 +874,8 @@ const ProblemSolvingScreen = () => {
             </View>
             <View style={styles.evaluatingTextContainer}>
               <Text style={styles.evaluatingTitle}>Evaluating...</Text>
-        </View>
-        </View>
+            </View>
+          </View>
         )}
     </SafeAreaView>
     </LinearGradient>
