@@ -62,6 +62,7 @@ interface EvaluationResult {
   total_keywords?: number;
   fluency_score?: number;
   grammar_score?: number;
+  argument_type?: string;
 }
 
 const CriticalThinkingDialoguesScreen = () => {
@@ -386,10 +387,38 @@ const CriticalThinkingDialoguesScreen = () => {
         console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
         
         // Navigate to feedback screen
+        const feedbackData = {
+          success: result.success,
+          topic: result.topic,
+          expected_keywords: result.expected_keywords,
+          user_text: result.user_text,
+          evaluation: {
+            overall_score: result.evaluation?.overall_score,
+            score: result.evaluation?.score,
+            argument_structure_score: result.evaluation?.argument_structure_score,
+            critical_thinking_score: result.evaluation?.critical_thinking_score,
+            vocabulary_range_score: result.evaluation?.vocabulary_range_score,
+            fluency_grammar_score: result.evaluation?.fluency_grammar_score,
+            discourse_markers_score: result.evaluation?.discourse_markers_score,
+            completed: result.evaluation?.completed,
+            is_correct: result.evaluation?.is_correct
+          },
+          suggested_improvement: result.suggested_improvement,
+          keyword_matches: result.keyword_matches,
+          total_keywords: result.total_keywords,
+          fluency_score: result.fluency_score,
+          grammar_score: result.grammar_score,
+          argument_type: result.argument_type
+        };
+        
+        console.log('🔄 [NAVIGATION] Preparing feedback data:', feedbackData);
+        console.log('🔄 [NAVIGATION] Score in feedback data:', feedbackData.evaluation.overall_score);
+        console.log('🔄 [NAVIGATION] Data size:', JSON.stringify(feedbackData).length, 'characters');
+        
         router.push({
           pathname: '/(tabs)/practice/stage5/feedback_7' as any,
           params: {
-            evaluationResult: JSON.stringify(result),
+            evaluationResult: JSON.stringify(feedbackData),
             currentTopicId: currentTopicId.toString(),
             totalTopics: totalTopics.toString(),
           }

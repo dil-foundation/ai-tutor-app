@@ -31,6 +31,7 @@ interface EvaluationResult {
   total_keywords?: number;
   fluency_score?: number;
   grammar_score?: number;
+  score?: number;
 }
 
 const Feedback7Screen = () => {
@@ -47,6 +48,17 @@ const Feedback7Screen = () => {
     // Only parse evaluation result if we haven't parsed it yet
     if (params.evaluationResult && !hasParsedEvaluation.current) {
       try {
+        console.log('🔄 [FEEDBACK] Raw evaluationResult parameter:', params.evaluationResult);
+        console.log('🔄 [FEEDBACK] Parameter length:', params.evaluationResult.length);
+        console.log('🔄 [FEEDBACK] Parameter type:', typeof params.evaluationResult);
+        
+        // Check if the parameter might be truncated
+        if (typeof params.evaluationResult === 'string' && params.evaluationResult.length > 1000) {
+          console.log('🔄 [FEEDBACK] Parameter is long, checking for truncation...');
+          console.log('🔄 [FEEDBACK] First 200 chars:', params.evaluationResult.substring(0, 200));
+          console.log('🔄 [FEEDBACK] Last 200 chars:', params.evaluationResult.substring(params.evaluationResult.length - 200));
+        }
+        
         const result = JSON.parse(params.evaluationResult as string);
         setEvaluationResult(result);
         hasParsedEvaluation.current = true;
@@ -54,8 +66,26 @@ const Feedback7Screen = () => {
         console.log('📊 [FEEDBACK] Full evaluation result:', result);
         console.log('📊 [FEEDBACK] Evaluation object:', result.evaluation);
         console.log('📊 [FEEDBACK] Score from evaluation:', result.evaluation?.overall_score);
+        console.log('📊 [FEEDBACK] Alternative score fields:', {
+          'evaluation.overall_score': result.evaluation?.overall_score,
+          'evaluation.score': result.evaluation?.score,
+          'root.score': result.score,
+          'evaluation.fluency_grammar_score': result.evaluation?.fluency_grammar_score
+        });
+        
+        // Deep dive into the evaluation structure
+        if (result.evaluation) {
+          console.log('🔍 [FEEDBACK] Deep evaluation structure analysis:', {
+            'evaluation_type': typeof result.evaluation,
+            'evaluation_keys': Object.keys(result.evaluation),
+            'overall_score_exists': 'overall_score' in result.evaluation,
+            'overall_score_value': result.evaluation.overall_score,
+            'overall_score_type': typeof result.evaluation.overall_score
+          });
+        }
       } catch (error) {
         console.error('❌ [FEEDBACK] Error parsing evaluation result:', error);
+        console.error('❌ [FEEDBACK] Raw parameter that failed:', params.evaluationResult);
       }
     }
 
@@ -121,6 +151,94 @@ const Feedback7Screen = () => {
     });
   };
 
+  // Helper function to safely parse score
+  const parseScore = (value: any): number => {
+    if (value === null || value === undefined) return 0;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : Math.max(0, Math.min(100, parsed));
+  };
+
+  // Enhanced score extraction function with comprehensive fallbacks
+  const extractScore = (data: any): number => {
+    console.log('🔍 [FEEDBACK] Extracting score from data structure:', {
+      'data_type': typeof data,
+      'has_evaluation': !!data?.evaluation,
+      'evaluation_type': typeof data?.evaluation,
+      'evaluation_keys': data?.evaluation ? Object.keys(data.evaluation) : []
+    });
+
+    // Try multiple possible score locations
+    const possibleScores = [
+      data?.evaluation?.overall_score,
+      data?.evaluation?.score,
+      data?.score,
+      data?.evaluation?.fluency_grammar_score,
+      data?.fluency_score,
+      data?.grammar_score
+    ];
+
+    console.log('🔍 [FEEDBACK] Possible scores found:', possibleScores);
+
+    for (const score of possibleScores) {
+      if (score !== null && score !== undefined && score !== '') {
+        const parsed = parseScore(score);
+        if (parsed > 0) {
+          console.log('✅ [FEEDBACK] Valid score found:', { 'raw': score, 'parsed': parsed });
+          return parsed;
+        }
+      }
+    }
+
+    // If no score found, try to calculate from individual scores
+    if (data?.evaluation) {
+      const evalData = data.evaluation;
+      const individualScores = [
+        evalData.argument_structure_score,
+        evalData.critical_thinking_score,
+        evalData.vocabulary_range_score,
+        evalData.fluency_grammar_score,
+        evalData.discourse_markers_score
+      ].filter(score => score !== null && score !== undefined);
+      
+      if (individualScores.length > 0) {
+        const calculatedScore = Math.round(individualScores.reduce((sum, score) => sum + score, 0));
+        console.log('🔄 [FEEDBACK] Calculated score from individual scores:', calculatedScore);
+        return Math.min(100, calculatedScore);
+      }
+    }
+
+    // Last resort: check if we have any numeric values in the data
+    const allNumericValues: Array<{path: string, value: number}> = [];
+    const extractNumericValues = (obj: any, path: string = '') => {
+      if (obj && typeof obj === 'object') {
+        Object.entries(obj).forEach(([key, value]) => {
+          const currentPath = path ? `${path}.${key}` : key;
+          if (typeof value === 'number' && value > 0 && value <= 100) {
+            allNumericValues.push({ path: currentPath, value });
+          } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+            const parsed = parseFloat(value);
+            if (parsed > 0 && parsed <= 100) {
+              allNumericValues.push({ path: currentPath, value: parsed });
+            }
+          }
+        });
+      }
+    };
+    
+    extractNumericValues(data);
+    
+    if (allNumericValues.length > 0) {
+      // Use the highest numeric value found
+      const highestScore = Math.max(...allNumericValues.map(item => item.value));
+      console.log('🔄 [FEEDBACK] Found numeric values in data:', allNumericValues);
+      console.log('🔄 [FEEDBACK] Using highest numeric value as score:', highestScore);
+      return highestScore;
+    }
+
+    console.log('⚠️ [FEEDBACK] No valid score found, using default 0');
+    return 0;
+  };
+
   // Check if the exercise is completed based on evaluation result
   const isCompleted = evaluationResult?.evaluation?.completed === true;
 
@@ -140,8 +258,11 @@ const Feedback7Screen = () => {
     );
   }
 
-  const score = evaluationResult.evaluation?.overall_score || 0;
-  console.log('📊 [FEEDBACK] Final score being displayed:', score);
+  // Enhanced score extraction with multiple fallbacks
+  const score = extractScore(evaluationResult);
+  
+  console.log('📊 [FEEDBACK] Final score extracted:', score);
+  
   const keywordMatches = evaluationResult.keyword_matches || 0;
   const totalKeywords = evaluationResult.total_keywords || 0;
   const fluencyScore = evaluationResult.fluency_score || 0;
@@ -188,6 +309,17 @@ const Feedback7Screen = () => {
                     <Text style={styles.scoreMax}>/100</Text>
                   </LinearGradient>
                 </View>
+                
+                {/* Score Warning */}
+                {score === 0 && (
+                  <View style={styles.scoreWarning}>
+                    <Ionicons name="warning" size={16} color="#F39C12" style={{ marginRight: 4 }} />
+                    <Text style={styles.scoreWarningText}>
+                      Score may not be displaying correctly. Please check console for details.
+                    </Text>
+                  </View>
+                )}
+                
                 <Text style={styles.scoreMessage}>
                   {getScoreMessage(score)}
                 </Text>
@@ -196,15 +328,15 @@ const Feedback7Screen = () => {
                 </Text>
                 
                 {/* Completion Status */}
-                <View style={[styles.completionStatus, { backgroundColor: isCompleted ? '#D4EDDA' : '#FFF3CD' }]}>
+                <View style={[styles.completionStatus, { backgroundColor: evaluationResult?.evaluation?.completed === true ? '#D4EDDA' : '#FFF3CD' }]}>
                   <Ionicons 
-                    name={isCompleted ? 'checkmark-circle' : 'alert-circle'} 
+                    name={evaluationResult?.evaluation?.completed === true ? 'checkmark-circle' : 'alert-circle'} 
                     size={20} 
-                    color={isCompleted ? '#155724' : '#856404'} 
+                    color={evaluationResult?.evaluation?.completed === true ? '#155724' : '#856404'} 
                     style={{ marginRight: 8 }} 
                   />
-                  <Text style={[styles.completionStatusText, { color: isCompleted ? '#155724' : '#856404' }]}>
-                    {isCompleted ? 'Exercise Completed! 🎉' : 'Keep Practicing 💪'}
+                  <Text style={[styles.completionStatusText, { color: evaluationResult?.evaluation?.completed === true ? '#155724' : '#856404' }]}>
+                    {evaluationResult?.evaluation?.completed === true ? 'Exercise Completed! 🎉' : 'Keep Practicing 💪'}
                   </Text>
                 </View>
               </View>
@@ -241,7 +373,7 @@ const Feedback7Screen = () => {
                   <View style={styles.metricCard}>
                     <Ionicons name="checkmark-circle" size={24} color="#58D68D" />
                     <Text style={styles.metricValue}>
-                      {evaluationResult.evaluation?.argument_structure_score || 0}/25
+                      {evaluationResult?.evaluation?.argument_structure_score || 0}/25
                     </Text>
                     <Text style={styles.metricLabel}>Argument Structure</Text>
                   </View>
@@ -249,7 +381,7 @@ const Feedback7Screen = () => {
                   <View style={styles.metricCard}>
                     <Ionicons name="bulb" size={24} color="#58D68D" />
                     <Text style={styles.metricValue}>
-                      {evaluationResult.evaluation?.critical_thinking_score || 0}/25
+                      {evaluationResult?.evaluation?.critical_thinking_score || 0}/25
                     </Text>
                     <Text style={styles.metricLabel}>Critical Thinking</Text>
                   </View>
@@ -257,7 +389,7 @@ const Feedback7Screen = () => {
                   <View style={styles.metricCard}>
                     <Ionicons name="book" size={24} color="#58D68D" />
                     <Text style={styles.metricValue}>
-                      {evaluationResult.evaluation?.vocabulary_range_score || 0}/20
+                      {evaluationResult?.evaluation?.vocabulary_range_score || 0}/20
                     </Text>
                     <Text style={styles.metricLabel}>Vocabulary Range</Text>
                   </View>
@@ -265,7 +397,7 @@ const Feedback7Screen = () => {
               </View>
 
               {/* Topic */}
-              {evaluationResult.topic && (
+              {evaluationResult?.topic && (
                 <View style={styles.topicSection}>
                   <Text style={styles.sectionTitle}>Debate Topic</Text>
                   <View style={styles.topicCard}>
@@ -276,7 +408,7 @@ const Feedback7Screen = () => {
               )}
 
               {/* Your Response */}
-              {evaluationResult.user_text && (
+              {evaluationResult?.user_text && (
                 <View style={styles.userTextSection}>
                   <Text style={styles.sectionTitle}>What You Said</Text>
                   <View style={styles.userTextCard}>
@@ -287,7 +419,7 @@ const Feedback7Screen = () => {
               )}
 
               {/* Improvement Suggestions */}
-              {evaluationResult.suggested_improvement && (
+              {evaluationResult?.suggested_improvement && (
                 <View style={styles.improvementSection}>
                   <Text style={styles.sectionTitle}>Suggestions for Improvement</Text>
                   <View style={styles.improvementCard}>
@@ -300,7 +432,7 @@ const Feedback7Screen = () => {
               )}
 
               {/* Expected Keywords */}
-              {evaluationResult.expected_keywords && evaluationResult.expected_keywords.length > 0 && (
+              {evaluationResult?.expected_keywords && evaluationResult.expected_keywords.length > 0 && (
                 <View style={styles.keywordsSection}>
                   <Text style={styles.sectionTitle}>Expected Keywords</Text>
                   <View style={styles.keywordsContainer}>
@@ -314,7 +446,7 @@ const Feedback7Screen = () => {
               )}
 
               {/* Unlocked Content */}
-              {evaluationResult.unlocked_content && evaluationResult.unlocked_content.length > 0 && (
+              {evaluationResult?.unlocked_content && evaluationResult.unlocked_content.length > 0 && (
                 <View style={styles.unlockedSection}>
                   <Text style={styles.sectionTitle}>🎉 New Content Unlocked!</Text>
                   <View style={styles.unlockedCard}>
@@ -341,7 +473,7 @@ const Feedback7Screen = () => {
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             {/* Show Try Again button when not completed */}
-            {!isCompleted && (
+            {!evaluationResult?.evaluation?.completed && (
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={handleTryAgain}
@@ -357,7 +489,7 @@ const Feedback7Screen = () => {
             )}
             
             {/* Show Next Topic button when completed */}
-            {isCompleted && currentTopicId < totalTopics && (
+            {evaluationResult?.evaluation?.completed && currentTopicId < totalTopics && (
               <TouchableOpacity
                 style={styles.nextButton}
                 onPress={handleNextTopic}
@@ -742,6 +874,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  scoreWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  scoreWarningText: {
+    fontSize: 13,
+    color: '#856404',
+    fontWeight: '600',
   },
 });
 
