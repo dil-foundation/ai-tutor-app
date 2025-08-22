@@ -2,8 +2,7 @@
  * English-Only AI Tutor Screen
  * 
  * Features:
- * - ChatGPT Voice Mode style experience
- * - Voice-only interaction (no UI overlays)
+ * - ChatGPT-like voice mode experience
  * - Personalized greetings with user's name
  * - Thick accent detection and correction
  * - Broken English detection and correction
@@ -15,7 +14,7 @@
  * 1. Greet user by name
  * 2. Listen continuously to user input
  * 3. Detect accent/grammar issues
- * 4. Provide corrections with pronunciation (voice-only)
+ * 4. Provide corrections with pronunciation
  * 5. Stay in listening mode for next input
  * 6. Handle prolonged silence with gentle prompts
  */
@@ -75,11 +74,6 @@ interface EnglishOnlyState {
   isProcessingAudio: boolean; // New state for tracking audio processing
   isNoSpeechAfterProcessing: boolean; // New state for tracking no speech detected after processing
   isUserReminded: boolean;
-  // Correction-related states (voice-only mode)
-  needsCorrection: boolean;
-  correctedSentence: string;
-  correctionType: string;
-  isPlayingCorrection: boolean;
 }
 
 export default function EnglishOnlyScreen() {
@@ -128,10 +122,6 @@ export default function EnglishOnlyScreen() {
     isProcessingAudio: false,
     isNoSpeechAfterProcessing: false,
     isUserReminded: false,
-    needsCorrection: false,
-    correctedSentence: '',
-    correctionType: '',
-    isPlayingCorrection: false,
   });
 
   // Track connection attempts to prevent multiple simultaneous connections
@@ -145,7 +135,6 @@ export default function EnglishOnlyScreen() {
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
-  const correctionSoundRef = useRef<Audio.Sound | null>(null); // New ref for correction audio
   const scrollViewRef = useRef<any>(null);
   const isPlayingAudioRef = useRef(false); // Prevent multiple audio sessions
   const [isTalking, setIsTalking] = useState(false);
@@ -543,129 +532,6 @@ export default function EnglishOnlyScreen() {
     }
   };
 
-  const ensureAudioOnlyMode = async () => {
-    /**
-     * Ensures the app is in audio-only mode by stopping any recording and cleaning up audio states.
-     * This prevents voice overlapping between user speech and AI audio playback.
-     * Voice-only interaction like ChatGPT Voice Mode.
-     */
-    console.log('🔇 Ensuring audio-only mode (ChatGPT Voice Mode style)...');
-    
-    // Stop any ongoing recording
-    if (recordingRef.current && state.isListening) {
-      console.log('🛑 Stopping recording to prevent voice overlap');
-      try {
-        await stopRecording(false);
-      } catch (error) {
-        console.error('Error stopping recording for audio-only mode:', error);
-      }
-    }
-    
-    // Stop any existing audio playback
-    const cleanupPromises = [];
-    
-    if (soundRef.current) {
-      try {
-        const currentSound = soundRef.current;
-        soundRef.current = null;
-        cleanupPromises.push(
-          currentSound.stopAsync().then(() => currentSound.unloadAsync())
-        );
-      } catch (error) {
-        console.log('Error stopping main audio for audio-only mode:', error);
-      }
-    }
-    
-    if (correctionSoundRef.current) {
-      try {
-        const currentCorrectionSound = correctionSoundRef.current;
-        correctionSoundRef.current = null;
-        cleanupPromises.push(
-          currentCorrectionSound.stopAsync().then(() => currentCorrectionSound.unloadAsync())
-        );
-      } catch (error) {
-        console.log('Error stopping correction audio for audio-only mode:', error);
-      }
-    }
-    
-    // Wait for all cleanup to complete
-    if (cleanupPromises.length > 0) {
-      await Promise.allSettled(cleanupPromises);
-      console.log('✅ Audio-only mode cleanup completed');
-    }
-    
-    // Update state to reflect audio-only mode
-    setState(prev => ({
-      ...prev,
-      isListening: false,
-      isPlayingCorrection: false,
-    }));
-  };
-
-  const playCorrectionAudio = async (audioUri: string) => {
-    console.log('🎯 Playing correction audio (voice-only mode)...');
-    
-    try {
-      // Enhanced cleanup to prevent voice overlapping
-      await ensureAudioOnlyMode();
-      
-      // Set state for correction audio playback
-      setState(prev => ({
-        ...prev,
-        isPlayingCorrection: true,
-        currentStep: 'speaking',
-        isAISpeaking: true,
-        isListening: false, // Ensure listening is stopped
-      }));
-
-      // Stop any existing correction audio
-      if (correctionSoundRef.current) {
-        try {
-          const currentSound = correctionSoundRef.current;
-          correctionSoundRef.current = null;
-          await currentSound.stopAsync();
-          await currentSound.unloadAsync();
-        } catch (error) {
-          console.log('Error stopping existing correction audio:', error);
-        }
-      }
-
-      // Create and play correction audio
-      const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
-      correctionSoundRef.current = sound;
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          console.log('🎯 Correction audio finished, starting to listen for user');
-          setState(prev => ({
-            ...prev,
-            isPlayingCorrection: false,
-            isAISpeaking: false,
-            currentStep: 'waiting',
-            currentMessageText: '', // Clear message for clean interface
-          }));
-
-          // Start listening for user to repeat (voice-only interaction)
-          setTimeout(() => {
-            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-              console.log('🎤 Starting to listen for user repetition');
-              startRecording();
-            }
-          }, 1000); // Reduced delay for more natural flow
-        }
-      });
-
-      await sound.playAsync();
-    } catch (error) {
-      console.error('Failed to play correction audio:', error);
-      setState(prev => ({
-        ...prev,
-        isPlayingCorrection: false,
-        currentStep: 'waiting',
-      }));
-    }
-  };
-
   const connectToWebSocket = () => {
     // Prevent multiple simultaneous connection attempts
     if (connectionAttemptsRef.current >= maxConnectionAttempts) {
@@ -754,15 +620,6 @@ export default function EnglishOnlyScreen() {
       });
     }
 
-    // Log correction data if available
-    if (data.needs_correction) {
-      console.log('🔍 [CORRECTION]', {
-        needs_correction: data.needs_correction,
-        corrected_sentence: data.corrected_sentence,
-        correction_type: data.correction_type
-      });
-    }
-
     // Stop any existing recording when AI responds
     if (recordingRef.current && state.isListening) {
       console.log('🛑 Stopping recording because AI is responding');
@@ -804,10 +661,6 @@ export default function EnglishOnlyScreen() {
       // Don't set isAISpeaking to false here - let handleAudioData manage it
       // Update lastUserInput if this is a response to user speech
       lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
-      // Update correction-related states
-      needsCorrection: data.needs_correction || false,
-      correctedSentence: data.corrected_sentence || '',
-      correctionType: data.correction_type || '',
     }));
 
     // Handle no speech detected response from backend
@@ -897,40 +750,28 @@ export default function EnglishOnlyScreen() {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Enhanced audio interruption logic to prevent voice overlapping
-      const isHighPriority = lastMessageStepRef.current === 'no_speech_detected_after_processing' || 
-                            lastMessageStepRef.current === 'correction' || 
-                            lastMessageStepRef.current === 'greeting';
-      
+      // If a high-priority audio message arrives, interrupt the current audio.
+      // This prevents a race condition where a "no speech" response is ignored
+      // because the initial "processing" audio is still playing.
+      const isHighPriority = lastMessageStepRef.current === 'no_speech_detected_after_processing' || lastMessageStepRef.current === 'correction';
       if (isHighPriority && isPlayingAudioRef.current) {
         console.log('🎵 [High Priority] Interrupting current audio for new message.');
-        
-        // Stop main audio
         if (soundRef.current) {
           const currentSound = soundRef.current;
-          soundRef.current = null;
+          soundRef.current = null; // Clear reference first to prevent race conditions
+          
           await currentSound.stopAsync();
           await currentSound.unloadAsync();
         }
-        
-        // Stop correction audio if playing
-        if (correctionSoundRef.current) {
-          const currentCorrectionSound = correctionSoundRef.current;
-          correctionSoundRef.current = null;
-          await currentCorrectionSound.stopAsync();
-          await currentCorrectionSound.unloadAsync();
-        }
-        
-        // Stop any ongoing recording to prevent voice overlap
-        if (recordingRef.current && state.isListening) {
-          console.log('🛑 Stopping recording to prevent voice overlap');
-          try {
-            await stopRecording(false);
-          } catch (error) {
-            console.error('Error stopping recording during audio interruption:', error);
-          }
-        }
-        
+        // Stop processing audio if it's playing (disabled for natural flow)
+        // if (audioManager.isAudioPlaying('processing_audio') ||
+        //     audioManager.isAudioPlaying('processing_audio_0') ||
+        //     audioManager.isAudioPlaying('processing_audio_1') ||
+        //     audioManager.isAudioPlaying('processing_audio_2') ||
+        //     audioManager.isAudioPlaying('processing_audio_3')) {
+        //   console.log('🎵 [High Priority] Stopping processing audio for new message.');
+        //   audioManager.stopCurrentAudio();
+        // }
         isPlayingAudioRef.current = false;
       }
       // Processing audio interruption removed for natural flow
@@ -968,13 +809,7 @@ export default function EnglishOnlyScreen() {
         }
       });
 
-      // Check if this is correction audio (second audio buffer)
-      if (state.needsCorrection && state.correctedSentence && !state.isPlayingCorrection) {
-        console.log('🎯 Detected correction audio, playing with repeat after me behavior');
-        await playCorrectionAudio(audioUri);
-      } else {
-        await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
-      }
+      await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
     } catch (error) {
       console.error('Failed to handle audio data:', error);
     }
@@ -1014,8 +849,18 @@ export default function EnglishOnlyScreen() {
     isPlayingAudioRef.current = true;
 
     try {
-      // Enhanced audio cleanup to prevent voice overlapping
-      await ensureAudioOnlyMode();
+      // Stop any existing audio playback
+      if (soundRef.current) {
+        try {
+          const currentSound = soundRef.current;
+          soundRef.current = null; // Clear reference first to prevent race conditions
+          
+          await currentSound.stopAsync();
+          await currentSound.unloadAsync();
+        } catch (error) {
+          console.log('Error stopping existing audio:', error);
+        }
+      }
 
       // Clear any existing timers
       if (silenceTimerRef.current) {
@@ -1321,8 +1166,6 @@ export default function EnglishOnlyScreen() {
         isPauseDetected: false,
         currentMessageText: '',
         silenceStartTime: null,
-        // Clear correction states when user starts speaking
-        isPlayingCorrection: false,
       }));
 
       // Log the recording state for debugging
@@ -1456,8 +1299,6 @@ export default function EnglishOnlyScreen() {
                 setState(prev => ({ 
                   ...prev, 
                   isListening: false,
-                  // Clear correction states when user starts talking
-                  isPlayingCorrection: false,
                 }));
               }
               // Only reset silence timer when user is talking
@@ -1744,19 +1585,6 @@ export default function EnglishOnlyScreen() {
         console.warn('Error unloading sound:', error);
       });
     }
-
-    if (correctionSoundRef.current) {
-      console.log('🔇 Stopping and unloading correction sound...');
-      const currentCorrectionSound = correctionSoundRef.current;
-      correctionSoundRef.current = null;
-      
-      currentCorrectionSound.stopAsync().catch(error => {
-        console.warn('Error stopping correction sound:', error);
-      });
-      currentCorrectionSound.unloadAsync().catch(error => {
-        console.warn('Error unloading correction sound:', error);
-      });
-    }
     
     // Stop processing audio using audioManager (disabled for natural flow)
     // if (audioManager.isAudioPlaying('processing_audio') || 
@@ -1790,11 +1618,6 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
-      // Reset correction-related states
-      needsCorrection: false,
-      correctedSentence: '',
-      correctionType: '',
-      isPlayingCorrection: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -1821,15 +1644,6 @@ export default function EnglishOnlyScreen() {
       
       currentSound.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
-      });
-    }
-
-    if (correctionSoundRef.current) {
-      const currentCorrectionSound = correctionSoundRef.current;
-      correctionSoundRef.current = null;
-      
-      currentCorrectionSound.stopAsync().catch(error => {
-        console.warn('Error stopping correction sound immediately:', error);
       });
     }
     
@@ -1879,11 +1693,6 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
-      // Reset correction-related states
-      needsCorrection: false,
-      correctedSentence: '',
-      correctionType: '',
-      isPlayingCorrection: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -2038,8 +1847,6 @@ export default function EnglishOnlyScreen() {
           </>
         )}
       </View>
-
-
 
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
@@ -2344,5 +2151,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#CED4DA',
     opacity: 0.25,
   },
-
 });
