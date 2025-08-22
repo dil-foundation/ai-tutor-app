@@ -192,6 +192,128 @@ export default function EnglishOnlyScreen() {
     }
   };
 
+  // Enhanced audio session management to prevent dual voice echo
+  const audioSessionRef = useRef<{
+    isRecording: boolean;
+    isPlaying: boolean;
+    isTTSActive: boolean;
+    lastMode: 'recording' | 'playback' | 'none';
+  }>({
+    isRecording: false,
+    isPlaying: false,
+    isTTSActive: false,
+    lastMode: 'none'
+  });
+
+  // Centralized audio cleanup function to prevent dual voice echo
+  const ensureAudioCleanup = async (targetMode: 'recording' | 'playback' | 'none') => {
+    console.log(`🔧 [AUDIO_CLEANUP] Ensuring cleanup for mode: ${targetMode}`);
+    
+    try {
+      // Stop all speech synthesis first (highest priority)
+      if (audioSessionRef.current.isTTSActive) {
+        console.log('🔇 Stopping TTS synthesis...');
+        Speech.stop();
+        audioSessionRef.current.isTTSActive = false;
+        
+        // iOS-specific delay to prevent dual voice echo
+        if (Platform.OS === 'ios') {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      // Stop and unload any playing audio
+      if (soundRef.current && audioSessionRef.current.isPlaying) {
+        console.log('🔇 Stopping and unloading sound...');
+        const currentSound = soundRef.current;
+        soundRef.current = null;
+        
+        try {
+          await currentSound.stopAsync();
+          await currentSound.unloadAsync();
+          
+          // iOS-specific delay to prevent dual voice echo
+          if (Platform.OS === 'ios') {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } catch (error) {
+          console.log('Error stopping sound during cleanup:', error);
+        }
+        audioSessionRef.current.isPlaying = false;
+      }
+
+      // Stop any active recording
+      if (recordingRef.current && audioSessionRef.current.isRecording) {
+        console.log('🛑 Stopping active recording...');
+        const currentRecording = recordingRef.current;
+        recordingRef.current = null;
+        
+        try {
+          await currentRecording.stopAndUnloadAsync();
+          
+          // iOS-specific delay to prevent dual voice echo
+          if (Platform.OS === 'ios') {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } catch (error) {
+          console.log('Error stopping recording during cleanup:', error);
+        }
+        audioSessionRef.current.isRecording = false;
+      }
+
+      // Set appropriate audio mode based on target
+      if (targetMode === 'recording') {
+        console.log('🎤 Setting audio mode for recording...');
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        });
+        audioSessionRef.current.lastMode = 'recording';
+      } else if (targetMode === 'playback') {
+        console.log('🔊 Setting audio mode for playback...');
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        });
+        audioSessionRef.current.lastMode = 'playback';
+      } else {
+        console.log('🔇 Setting audio mode to none...');
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+        audioSessionRef.current.lastMode = 'none';
+      }
+
+      console.log(`✅ [AUDIO_CLEANUP] Cleanup completed for mode: ${targetMode}`);
+    } catch (error) {
+      console.error('Error during audio cleanup:', error);
+    }
+  };
+
+  // Enhanced audio initialization with proper session management
+  const initializeAudio = async () => {
+    try {
+      await Audio.requestPermissionsAsync();
+      
+      // Initialize with recording mode
+      await ensureAudioCleanup('recording');
+      
+      console.log('✅ Audio initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize audio:', error);
+      Alert.alert('Error', 'Failed to initialize audio permissions');
+    }
+  };
+
   // Handle screen focus and blur events
   useFocusEffect(
     useCallback(() => {
@@ -242,28 +364,12 @@ export default function EnglishOnlyScreen() {
     }
   }, [state.silenceStartTime, state.isAISpeaking, state.isListening, state.isPauseDetected, state.lastUserInput]);
 
-  const initializeAudio = async () => {
-    try {
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-      });
-    } catch (error) {
-      console.error('Failed to initialize audio:', error);
-      Alert.alert('Error', 'Failed to initialize audio permissions');
-    }
-  };
-
   const playGreeting = async () => {
     if (greetingInitiatedRef.current) {
       console.log('Greeting already initiated, skipping.');
       return;
     }
     greetingInitiatedRef.current = true;
-
 
     // Check if WebSocket is connected before sending greeting
     if (!isEnglishOnlySocketConnected()) {
@@ -289,20 +395,8 @@ export default function EnglishOnlyScreen() {
         currentMessageText: `Hi ${state.userName}, I'm your AI English tutor. How can I help?`,
       }));
 
-      // Unload any previous sound
-      if (soundRef.current) {
-        const currentSound = soundRef.current;
-        soundRef.current = null; // Clear reference first to prevent race conditions
-        await currentSound.unloadAsync();
-      }
-
-      // Set audio mode for playback
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-      });
+      // Ensure proper audio cleanup before greeting playback
+      await ensureAudioCleanup('playback');
 
       // Send greeting request to backend
       sendEnglishOnlyMessage(JSON.stringify({
@@ -351,16 +445,8 @@ export default function EnglishOnlyScreen() {
   const handleSilenceAfterAI = async () => {
     console.log('⏰ User silent after AI, prompting with "Would you be there?"');
     
-    // Stop current recording if any
-    if (recordingRef.current) {
-      try {
-        const currentRecording = recordingRef.current;
-        recordingRef.current = null; // Clear reference first to prevent race conditions
-        await currentRecording.stopAndUnloadAsync();
-      } catch (error) {
-        console.error('Error stopping recording for silence after AI:', error);
-      }
-    }
+    // Ensure proper audio cleanup before AI response
+    await ensureAudioCleanup('playback');
 
     setState(prev => ({
       ...prev,
@@ -381,16 +467,8 @@ export default function EnglishOnlyScreen() {
   const handleFirstTimeSilence = async () => {
     console.log('🔇 Handling first time silence - playing no speech message (frontend only)');
     
-    // Stop current recording
-    if (recordingRef.current) {
-      try {
-        const currentRecording = recordingRef.current;
-        recordingRef.current = null; // Clear reference first to prevent race conditions
-        await currentRecording.stopAndUnloadAsync();
-      } catch (error) {
-        console.error('Error stopping recording for first time silence:', error);
-      }
-    }
+    // Ensure proper audio cleanup before handling silence
+    await ensureAudioCleanup('playback');
 
     // Reset first recording flag since we've handled the silence
     isFirstRecordingRef.current = false;
@@ -416,6 +494,9 @@ export default function EnglishOnlyScreen() {
     console.log('🔊 Playing no speech detected audio in frontend...');
     
     try {
+      // Ensure proper audio cleanup before TTS playback
+      await ensureAudioCleanup('playback');
+      
       // Use expo-speech to play the audio directly (like conversation.tsx)
       const noSpeechText = 'No speech detected. Please try speaking again.';
       
@@ -428,6 +509,9 @@ export default function EnglishOnlyScreen() {
         currentMessageText: noSpeechText,
       }));
 
+      // Mark TTS as active to prevent dual voice echo
+      audioSessionRef.current.isTTSActive = true;
+
       // Play the audio using expo-speech
       await Speech.speak(noSpeechText, {
         language: 'en-US',
@@ -435,6 +519,8 @@ export default function EnglishOnlyScreen() {
         pitch: 1.0,
         onDone: () => {
           console.log('🎵 No speech detected audio finished playing, restarting recording');
+          audioSessionRef.current.isTTSActive = false;
+          
           setState(prev => ({
             ...prev,
             currentStep: 'waiting',
@@ -445,7 +531,7 @@ export default function EnglishOnlyScreen() {
           }));
 
           // Restart recording after no speech detected audio finishes
-          setTimeout(() => {
+          setTimeout(async () => {
             if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
               console.log('🎤 Restarting recording after no speech detected audio finished');
               // Keep existing flags as they are - don't reset isFirstRecording inappropriately
@@ -453,12 +539,17 @@ export default function EnglishOnlyScreen() {
               // Don't reset isFirstRecordingRef.current here - it should stay as it was
               // Don't reset isNewSessionAfterAI.current here - it should stay as it was
               console.log('🔄 [NO_SPEECH_DETECTED] Restart recording while preserving flag states');
+              
+              // Ensure proper audio cleanup before starting recording
+              await ensureAudioCleanup('recording');
               startRecording();
             }
           }, 1000); // 1 second delay before restarting recording
         },
         onError: (error: any) => {
           console.error('Error playing no speech detected audio:', error);
+          audioSessionRef.current.isTTSActive = false;
+          
           // Fallback: restart recording even if audio fails
           setState(prev => ({
             ...prev,
@@ -467,11 +558,14 @@ export default function EnglishOnlyScreen() {
             isNoSpeechDetected: false,
             currentMessageText: '',
           }));
-          setTimeout(() => {
+          setTimeout(async () => {
             if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
               // Keep existing flags in error fallback too
               hasUserSpokenRef.current = false;
               console.log('🔄 [NO_SPEECH_DETECTED] Restart recording in onError while preserving flag states');
+              
+              // Ensure proper audio cleanup before starting recording
+              await ensureAudioCleanup('recording');
               startRecording();
             }
           }, 1000);
@@ -480,6 +574,8 @@ export default function EnglishOnlyScreen() {
 
     } catch (error) {
       console.error('Failed to play no speech detected audio:', error);
+      audioSessionRef.current.isTTSActive = false;
+      
       // Fallback: restart recording
       setState(prev => ({
         ...prev,
@@ -488,8 +584,10 @@ export default function EnglishOnlyScreen() {
         isNoSpeechDetected: false,
         currentMessageText: '',
       }));
-      setTimeout(() => {
+      setTimeout(async () => {
         if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
+          // Ensure proper audio cleanup before starting recording
+          await ensureAudioCleanup('recording');
           startRecording();
         }
       }, 1000);
@@ -513,9 +611,11 @@ export default function EnglishOnlyScreen() {
       }));
       
       // Start listening again after a short delay
-      setTimeout(() => {
+      setTimeout(async () => {
         if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
           console.log('🎤 Resuming conversation after pause response');
+          // Ensure proper audio cleanup before starting recording
+          await ensureAudioCleanup('recording');
           startRecording();
         }
       }, 1000);
@@ -620,9 +720,13 @@ export default function EnglishOnlyScreen() {
       });
     }
 
-    // Stop any existing recording when AI responds
+    // Stop any existing recording when AI responds and ensure proper audio cleanup
     if (recordingRef.current && state.isListening) {
       console.log('🛑 Stopping recording because AI is responding');
+      // Ensure proper audio cleanup to prevent dual voice echo
+      ensureAudioCleanup('playback').catch(error => {
+        console.warn('Error during audio cleanup for AI response:', error);
+      });
       stopRecording(false).catch(console.error);
     }
 
@@ -717,6 +821,9 @@ export default function EnglishOnlyScreen() {
       return;
     }
 
+    // Ensure proper audio cleanup before AI speech playback
+    await ensureAudioCleanup('playback');
+
     // Stop recording immediately when AI starts speaking
     if (recordingRef.current && state.isListening) {
       console.log('🛑 Stopping recording because AI is about to speak');
@@ -724,21 +831,6 @@ export default function EnglishOnlyScreen() {
         await stopRecording(false);
       } catch (error) {
         console.error('Error stopping recording for AI speech:', error);
-      }
-    }
-
-    // iOS Volume Fix
-    if (Platform.OS === 'ios') {
-      try {
-        console.log('iOS: Setting audio mode for playback.');
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-          shouldDuckAndroid: true,
-        });
-      } catch (e) {
-        console.error("iOS: Failed to set audio mode for playback:", e);
       }
     }
 
@@ -839,14 +931,14 @@ export default function EnglishOnlyScreen() {
       return;
     }
 
-    // Prevent multiple audio sessions
-    // This check is now handled more intelligently in `handleAudioData` to prevent race conditions.
-    // if (isPlayingAudioRef.current) {
-    //   console.log('Audio already playing, skipping new audio session');
-    //   return;
-    // }
+    // Prevent multiple audio sessions and ensure no TTS is active
+    if (isPlayingAudioRef.current || audioSessionRef.current.isTTSActive) {
+      console.log('🛑 Audio already playing or TTS active, skipping new audio session');
+      return;
+    }
 
     isPlayingAudioRef.current = true;
+    audioSessionRef.current.isPlaying = true;
 
     try {
       // Stop any existing audio playback
@@ -874,8 +966,9 @@ export default function EnglishOnlyScreen() {
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
           console.log(`🎵 [Audio Finished] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
-          // Reset audio playing flag
+          // Reset audio playing flags
           isPlayingAudioRef.current = false;
+          audioSessionRef.current.isPlaying = false;
           
           if (isGreeting) {
             console.log('🎵 [Audio Branch] Greeting audio finished playing, starting to listen');
@@ -1045,32 +1138,18 @@ export default function EnglishOnlyScreen() {
 
     try {
       console.log('🎤 Setting audio mode for recording...');
-      // Set audio mode with timeout to prevent hanging
-      const audioModePromise = Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-      });
-      
-      await Promise.race([
-        audioModePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Audio mode timeout')), 1000))
-      ]);
+      // Ensure proper audio cleanup before starting recording
+      await ensureAudioCleanup('recording');
       console.log('✅ Audio mode set successfully');
     } catch (error) {
       console.error('Failed to set audio mode for recording:', error);
-      // Don't show alert for timeout, just continue
-      if (error instanceof Error && !error.message?.includes('timeout')) {
-        Alert.alert('Error', 'Could not configure audio for recording.');
-        setState(prev => ({ 
-          ...prev, 
-          currentStep: 'waiting',
-          isListening: false 
-        }));
-        return;
-      }
+      Alert.alert('Error', 'Could not configure audio for recording.');
+      setState(prev => ({ 
+        ...prev, 
+        currentStep: 'waiting',
+        isListening: false 
+      }));
+      return;
     }
 
     isStoppingRef.current = false;
@@ -1103,43 +1182,8 @@ export default function EnglishOnlyScreen() {
       return;
     }
 
-    // Quick cleanup - stop existing recording and audio in parallel
-    const cleanupPromises = [];
-    
-    if (recordingRef.current) {
-      console.log('🛑 Stopping existing recording...');
-      const currentRecording = recordingRef.current;
-      recordingRef.current = null; // Clear reference first to prevent race conditions
-      cleanupPromises.push(
-        currentRecording.stopAndUnloadAsync().catch(e => {
-          console.log('Error stopping existing recording:', e);
-        })
-      );
-    }
-
-    if (soundRef.current) {
-      console.log('🔇 Stopping existing audio...');
-      const currentSound = soundRef.current;
-      soundRef.current = null; // Clear reference first to prevent race conditions
-      cleanupPromises.push(
-        currentSound.stopAsync().then(() => currentSound.unloadAsync()).catch(e => {
-          console.log('Error stopping existing audio:', e);
-        })
-      );
-    }
-
-    // Wait for cleanup to complete (but don't block if it takes too long)
-    if (cleanupPromises.length > 0) {
-      try {
-        await Promise.race([
-          Promise.all(cleanupPromises),
-          new Promise(resolve => setTimeout(resolve, 500)) // Max 500ms wait
-        ]);
-        console.log('✅ Cleanup completed');
-      } catch (e) {
-        console.log('Cleanup completed with errors:', e);
-      }
-    }
+    // Enhanced cleanup to prevent dual voice echo - use centralized audio cleanup
+    await ensureAudioCleanup('recording');
 
     if (!isEnglishOnlySocketConnected()) {
       Alert.alert('Error', 'WebSocket connection is not available');
@@ -1337,6 +1381,7 @@ export default function EnglishOnlyScreen() {
 
       console.log('🎤 Recording instance created successfully');
       recordingRef.current = recording;
+      audioSessionRef.current.isRecording = true;
       resetSilenceTimer();
       
       console.log('✅ Recording started successfully');
@@ -1412,6 +1457,7 @@ export default function EnglishOnlyScreen() {
 
       const currentRecording = recordingRef.current;
       recordingRef.current = null; // Clear reference first to prevent race conditions
+      audioSessionRef.current.isRecording = false;
       await currentRecording.stopAndUnloadAsync();
       const uri = currentRecording.getURI();
 
@@ -1564,41 +1610,10 @@ export default function EnglishOnlyScreen() {
       silenceTimerRef.current = null;
     }
     
-    if (recordingRef.current) {
-      console.log('🛑 Stopping recording...');
-      const currentRecording = recordingRef.current;
-      recordingRef.current = null; // Clear reference first to prevent race conditions
-      currentRecording.stopAndUnloadAsync().catch(error => {
-        console.warn('Error stopping recording during cleanup:', error);
-      });
-    }
-    
-    if (soundRef.current) {
-      console.log('🔇 Stopping and unloading sound...');
-      const currentSound = soundRef.current;
-      soundRef.current = null; // Clear reference first to prevent race conditions
-      
-      currentSound.stopAsync().catch(error => {
-        console.warn('Error stopping sound:', error);
-      });
-      currentSound.unloadAsync().catch(error => {
-        console.warn('Error unloading sound:', error);
-      });
-    }
-    
-    // Stop processing audio using audioManager (disabled for natural flow)
-    // if (audioManager.isAudioPlaying('processing_audio') || 
-    //     audioManager.isAudioPlaying('processing_audio_0') ||
-    //     audioManager.isAudioPlaying('processing_audio_1') ||
-    //     audioManager.isAudioPlaying('processing_audio_2') ||
-    //     audioManager.isAudioPlaying('processing_audio_3')) {
-    //   console.log('🔇 Stopping processing audio...');
-    //   audioManager.stopCurrentAudio();
-    // }
-    
-    // Stop Speech synthesis
-    console.log('🔇 Stopping speech synthesis...');
-    Speech.stop();
+    // Use centralized audio cleanup for comprehensive cleanup
+    ensureAudioCleanup('none').catch(error => {
+      console.warn('Error during audio cleanup:', error);
+    });
     
     console.log('🔌 Closing WebSocket connection...');
     closeEnglishOnlySocket();
@@ -1629,6 +1644,13 @@ export default function EnglishOnlyScreen() {
     isProcessingAudioRef.current = false; // Reset processing audio flag
     greetingInitiatedRef.current = false;
 
+    // Reset audio session state
+    audioSessionRef.current = {
+      isRecording: false,
+      isPlaying: false,
+      isTTSActive: false,
+      lastMode: 'none'
+    };
     
     console.log('✅ Cleanup completed');
   };
@@ -1638,37 +1660,10 @@ export default function EnglishOnlyScreen() {
     
     isScreenFocusedRef.current = false;
     
-    if (soundRef.current) {
-      const currentSound = soundRef.current;
-      soundRef.current = null; // Clear reference first to prevent race conditions
-      
-      currentSound.stopAsync().catch(error => {
-        console.warn('Error stopping sound:', error);
-      });
-    }
-    
-    // Stop processing audio using audioManager (disabled for natural flow)
-    // if (audioManager.isAudioPlaying('processing_audio') || 
-    //     audioManager.isAudioPlaying('processing_audio_0') ||
-    //     audioManager.isAudioPlaying('processing_audio_1') ||
-    //     audioManager.isAudioPlaying('processing_audio_2') ||
-    //     audioManager.isAudioPlaying('processing_audio_3')) {
-    //   console.log('🔇 Stopping processing audio immediately...');
-    //   audioManager.stopCurrentAudio();
-    // }
-    
-    // Stop Speech synthesis immediately
-    console.log('🔇 Stopping speech synthesis immediately...');
-    Speech.stop();
-    
-    if (recordingRef.current) {
-      console.log('🛑 Stopping recording immediately...');
-      const currentRecording = recordingRef.current;
-      recordingRef.current = null; // Clear reference first to prevent race conditions
-      currentRecording.stopAndUnloadAsync().catch(error => {
-        console.warn('Error stopping recording during manual cleanup:', error);
-      });
-    }
+    // Use centralized audio cleanup for immediate cleanup
+    ensureAudioCleanup('none').catch(error => {
+      console.warn('Error during immediate audio cleanup:', error);
+    });
     
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -1700,6 +1695,13 @@ export default function EnglishOnlyScreen() {
     isProcessingAudioRef.current = false; // Reset processing audio flag
     greetingInitiatedRef.current = false;
 
+    // Reset audio session state
+    audioSessionRef.current = {
+      isRecording: false,
+      isPlaying: false,
+      isTTSActive: false,
+      lastMode: 'none'
+    };
     
     console.log('✅ Immediate manual cleanup completed');
   };
