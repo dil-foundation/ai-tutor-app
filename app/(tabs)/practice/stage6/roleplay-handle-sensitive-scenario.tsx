@@ -1,231 +1,1103 @@
-import { useRouter } from "expo-router";
-import React from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../../../context/AuthContext';
+import { useAudioRecorder, useAudioPlayerFixed } from '../../../../hooks';
+import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
+import { authenticatedFetch } from '../../../../utils/authUtils';
+import LottieView from 'lottie-react-native';
+
+const { width, height } = Dimensions.get('window');
+
+interface Scenario {
+  id: number;
+  scenario: string;
+  category: string;
+  difficulty: string;
+  scenario_type: string;
+  context: string;
+  stakeholder_emotions: string;
+  expected_structure: string;
+  expected_keywords: string[];
+  vocabulary_focus: string[];
+  model_response: string;
+  evaluation_criteria: any;
+}
+
+interface EvaluationResult {
+  success: boolean;
+  scenario?: string;
+  expected_keywords?: string[];
+  user_text?: string;
+  evaluation?: any;
+  suggested_improvement?: string;
+  error?: string;
+  message?: string;
+  progress_recorded?: boolean;
+  unlocked_content?: string[];
+  keyword_matches?: number;
+  total_keywords?: number;
+  fluency_score?: number;
+  grammar_score?: number;
+}
 
 const RoleplaySensitiveScenarioScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { user } = useAuth();
+  
+  // Animation values - matching storytelling.tsx pattern
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(30));
+  const [scaleAnim] = useState(new Animated.Value(0.9));
+  const [cardScaleAnim] = useState(new Animated.Value(0.8));
+  const [buttonScaleAnim] = useState(new Animated.Value(1));
+  
+  // State management
+  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
+  const [currentScenarioId, setCurrentScenarioId] = useState(1);
+  const [totalScenarios, setTotalScenarios] = useState(10);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
+  
+  // Audio hooks
+  const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
+    console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
+    if (audioUri) {
+      console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
+      await processRecording(audioUri);
+    } else {
+      console.log('⚠️ [AUTO-STOP] No valid audio URI from auto-stop');
+      setEvaluationResult({
+        success: false,
+        scenario: currentScenario?.scenario || '',
+        error: 'No audio recorded',
+        message: 'Please try recording again'
+      });
+    }
+  });
+  const audioPlayer = useAudioPlayerFixed();
+
+  // Animation effects - matching storytelling.tsx
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScaleAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Initialize progress tracking
+  const initializeProgressTracking = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('🔄 [PROGRESS] Initializing progress tracking for user:', user.id);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.INITIALIZE_PROGRESS, {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: user.id,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ [PROGRESS] Progress tracking initialized successfully');
+      } else {
+        console.log('⚠️ [PROGRESS] Progress tracking initialization failed:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ [PROGRESS] Error initializing progress tracking:', error);
+    }
+  };
+
+  // Load user progress
+  const loadUserProgress = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('🔄 [PROGRESS] Loading user progress for user:', user.id);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_USER_PROGRESS(user.id));
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        console.log('✅ [PROGRESS] User progress loaded successfully');
+        // Handle progress data if needed
+      } else {
+        console.log('⚠️ [PROGRESS] Failed to load user progress:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ [PROGRESS] Error loading user progress:', error);
+    }
+  };
+
+  // Load current topic
+  const loadCurrentTopic = async () => {
+    if (!user?.id || currentScenario) return; // Skip if we already have a scenario
+    
+    try {
+      console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: user.id,
+          stage_id: 6,
+          exercise_id: 2,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const topicId = result.data.current_topic_id;
+        console.log('✅ [TOPIC] Current topic loaded:', topicId);
+        setCurrentScenarioId(topicId);
+        await loadScenario(topicId);
+      } else {
+        console.log('⚠️ [TOPIC] Failed to load current topic, starting with scenario 1');
+        await loadScenario(1);
+      }
+    } catch (error) {
+      console.error('❌ [TOPIC] Error loading current topic:', error);
+      await loadScenario(1);
+    }
+  };
+
+  // Load total scenarios
+  const loadTotalScenarios = async () => {
+    // Only load if we don't already have the total scenarios
+    if (totalScenarios > 0) return;
+    
+    try {
+      console.log('🔄 [SCENARIOS] Loading total scenarios count');
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.SENSITIVE_SCENARIO_SCENARIOS);
+      const result = await response.json();
+      
+      if (result.scenarios) {
+        setTotalScenarios(result.scenarios.length);
+        console.log('✅ [SCENARIOS] Total scenarios loaded:', result.scenarios.length);
+      }
+    } catch (error) {
+      console.error('❌ [SCENARIOS] Error loading total scenarios:', error);
+      setTotalScenarios(10); // Fallback
+    }
+  };
+
+  // Load specific scenario
+  const loadScenario = async (scenarioId: number) => {
+    try {
+      setIsLoading(true);
+      console.log('🔄 [SCENARIO] Loading scenario with ID:', scenarioId);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.SENSITIVE_SCENARIO_SCENARIO(scenarioId));
+      const result = await response.json();
+      
+      if (response.ok) {
+        setCurrentScenario(result);
+        console.log('✅ [SCENARIO] Scenario loaded successfully:', result.scenario);
+        
+        // Audio will be loaded when play button is clicked
+      } else {
+        console.log('❌ [SCENARIO] Failed to load scenario:', result.detail);
+        Alert.alert('Error', 'Failed to load scenario. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ [SCENARIO] Error loading scenario:', error);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Play scenario audio
+  const playScenarioAudio = async () => {
+    if (!currentScenario || audioPlayer.state.isPlaying) return;
+
+    console.log("🔄 [AUDIO] Playing scenario audio for ID:", currentScenarioId);
+    try {
+      setIsPlayingAudio(true);
+      
+      const response = await authenticatedFetch(API_ENDPOINTS.SENSITIVE_SCENARIO(currentScenarioId), {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+      console.log("📊 [AUDIO] Audio response received");
+
+      if (response.ok && result.audio_base64) {
+        const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        await audioPlayer.loadAudio(audioUri);
+        await audioPlayer.playAudio();
+        console.log("✅ [AUDIO] Audio played successfully");
+      } else {
+        console.log("❌ [AUDIO] Failed to get audio:", result.detail);
+        Alert.alert('Error', 'Failed to play audio. Please try again.');
+      }
+    } catch (error) {
+      console.error("❌ [AUDIO] Error playing audio:", error);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsPlayingAudio(false);
+    }
+  };
+
+  // Start recording
+  const handleStartRecording = async () => {
+    try {
+      console.log('🔄 [RECORD] Starting recording...');
+      
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant microphone permission to record your response.');
+        return;
+      }
+
+      await audioRecorder.startRecording();
+      setRecordingStartTime(Date.now());
+      console.log('✅ [RECORD] Recording started');
+    } catch (error) {
+      console.error('❌ [RECORD] Error starting recording:', error);
+      Alert.alert('Error', 'Failed to start recording. Please try again.');
+    }
+  };
+
+  // Stop recording
+  const handleStopRecording = async () => {
+    try {
+      console.log('🔄 [RECORD] Stopping recording...');
+      
+      const uri = await audioRecorder.stopRecording();
+      const endTime = Date.now();
+      
+      if (recordingStartTime) {
+        const timeSpentSeconds = Math.floor((endTime - recordingStartTime) / 1000);
+        setTimeSpent(timeSpentSeconds);
+        console.log('⏱️ [RECORD] Recording duration:', timeSpentSeconds, 'seconds');
+      }
+      
+      if (uri) {
+        console.log('✅ [RECORD] Recording stopped, processing audio...');
+        await processRecording(uri);
+      } else {
+        console.log('❌ [RECORD] No recording URI received');
+        Alert.alert('Error', 'No audio recorded. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ [RECORD] Error stopping recording:', error);
+      Alert.alert('Error', 'Failed to stop recording. Please try again.');
+    }
+  };
+
+  // Process recording
+  const processRecording = async (audioUri: string) => {
+    if (!currentScenario || !user?.id) return;
+    
+    try {
+      setIsEvaluating(true);
+      setShowEvaluatingAnimation(true);
+      console.log('🔄 [EVAL] Processing recording...');
+      
+      // Read audio file as base64
+      const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      console.log('📊 [EVAL] Audio file size:', audioBase64.length, 'characters');
+      
+      // Send for evaluation
+      const response = await authenticatedFetch(API_ENDPOINTS.EVALUATE_SENSITIVE_SCENARIO, {
+        method: 'POST',
+        body: JSON.stringify({
+          audio_base64: audioBase64,
+          scenario_id: currentScenario.id,
+          filename: `sensitive_scenario_${currentScenario.id}_${Date.now()}.m4a`,
+          user_id: user.id,
+          time_spent_seconds: timeSpent,
+          urdu_used: false,
+        }),
+      });
+
+      const result: EvaluationResult = await response.json();
+      console.log('📊 [EVAL] Evaluation result:', result);
+      
+      if (result.success) {
+        setEvaluationResult(result);
+        // setShowEvaluatingAnimation(false); // Removed this line
+        console.log('✅ [EVAL] Evaluation completed successfully');
+        // Keep evaluation animation visible until navigation
+        // The animation will be hidden when the component unmounts during navigation
+        console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+        console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
+        
+        // Navigate to feedback screen
+        router.push({
+          pathname: '/(tabs)/practice/stage6/feedback_11',
+          params: {
+            evaluationResult: JSON.stringify(result),
+            currentScenarioId: currentScenarioId.toString(),
+            totalScenarios: totalScenarios.toString(),
+          }
+        });
+      } else {
+        console.log('❌ [EVAL] Evaluation failed:', result.error);
+        setShowEvaluatingAnimation(false);
+        
+        if (result.error === 'no_speech_detected') {
+          Alert.alert(
+            'No Speech Detected',
+            'Please speak clearly and provide a comprehensive response. Try again.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('Error', result.message || 'Failed to evaluate your response. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('❌ [EVAL] Error processing recording:', error);
+      setShowEvaluatingAnimation(false);
+      Alert.alert('Error', 'Network error. Please check your connection and try again.');
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  // Move to next scenario
+  const moveToNextScenario = () => {
+    if (currentScenarioId < totalScenarios) {
+      const nextScenarioId = currentScenarioId + 1;
+      setCurrentScenarioId(nextScenarioId);
+      setEvaluationResult(null);
+      setShowFeedback(false);
+      setTimeSpent(0);
+      loadScenario(nextScenarioId);
+    } else {
+      setIsExerciseCompleted(true);
+      Alert.alert(
+        'Congratulations! 🎉',
+        'You\'ve completed all sensitive scenario exercises!',
+        [{ text: 'Finish', onPress: () => router.back() }]
+      );
+    }
+  };
+
+  // Handle navigation back from feedback screen
+  const handleFeedbackReturn = () => {
+    // Reset evaluation result when returning from feedback
+    setEvaluationResult(null);
+    
+    // Check if we should move to next scenario
+    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+      moveToNextScenario();
+    }
+  };
+
+  // Animate button press - matching storytelling.tsx
+  const animateButtonPress = () => {
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Initialize on mount
+  useEffect(() => {
+    const initialize = async () => {
+      // Reset evaluation states on component mount to ensure clean state
+      console.log('🔄 [INIT] Component mounting, resetting evaluation states');
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      
+      // Only initialize progress tracking and load user progress once
+      if (!isProgressInitialized) {
+        await initializeProgressTracking();
+        await loadUserProgress();
+        setIsProgressInitialized(true);
+      }
+      
+      await loadTotalScenarios();
+      
+      // Check if we're coming back from feedback with next scenario
+      if (params.nextScenario === 'true' && params.currentScenarioId) {
+        const nextScenarioId = parseInt(params.currentScenarioId as string);
+        setCurrentScenarioId(nextScenarioId);
+        await loadScenario(nextScenarioId);
+      } else if (!currentScenario) {
+        // Only load current topic if we don't have a scenario loaded
+        await loadCurrentTopic();
+      }
+    };
+    
+    initialize();
+  }, [params.nextScenario, params.currentScenarioId]);
+
+  // Reset evaluation states when component comes back into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 [FOCUS] Component is now in focus. Resetting evaluation states.');
+      setShowEvaluatingAnimation(false);
+      setIsEvaluating(false);
+      setEvaluationResult(null);
+      setTimeSpent(0);
+      if (params.returnFromFeedback || params.tryAgain || params.evaluationResult) {
+        console.log('🔄 [FOCUS] Detected feedback return parameters, ensuring clean state');
+        setShowEvaluatingAnimation(false);
+        setIsEvaluating(false);
+      }
+    }, [params.returnFromFeedback, params.tryAgain, params.evaluationResult])
+  );
+
+  // Update time spent during recording
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    
+    if (audioRecorder.state.isRecording && recordingStartTime) {
+      interval = setInterval(() => {
+        const currentTime = Date.now();
+        const elapsed = Math.floor((currentTime - recordingStartTime) / 1000);
+        setTimeSpent(elapsed);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [audioRecorder.state.isRecording, recordingStartTime]);
+
+  // Cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      // Only stop audio if we're actually navigating away
+      if (isNavigatingAway && audioPlayer.state.isPlaying) {
+        console.log('🔄 [CLEANUP] Stopping audio playback due to navigation');
+        audioPlayer.stopAudio();
+      }
+      
+      // Reset states when component unmounts
+      // Note: Don't hide evaluation animation when navigating to feedback page
+      // It will be hidden automatically when the component unmounts during navigation
+      setEvaluationResult(null);
+      // setShowEvaluatingAnimation(false); // Removed this line
+      setIsEvaluating(false);
+    };
+  }, [audioPlayer, isNavigatingAway]);
+
+  // Handle back button press
+  const handleBackPress = () => {
+    if (isEvaluating || showEvaluatingAnimation) {
+      console.log('🎯 [NAVIGATION] Back button pressed during evaluation - ignoring');
+      return;
+    }
+    console.log('🎯 [NAVIGATION] Back button pressed, stopping audio if playing');
+    if (audioPlayer.state.isPlaying) {
+      audioPlayer.stopAudio();
+    }
+    setIsNavigatingAway(true);
+    router.push({ pathname: '/practice/stage6' });
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Empathy & Conflict Simulation</Text>
-      </View>
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      style={styles.gradient}
+    >
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {/* Header */}
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+              <View style={styles.backButtonCircle}>
+                <Ionicons name="arrow-back" size={24} color="#58D68D" />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={styles.titleContainer}>
+              <LinearGradient
+                colors={['#58D68D', '#45B7A8']}
+                style={styles.titleGradient}
+              >
+                <Ionicons name="shield-checkmark" size={32} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={styles.headerTitle}>Sensitive Scenario</Text>
+              <Text style={styles.headerSubtitle}>Handle Difficult Situations</Text>
+              
+              {/* Scenario Counter */}
+              <Text style={styles.scenarioCounter}>
+                Scenario: {currentScenarioId} of {totalScenarios}
+              </Text>
+            </View>
+          </Animated.View>
 
-      <View style={styles.imageContainer}>
-        <Image
-          source={require("../../../../assets/images/roleplay-simulation-1.png")} // Update this path
-          style={styles.mainImage}
-        />
-        {/* <View style={styles.imageOverlay}>
-          <Text style={styles.overlayText}>
-            You are an HR Manager. An employee is upset about a missed
-            promotion. Respond with tact
-          </Text>
-        </View> */}
-      </View>
+          {/* Main Content Card */}
+          <Animated.View
+            style={[
+              styles.mainCard,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: cardScaleAnim }
+                ],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
+              style={styles.mainCardGradient}
+            >
+              {isExerciseCompleted ? (
+                <View style={styles.completedContainer}>
+                  <Ionicons name="trophy" size={64} color="#58D68D" />
+                  <Text style={styles.completedTitle}>🎉 Exercise Completed!</Text>
+                  <Text style={styles.completedText}>
+                    Congratulations! You have successfully completed all Sensitive Scenario exercises.
+                  </Text>
+                  <Text style={styles.completedText}>Great job on your progress!</Text>
+                </View>
+              ) : isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Ionicons name="hourglass-outline" size={48} color="#58D68D" />
+                  <Text style={styles.loadingText}>Loading scenario...</Text>
+                </View>
+              ) : currentScenario ? (
+                <ScrollView 
+                  style={styles.scrollContainer}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.scenarioContainer}>
+                    {/* Scenario Description */}
+                    <Text style={styles.scenarioText}>{currentScenario.scenario}</Text>
+                    
+                    {/* Context Information */}
+                    <View style={styles.contextContainer}>
+                      <Text style={styles.contextTitle}>Context:</Text>
+                      <Text style={styles.contextText}>{currentScenario.context}</Text>
+                    </View>
+                    
+                    {/* Stakeholder Emotions */}
+                    <View style={styles.emotionsContainer}>
+                      <Text style={styles.emotionsTitle}>Stakeholder Emotions:</Text>
+                      <Text style={styles.emotionsText}>{currentScenario.stakeholder_emotions}</Text>
+                    </View>
+                    
+                    {/* Expected Structure */}
+                    <View style={styles.structureContainer}>
+                      <Text style={styles.structureTitle}>Expected Structure:</Text>
+                      <Text style={styles.structureText}>{currentScenario.expected_structure}</Text>
+                    </View>
+                    
+                    {/* Expected Keywords */}
+                    <View style={styles.keywordsContainer}>
+                      <Text style={styles.keywordsTitle}>Key Words to Include:</Text>
+                      <View style={styles.keywordsList}>
+                        {currentScenario.expected_keywords.map((keyword, index) => (
+                          <View key={index} style={styles.keywordChip}>
+                            <Text style={styles.keywordText}>{keyword}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
 
-      <ScrollView style={styles.chatContainer}>
-        <View style={styles.chatBubbleAI}>
-          <Image source={require("../../../../assets/images/ai-interviewer-avatar.png")} style={styles.avatar} />
-          <View style={styles.chatBubbleContentAI}>
-            <Text style={styles.chatTextAI}>
-              I'm really disappointed about not getting the promotion. I've
-              worked so hard and feel overlooked.
-            </Text>
+                    {/* Play Button */}
+                    <TouchableOpacity
+                      style={styles.playButton}
+                      onPress={playScenarioAudio}
+                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                    >
+                      <LinearGradient
+                        colors={["#58D68D", "#45B7A8"]}
+                        style={styles.playButtonGradient}
+                      >
+                        <Ionicons 
+                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                          size={36} 
+                          color="#fff" 
+                        />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.instructionText}>
+                      Listen to the scenario and respond with empathy and professionalism
+                    </Text>
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
+                  <Text style={styles.errorText}>Failed to load scenario</Text>
+                </View>
+              )}
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Action Button */}
+          <Animated.View
+            style={[
+              styles.buttonContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: buttonScaleAnim }
+                ],
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.speakButton,
+                {
+                  shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
+                }
+              ]}
+              onPress={() => {
+                animateButtonPress();
+                if (audioRecorder.state.isRecording) {
+                  handleStopRecording();
+                } else {
+                  handleStartRecording();
+                }
+              }}
+              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
+                style={styles.speakButtonGradient}
+              >
+                <Ionicons 
+                  name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
+                  size={24} 
+                  color="#fff" 
+                  style={{ marginRight: 8 }} 
+                />
+                <Text style={styles.speakButtonText}>
+                  {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Respond'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        {/* Evaluating Animation Overlay */}
+        {/* This animation will continue showing until navigation to the feedback page */}
+        {/* The animation will be automatically hidden when the component unmounts during navigation */}
+        {/* When returning from feedback page, the animation state is automatically reset */}
+        {showEvaluatingAnimation && (
+          <View style={styles.evaluatingOverlay}>
+            <View style={styles.animationContainer}>
+              <LottieView
+                source={require('../../../../assets/animations/evaluating.json')}
+                autoPlay
+                loop={true}
+                style={styles.evaluatingAnimation}
+              />
+            </View>
+            <View style={styles.evaluatingTextContainer}>
+              <Text style={styles.evaluatingTitle}>Evaluating...</Text>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.chatBubbleUser}>
-          <View style={styles.chatBubbleContentUser}>
-            <Text style={styles.chatTextUser}>
-              I understand your disappointment, Ethan. Your dedication is
-              valued, and I want to discuss this further.
-            </Text>
-          </View>
-          <Image source={require("../../../../assets/images/user_avatar.png")} style={styles.avatar} />
-        </View>
-        {/* Add more chat bubbles as needed */}
-      </ScrollView>
-
-      <Text style={styles.feedbackTitle}>Feedback</Text>
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Tone & Empathy Score</Text>
-          <Text style={styles.feedbackItemValue}>Your response showed understanding and a willingness to address the employee's concerns.</Text>
-        </View>
-        <Image source={require("../../../../assets/images/feedback-clarity-nuance-1.png")} style={styles.feedbackImage} />
-      </View>
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Conflict Resolution</Text>
-          <Text style={styles.feedbackItemValue}>You initiated a constructive dialogue, focusing on understanding the employee's perspective.</Text>
-        </View>
-        <Image source={require("../../../../assets/images/feedback-depth-ideas-1.png")} style={styles.feedbackImage} />
-      </View>
-      <View style={styles.feedbackCard}>
-        <View style={styles.feedbackTextContainer}>
-          <Text style={styles.feedbackItemTitle}>Professional Language Clarity</Text>
-          <Text style={styles.feedbackItemValue}>Your language was clear, respectful, and maintained a professional tone throughout.</Text>
-        </View>
-        <Image source={require("../../../../assets/images/feedback-fluency-1.png")} style={styles.feedbackImage} />
-      </View>
-
-
-      <TouchableOpacity style={styles.speakButton}>
-        <Text style={styles.speakButtonText}>🎤 Speak</Text>
-      </TouchableOpacity>
-    </View>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 20 : 30,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 60,
+    paddingHorizontal: 24,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 50, // Adjust as per status bar height
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
   },
   backButton: {
-    fontSize: 24,
-    marginRight: 10,
-    fontFamily: 'Lexend-Regular',
+    position: 'absolute',
+    left: 0,
+    top: Platform.OS === 'ios' ? 0 : 10,
+    zIndex: 10,
+  },
+  backButtonCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(88, 214, 141, 0.15)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: Platform.OS === 'ios' ? 10 : 20,
+  },
+  titleGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 12,
   },
   headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    opacity: 0.9,
+    marginBottom: 12,
+  },
+  scenarioCounter: {
     fontSize: 18,
-    fontFamily: 'Lexend-Bold',
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  imageContainer: {
-    position: "relative",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  mainImage: {
-    width: "100%",
-    height: 200, // Adjust as needed
-  },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 20, // Adjust to position text correctly
-    left: "10%",
-    right: "10%",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 15,
-    borderRadius: 8,
-  },
-  overlayText: {
-    color: "#fff",
-    fontSize: 16,
-    textAlign: "center",
-    fontFamily: 'Lexend-Bold',
-  },
-  chatContainer: {
+  mainCard: {
+    width: '100%',
     flex: 1,
-    paddingHorizontal: 10,
-    marginTop: 10,
+    marginBottom: 20,
   },
-  chatBubbleAI: {
-    flexDirection: "row",
-    marginBottom: 10,
-    alignSelf: "flex-start",
-  },
-  chatBubbleUser: {
-    flexDirection: "row",
-    marginBottom: 10,
-    alignSelf: "flex-end",
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginHorizontal: 5,
-  },
-  chatBubbleContentAI: {
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: "80%",
-  },
-  chatBubbleContentUser: {
-    backgroundColor: "#007AFF",
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: "80%",
-  },
-  chatTextAI: {
-    fontSize: 14,
-    color: "#000",
-    fontFamily: 'Lexend-Regular',
-  },
-  chatTextUser: {
-    fontSize: 14,
-    color: "#fff",
-    fontFamily: 'Lexend-Regular',
-  },
-  feedbackTitle: {
-    fontSize: 16,
-    fontFamily: 'Lexend-Bold',
-    marginHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 5,
-  },
-  feedbackCard: {
-    flexDirection: "row",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 10,
-    marginHorizontal: 15,
-    marginBottom: 10,
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.00,
-    elevation: 1,
-  },
-  feedbackTextContainer: {
+  mainCardGradient: {
     flex: 1,
-    marginRight: 10,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  feedbackItemTitle: {
-    fontSize: 13,
-    fontFamily: 'Lexend-Bold',
+  scrollContainer: {
+    flex: 1,
   },
-  feedbackItemValue: {
-    fontSize: 11,
-    color: "#444",
-    marginTop: 2,
-    fontFamily: 'Lexend-Regular',
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
-  feedbackImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 5,
+  completedContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  completedTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#58D68D',
+    marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  completedText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#58D68D',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  scenarioContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  scenarioText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 28,
+  },
+  contextContainer: {
+    width: '100%',
+    marginBottom: 16,
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+  },
+  contextTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  contextText: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+  },
+  emotionsContainer: {
+    width: '100%',
+    marginBottom: 16,
+    backgroundColor: '#FFF3CD',
+    padding: 16,
+    borderRadius: 12,
+  },
+  emotionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  emotionsText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
+  structureContainer: {
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: '#D4EDDA',
+    padding: 16,
+    borderRadius: 12,
+  },
+  structureTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#155724',
+    marginBottom: 8,
+  },
+  structureText: {
+    fontSize: 14,
+    color: '#155724',
+    lineHeight: 20,
+  },
+  keywordsContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  keywordsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  keywordsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  keywordChip: {
+    backgroundColor: '#58D68D',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  keywordText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  playButton: {
+    marginBottom: 24,
+  },
+  playButtonGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  buttonContainer: {
+    width: '100%',
   },
   speakButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    marginHorizontal: "25%",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20, // Ensure button is above navigation or edges
+    width: '100%',
+    borderRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  speakButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
   },
   speakButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: 'Lexend-Bold',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  evaluatingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    paddingHorizontal: 20,
+  },
+  animationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    maxHeight: height * 0.6,
+  },
+  evaluatingAnimation: {
+    width: Math.min(width * 0.7, height * 0.5),
+    height: Math.min(width * 0.7, height * 0.5),
+    alignSelf: 'center',
+  },
+  evaluatingTextContainer: {
+    position: 'absolute',
+    bottom: height * 0.15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  evaluatingTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
 });
 

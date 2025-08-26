@@ -32,26 +32,26 @@ const Stage6Screen = () => {
       description: 'Practice real-time conversations with AI, focusing on natural flow and quick thinking',
       icon: 'rocket-outline' as const,
       screen: '/(tabs)/practice/stage6/ai-guided-spontaneous-speech' as any,
-      gradient: ['#2ECC71', '#27AE60'] as const,
-      iconBg: 'rgba(46, 204, 113, 0.2)',
+      gradient: ['#58D68D', '#45B7A8'] as const,
+      iconBg: 'rgba(88, 214, 141, 0.2)',
     },
     {
       id: 'roleplaySensitive',
       title: 'Roleplay: Handle a Sensitive Scenario',
-      description: 'Simulate real-world interviews to improve fluency and confidence',
+      description: 'Simulate challenging scenarios to improve emotional intelligence and communication',
       icon: 'people-outline' as const,
       screen: '/(tabs)/practice/stage6/roleplay-handle-sensitive-scenario' as any,
-      gradient: ['#27AE60', '#229954'] as const,
-      iconBg: 'rgba(39, 174, 96, 0.2)',
+      gradient: ['#45B7A8', '#3A8B9F'] as const,
+      iconBg: 'rgba(69, 183, 168, 0.2)',
     },
     {
       id: 'criticalOpinion',
       title: 'Critical Opinion Builder',
-      description: 'Develop and articulate complex opinions on various topics, supported by evidence and logic',
+      description: 'Develop and articulate complex opinions on various topics with evidence and logic',
       icon: 'bulb-outline' as const,
       screen: '/(tabs)/practice/stage6/critical-opinion-builder' as any,
-      gradient: ['#229954', '#1E8449'] as const,
-      iconBg: 'rgba(34, 153, 84, 0.2)',
+      gradient: ['#3A8B9F', '#2E7D8F'] as const,
+      iconBg: 'rgba(58, 139, 159, 0.2)',
     },
   ];
 
@@ -113,15 +113,15 @@ const Stage6Screen = () => {
           ]}
         >
           <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/practice' })} style={styles.backButton}>
               <View style={styles.backButtonCircle}>
-                <Ionicons name="arrow-back" size={24} color="#2ECC71" />
+                <Ionicons name="arrow-back" size={24} color="#58D68D" />
               </View>
             </TouchableOpacity>
             
             <View style={styles.titleContainer}>
               <LinearGradient
-                colors={['#2ECC71', '#27AE60']}
+                colors={['#58D68D', '#45B7A8']}
                 style={styles.titleGradient}
               >
                 <Ionicons name="school" size={32} color="#FFFFFF" />
@@ -143,14 +143,14 @@ const Stage6Screen = () => {
           ]}
         >
           <LinearGradient
-            colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
+            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
             style={styles.goalGradient}
           >
             <View style={styles.goalContent}>
-              <Ionicons name="flag" size={28} color="#2ECC71" />
+              <Ionicons name="flag" size={28} color="#58D68D" />
               <Text style={styles.goalTitle}>Your Learning Goal</Text>
               <Text style={styles.goalDescription}>
-                Master real-time fluency, advanced argumentation, and nuanced emotional communication
+                Master real-time fluency, advanced argumentation, and nuanced emotional communication with excellence
               </Text>
             </View>
           </LinearGradient>
@@ -168,10 +168,10 @@ const Stage6Screen = () => {
         >
           <View style={styles.sectionHeader}>
             <LinearGradient
-              colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
+              colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
               style={styles.sectionHeaderGradient}
             >
-              <Ionicons name="play-circle" size={24} color="#2ECC71" />
+              <Ionicons name="play-circle" size={24} color="#58D68D" />
               <Text style={styles.sectionTitle}>Practice Activities</Text>
             </LinearGradient>
           </View>
@@ -228,11 +228,11 @@ const Stage6Screen = () => {
           ]}
         >
           <LinearGradient
-            colors={['rgba(46, 204, 113, 0.1)', 'rgba(39, 174, 96, 0.05)']}
+            colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
             style={styles.progressGradient}
           >
             <View style={styles.progressContent}>
-              <Ionicons name="trending-up" size={32} color="#2ECC71" />
+              <Ionicons name="trending-up" size={32} color="#58D68D" />
               <Text style={styles.progressTitle}>Track Your Progress</Text>
               <Text style={styles.progressDescription}>
                 Complete activities to unlock advanced stages and track your improvement
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(46, 204, 113, 0.15)',
+    borderColor: 'rgba(88, 214, 141, 0.15)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
     marginBottom: 8,
-    textShadowColor: 'rgba(46, 204, 113, 0.2)',
+    textShadowColor: 'rgba(88, 214, 141, 0.2)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
@@ -385,7 +385,8 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     marginBottom: 16,
-    height: 120,
+    minHeight: 120,
+    flex: 1,
   },
   activityButton: {
     borderRadius: 20,
@@ -395,15 +396,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
+    minHeight: 120,
   },
   activityGradient: {
-    paddingHorizontal: 24,
-    height: '100%',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    minHeight: 120,
     justifyContent: 'center',
   },
   activityContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   activityIconContainer: {
     width: 56,
@@ -413,21 +417,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    flexShrink: 0,
   },
   activityTextContainer: {
     flex: 1,
+    marginRight: 12,
+    justifyContent: 'center',
   },
   activityTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   activityDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#FFFFFF',
     opacity: 0.9,
-    lineHeight: 20,
+    lineHeight: 18,
+    flexWrap: 'wrap',
   },
   arrowContainer: {
     width: 32,
@@ -436,6 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   progressCard: {
     marginTop: 20,

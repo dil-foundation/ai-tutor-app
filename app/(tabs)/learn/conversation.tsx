@@ -33,6 +33,7 @@ import {
     View,
     Dimensions,
     Platform,
+    StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
@@ -103,6 +104,17 @@ export default function ConversationScreen() {
   const { mode } = useLanguageMode();
   // Define t() immediately after mode is available
   const t = (en: string, ur: string) => (mode === 'english' ? en : ur);
+
+  // Full screen mode - hide status bar and tab bar
+  useEffect(() => {
+    // Hide status bar for full screen experience
+    StatusBar.setHidden(true);
+    
+    // Return function to restore status bar when component unmounts
+    return () => {
+      StatusBar.setHidden(false);
+    };
+  }, []);
   const [state, setState] = useState<ConversationState>({
     messages: [],
     currentStep: 'waiting',
@@ -1940,6 +1952,19 @@ export default function ConversationScreen() {
     router.replace('/(tabs)/learn');
   };
 
+  // Prevent back navigation - only allow exit via wrong button
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = () => {
+        // Prevent default back navigation
+        return true; // Return true to prevent default behavior
+      };
+
+      // This would require additional setup with react-native-gesture-handler
+      // For now, we'll rely on the wrong button being the only exit method
+    }, [])
+  );
+
   // Animate mic button when listening or talking
   useEffect(() => {
     if (state.currentStep === 'listening') {
@@ -1985,32 +2010,11 @@ export default function ConversationScreen() {
   // UI for real-time conversation mode
   return (
     <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['rgba(88, 214, 141, 0.1)', 'rgba(69, 183, 168, 0.05)']}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8']}
-                style={styles.iconGradient}
-              >
-                <Ionicons name="chatbubbles" size={24} color="#000000" />
-              </LinearGradient>
-            </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>AI Tutor Conversation</Text>
-              <Text style={styles.subtitle}>Real-time learning experience</Text>
-            </View>
-            <View style={[
-              styles.connectionIndicator,
-              { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
-            ]} />
-          </View>
-        </LinearGradient>
-      </View>
+      {/* Connection Indicator Dot - Top Right */}
+      <View style={[
+        styles.connectionIndicator,
+        { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
+      ]} />
 
       {/* Unified Animation Overlay - Always show something */}
       <View style={currentAnimation.isSentenceDisplay ? styles.sentenceOverlay : styles.processingOverlay} pointerEvents="box-none">
@@ -2202,61 +2206,13 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30, // Adjust for full screen mode
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  headerGradient: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#F8F9FA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconContainer: {
-    marginRight: 16,
-  },
-  iconGradient: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E9ECEF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6C757D',
-    fontWeight: '500',
-  },
   connectionIndicator: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40, // Adjust for full screen mode
+    right: 24,
     width: 12,
     height: 12,
     borderRadius: 6,
@@ -2265,6 +2221,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+    zIndex: 1000,
   },
   messagesContainer: {
     flex: 1,

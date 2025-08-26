@@ -28,6 +28,7 @@ export default function LearnScreen() {
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [pulseAnim] = useState(new Animated.Value(1));
   const { mode, setMode } = useLanguageMode();
+  const [selectedToggle, setSelectedToggle] = useState('eng-eng'); // Default to Eng-Eng only
 
   useEffect(() => {
     // Animate elements on mount
@@ -88,6 +89,27 @@ export default function LearnScreen() {
     });
   };
 
+  const handleEnglishOnlyPress = () => {
+    // Add a small scale animation on press
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    router.push({ 
+      pathname: '/(tabs)/learn/english-only', 
+      params: { autoStart: 'true' } 
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.centeredContainer}>
@@ -109,74 +131,33 @@ export default function LearnScreen() {
               <Ionicons name="mic" size={32} color="#000000" />
             </LinearGradient>
           </View>
-          <Text style={styles.headerTitle}>Speak to Translate</Text>
-          <Text style={styles.headerSubtitle}>Transform your Urdu into English</Text>
-          {/* Custom Segmented Toggle for Language Mode */}
-          <View style={styles.segmentedToggleContainer}>
-            {/* Urdu Option */}
-            {mode === 'urdu' ? (
+          <Text style={styles.headerTitle}>English Tutoring</Text>
+          <Text style={styles.headerSubtitle}>Perfect your English speaking skills</Text>
+          
+          {/* Language Mode Toggle - Temporarily Hidden */}
+          {/* <View style={styles.toggleButtonWrapper}>
+            <View style={styles.segmentedToggleContainer}>
               <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
+                colors={['#58D68D', '#45B7A8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={[styles.toggleOption, styles.toggleActive, { borderTopRightRadius: 0, borderBottomRightRadius: 0 }]}
+                style={[styles.toggleOption, styles.toggleActive]}
               >
-                <TouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                  onPress={() => setMode('urdu')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="globe" size={18} color={'#fff'} style={{ marginRight: 6 }} />
-                  <Text style={[styles.toggleOptionText, { color: '#fff' }]}>Urdu</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons
+                    name="school"
+                    size={18}
+                    color={'#000000'}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.toggleOptionText, { color: '#000000' }]}>English Only</Text>
+                </View>
               </LinearGradient>
-            ) : (
-              <TouchableOpacity
-                style={[
-                  styles.toggleOption,
-                  styles.toggleInactive,
-                  { borderTopRightRadius: 0, borderBottomRightRadius: 0, borderWidth: 1, borderColor: '#E0E0E0' }
-                ]}
-                onPress={() => setMode('urdu')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="globe" size={18} color={'#58D68D'} style={{ marginRight: 6 }} />
-                <Text style={[styles.toggleOptionText, { color: '#58D68D' }]}>Urdu</Text>
-              </TouchableOpacity>
-            )}
-            {/* English Option */}
-            {mode === 'english' ? (
-              <LinearGradient
-                colors={['#58D68D', '#45B7A8', '#58D68D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.toggleOption, styles.toggleActive, { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
-              >
-                <TouchableOpacity
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                  onPress={() => setMode('english')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="language" size={18} color={'#fff'} style={{ marginRight: 6 }} />
-                  <Text style={[styles.toggleOptionText, { color: '#fff' }]}>English</Text>
-                </TouchableOpacity>
-              </LinearGradient>
-            ) : (
-              <TouchableOpacity
-                style={[
-                  styles.toggleOption,
-                  styles.toggleInactive,
-                  { borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderWidth: 1, borderColor: '#E0E0E0' }
-                ]}
-                onPress={() => setMode('english')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="language" size={18} color={'#58D68D'} style={{ marginRight: 6 }} />
-                <Text style={[styles.toggleOptionText, { color: '#58D68D' }]}>English</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          </View> */}
+
         </Animated.View>
+        
         <Animated.View
           style={[
             styles.buttonContainer,
@@ -188,12 +169,13 @@ export default function LearnScreen() {
               ],
               alignSelf: 'center',
               width: '100%',
-              marginTop: 40,
+              marginTop: 20,
             },
           ]}
         >
+          {/* English-Only Button */}
           <TouchableOpacity 
-            onPress={handleConversationPress}
+            onPress={handleEnglishOnlyPress}
             style={styles.buttonWrapper}
             activeOpacity={0.8}
           >
@@ -205,11 +187,11 @@ export default function LearnScreen() {
             >
               <View style={styles.buttonContent}>
                 <View style={styles.buttonIconContainer}>
-                  <Ionicons name="chatbubbles" size={24} color="#000000" />
+                  <Ionicons name="school" size={24} color="#000000" />
                 </View>
                 <View style={styles.buttonTextContainer}>
-                  <Text style={styles.buttonText}>Press to Start Real-time Conversation</Text>
-                  <Text style={styles.buttonSubtext}>Begin your learning journey →</Text>
+                  <Text style={styles.buttonText}>Start English Tutoring</Text>
+                  <Text style={styles.buttonSubtext}>Perfect your English speaking skills</Text>
                 </View>
                 <View style={styles.arrowContainer}>
                   <Ionicons name="arrow-forward" size={20} color="#000000" />
@@ -290,6 +272,12 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  toggleButtonWrapper: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    marginTop: -10,
   },
   toggleBox: {
     width: '100%',
@@ -527,7 +515,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf: 'center',
     backgroundColor: '#fff',
-    borderRadius: 30,
+    borderRadius: 30, // Remove rounded corners
     borderWidth: 1,
     borderColor: '#E0E0E0',
     marginTop: 18,
@@ -537,15 +525,18 @@ const styles = StyleSheet.create({
   toggleOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 13,
     paddingHorizontal: 22,
-    borderRadius: 30,
+    borderRadius: 0, // Remove rounded corners
+    borderRightWidth: 1, // Add straight line divider
+    borderRightColor: '#E0E0E0',
   },
   toggleActive: {
     backgroundColor: '#58D68D',
   },
   toggleInactive: {
     backgroundColor: 'transparent',
+    borderWidth: 0, // Remove border for inactive state
   },
   toggleOptionText: {
     fontWeight: 'bold',

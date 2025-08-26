@@ -1,7 +1,29 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+
+// Modern color palette
+const COLORS = {
+  primary: '#58D68D',
+  primaryGradient: ['#58D68D', '#45B7A8'],
+  secondary: '#8B5CF6',
+  accent: '#F59E0B',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  background: '#FAFAFA',
+  card: 'rgba(255, 255, 255, 0.95)',
+  glass: 'rgba(255, 255, 255, 0.25)',
+  text: {
+    primary: '#1F2937',
+    secondary: '#6B7280',
+    tertiary: '#9CA3AF',
+  },
+  border: 'rgba(255, 255, 255, 0.2)',
+  shadow: 'rgba(0, 0, 0, 0.1)',
+};
 
 interface Exercise {
   name: string;
@@ -16,213 +38,272 @@ interface StageCardProps {
     completed: boolean;
     progress: number;
     exercises: Exercise[];
+    unlocked: boolean;
   };
   expanded: boolean;
   onPress: () => void;
   children?: React.ReactNode;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'completed': return '#58D68D';
-    case 'in_progress': return '#3B82F6';
-    case 'locked': return '#F3F4F6';
-    default: return '#F3F4F6';
-  }
-};
-
-const getStatusText = (stage: any) => {
-  if (stage.completed) return 'Complete';
-  if (stage.progress > 0) return `${Math.floor(stage.progress / 33.34) + 1}/3 done`;
-  return 'Locked';
-};
-
 const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children }) => {
-  const status = stage.completed ? 'completed' : stage.progress > 0 ? 'in_progress' : 'locked';
-  const progress = Math.round(
-    (stage.exercises.filter((ex) => ex.status === 'completed').length / stage.exercises.length) * 100
-  );
+  const status = stage.completed ? 'completed' : stage.unlocked ? 'in_progress' : 'locked';
+  const clampedProgress = Math.round(stage.progress);
+  const isActive = status === 'in_progress';
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'completed': return COLORS.success;
+      case 'in_progress': return COLORS.primary;
+      case 'locked': return COLORS.text.tertiary;
+      default: return COLORS.text.tertiary;
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'completed': return 'checkmark-circle';
+      case 'in_progress': return 'ellipse';
+      case 'locked': return 'lock-closed';
+      default: return 'lock-closed';
+    }
+  };
 
   return (
-    <View style={styles.cardWrapper}>
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.85}
-        onPress={onPress}
-        disabled={status === 'locked'}
-      >
-        {/* Icon Circle/Shield with number and overlay icon */}
-        <View
+    <View style={styles.container}>
+      <BlurView intensity={15} style={styles.glassCard}>
+        <TouchableOpacity
           style={[
-            styles.iconCircle,
-            status === 'completed'
-              ? { backgroundColor: '#58D68D', borderWidth: 0 }
-              : status === 'in_progress'
-              ? { backgroundColor: '#3B82F6', borderWidth: 0 }
-              : { backgroundColor: '#F3F4F6', borderColor: '#E0E0E0', borderWidth: 1 }
+            styles.card,
+            status === 'locked' && styles.lockedCard,
+            isActive && styles.activeCard,
+            status === 'completed' && styles.completedCard,
           ]}
+          activeOpacity={0.8}
+          onPress={onPress}
+          disabled={status === 'locked'}
         >
-          <Text
-            style={[
-              styles.stageNumber,
-              status === 'locked'
-                ? { color: '#888' }
-                : { color: '#fff' }
-            ]}
-          >
-            {index + 1}
-          </Text>
-          {/* Overlay icon for completed and locked */}
-          {status === 'completed' && (
-            <View style={styles.iconOverlayCompleted}>
-              <Ionicons name="checkmark" size={18} color="#fff" />
-            </View>
-          )}
-          {status === 'locked' && (
-            <View style={styles.iconOverlayLocked}>
-              <Ionicons name="lock-closed" size={16} color="#B0B3B8" />
-            </View>
-          )}
-        </View>
-        <View style={styles.textBlock}>
-          <Text style={[styles.title, status === 'completed' && { color: '#222' }, status === 'in_progress' && { color: '#58D68D' }]}>{stage.stage.replace(/Stage \d+ – /, '')}</Text>
-          <Text style={styles.subtitle}>{stage.subtitle}</Text>
-        </View>
-        <View style={styles.statusBlock}>
-          <Text style={[styles.status, status === 'completed' && { color: '#58D68D' }, status === 'locked' && { color: '#BDC3C7' }]}>{getStatusText(stage)}</Text>
-        </View>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={status === 'locked' ? '#BDC3C7' : '#58D68D'} style={{ marginLeft: 8 }} />
-      </TouchableOpacity>
-      {expanded && (
-        <View style={styles.progressBarContainer}>
           <LinearGradient
-            colors={['#58D68D', '#45B7A8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressBar, { width: `${progress}%` }]}
-          />
-          <View style={styles.progressBarBg} />
-          <Text style={styles.progressText}>{progress}% Complete</Text>
-        </View>
-      )}
-      {expanded && children}
+            colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+            style={styles.cardGradient}
+          >
+            {/* Header Section */}
+            <View style={styles.header}>
+              <View style={styles.iconCircle}>
+                <LinearGradient
+                  colors={
+                    status === 'locked' ? ['#E5E7EB', '#D1D5DB'] : 
+                    status === 'completed' ? [COLORS.success, '#059669'] : 
+                    COLORS.primaryGradient as any
+                  }
+                  style={styles.iconGradient}
+                >
+                  <Text style={[styles.stageNumber, status === 'locked' && styles.lockedText]}>
+                    {index + 1}
+                  </Text>
+                </LinearGradient>
+              </View>
+              <View style={styles.textBlock}>
+                <Text style={[styles.title, status === 'locked' && styles.lockedText]}>
+                  {stage.stage}
+                </Text>
+                <Text style={[styles.subtitle, status === 'locked' && styles.lockedText]}>
+                  {stage.subtitle}
+                </Text>
+              </View>
+              <View style={styles.statusBlock}>
+                {status === 'locked' ? (
+                  <View style={styles.lockedIconContainer}>
+                    <Ionicons name="lock-closed" size={24} color={COLORS.text.tertiary} />
+                  </View>
+                ) : (
+                  <View style={styles.expandIconContainer}>
+                    <Ionicons 
+                      name={expanded ? 'chevron-up-circle' : 'chevron-down-circle'} 
+                      size={28} 
+                      color={isActive ? COLORS.primary : COLORS.text.secondary} 
+                    />
+                  </View>
+                )}
+              </View>
+            </View>
+            
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarBackground}>
+                  <Animated.View 
+                    style={[
+                      styles.progressBarFill,
+                      { 
+                        width: `${clampedProgress}%`,
+                        backgroundColor: getStatusColor()
+                      }
+                    ]} 
+                  />
+                </View>
+              </View>
+              <Text style={styles.progressText}>{clampedProgress}% Complete</Text>
+            </View>
+
+            {/* Expanded Content */}
+            {expanded && children && (
+              <View style={styles.expandedContent}>
+                {children}
+              </View>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </BlurView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  cardWrapper: {
-    marginBottom: 16,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    shadowColor: '#58D68D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
+  container: {
+    marginBottom: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    backgroundColor: 'transparent', // Ensure background is transparent
+  },
+  glassCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(25, 218, 105, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   card: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)', // More opaque to hide lines behind
+  },
+  cardGradient: {
+    padding: 24,
+    borderRadius: 20,
+  },
+  lockedCard: {
+    opacity: 0.8,
+    borderColor: 'rgba(156, 163, 175, 0.3)',
+    backgroundColor: 'rgba(248, 249, 250, 0.95)',
+  },
+  activeCard: {
+    borderColor: COLORS.primary,
+    borderWidth: 3,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 15,
+  },
+  completedCard: {
+    borderColor: COLORS.success,
+    borderWidth: 2,
+    shadowColor: COLORS.success,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    backgroundColor: '#fff',
-    borderRadius: 18,
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  iconGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconOverlayCompleted: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    backgroundColor: '#58D68D',
-    borderRadius: 10,
-    padding: 2,
-    zIndex: 2,
-  },
-  iconOverlayLocked: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 2,
-    zIndex: 2,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
   },
   stageNumber: {
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 22,
+    color: '#FFFFFF',
     fontFamily: 'Lexend-Bold',
+  },
+  lockedText: {
+    color: COLORS.text.tertiary,
   },
   textBlock: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#222',
+    color: COLORS.text.primary,
     fontFamily: 'Lexend-Bold',
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 2,
+    fontSize: 16,
+    color: COLORS.text.secondary,
     fontFamily: 'Lexend-Regular',
   },
   statusBlock: {
-    minWidth: 60,
-    alignItems: 'flex-end',
+    marginLeft: 16,
   },
-  status: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    fontFamily: 'Lexend-Bold',
+  lockedIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(156, 163, 175, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  expandIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(88, 214, 141, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressContainer: {
+    marginBottom: 16,
   },
   progressBarContainer: {
-    marginTop: 0,
     marginBottom: 8,
-    marginHorizontal: 18,
-    position: 'relative',
-    height: 10,
-    justifyContent: 'center',
   },
-  progressBarBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#E5E5E5',
-    borderRadius: 5,
-    zIndex: -1,
+  progressBarBackground: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(156, 163, 175, 0.2)',
+    overflow: 'hidden',
   },
-  progressBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    height: 10,
-    borderRadius: 5,
-    zIndex: 1,
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   progressText: {
-    fontSize: 12,
-    color: '#58D68D',
-    marginTop: 4,
-    marginLeft: 2,
-    fontFamily: 'Lexend-Regular',
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+    fontFamily: 'Lexend-Medium',
+    textAlign: 'right',
+  },
+  expandedContent: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(156, 163, 175, 0.1)',
   },
 });
 
