@@ -13,25 +13,32 @@ import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
 
-// UXCam Integration - Mock Implementation for Expo Managed Workflow
-// Note: UXCam requires development builds in Expo, not managed workflow
-let RNUxcam: any = {
-  startWithConfiguration: (configuration: any) => {
-    console.log('🎥 [UXCam Mock] Started with configuration:', configuration);
-    console.log('🎥 [UXCam Mock] API Key:', configuration.userAppKey);
-    console.log('🎥 [UXCam Mock] Note: Real UXCam requires development build');
-  },
-};
+// UXCam Integration - Real Implementation for Development Builds
+let RNUxcam: any = null;
 
-// Function to load UXCam SDK (will always use mock in managed workflow)
+// Function to load UXCam SDK
 const loadUXCamSDK = () => {
   try {
-    // In Expo managed workflow, UXCam native module won't work
-    // We'll always use mock implementation for now
-    console.log('🎥 [UXCam] Using mock implementation (Expo managed workflow)');
-    return false;
+    // Try to load the real UXCam SDK
+    const UXCamModule = require('react-native-ux-cam');
+    RNUxcam = UXCamModule.default || UXCamModule;
+    
+    if (RNUxcam && typeof RNUxcam.startWithConfiguration === 'function') {
+      console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+      return true;
+    } else {
+      throw new Error('UXCam SDK methods not found');
+    }
   } catch (error) {
-    console.log('🎥 [UXCam] Using mock implementation');
+    // Fallback to mock implementation
+    console.log('🎥 [UXCam] Using mock implementation (native module not available)');
+    RNUxcam = {
+      startWithConfiguration: (configuration: any) => {
+        console.log('🎥 [UXCam Mock] Started with configuration:', configuration);
+        console.log('🎥 [UXCam Mock] API Key:', configuration.userAppKey);
+        console.log('🎥 [UXCam Mock] Note: Use development build for real tracking');
+      },
+    };
     return false;
   }
 };
