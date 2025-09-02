@@ -1,22 +1,23 @@
 /**
- * English-Only AI Tutor Screen
+ * Enhanced English-Only AI Tutor Screen
  * 
  * Features:
  * - ChatGPT-like voice mode experience
  * - Personalized greetings with user's name
- * - Thick accent detection and correction
- * - Broken English detection and correction
- * - Natural conversation flow without processing screens
- * - Prolonged pause detection (7+ seconds)
- * - Friendly, human-like tone
+ * - Consistent Urdu-to-English correction for every response
+ * - Separate logic flows for Vocabulary, Sentence Structure, and Topics
+ * - Fallback to normal NLP conversation outside learning areas
+ * - Professional error handling and edge case management
+ * - Multi-stage conversation management with intelligent routing
+ * - Enhanced UI feedback for different learning modes
  * 
  * Flow:
- * 1. Greet user by name
+ * 1. Greet user by name with clear learning options
  * 2. Listen continuously to user input
- * 3. Detect accent/grammar issues
- * 4. Provide corrections with pronunciation
+ * 3. Route to appropriate learning path (Vocabulary, Grammar, Topics, etc.)
+ * 4. Provide consistent corrections and feedback
  * 5. Stay in listening mode for next input
- * 6. Handle prolonged silence with gentle prompts
+ * 6. Handle prolonged silence with context-aware prompts
  */
 
 import { Ionicons } from '@expo/vector-icons';
@@ -55,6 +56,8 @@ interface Message {
   isAI: boolean;
   timestamp: Date;
   audioUri?: string;
+  stage?: string;
+  analysis?: any;
 }
 
 interface EnglishOnlyState {
@@ -70,16 +73,31 @@ interface EnglishOnlyState {
   silenceStartTime: number | null;
   lastUserInput: string;
   correctionProvided: boolean;
-  isNoSpeechDetected: boolean; // New state for tracking no speech detected animation
-  isProcessingAudio: boolean; // New state for tracking audio processing
-  isNoSpeechAfterProcessing: boolean; // New state for tracking no speech detected after processing
+  isNoSpeechDetected: boolean;
+  isProcessingAudio: boolean;
+  isNoSpeechAfterProcessing: boolean;
   isUserReminded: boolean;
-  // New correction-related states
-  needsCorrection: boolean;
-  correctedSentence: string;
-  correctionType: string;
-  isPlayingCorrection: boolean;
-  showRepeatAfterMe: boolean;
+  
+  // Enhanced state for new stage system
+  conversationStage: string;
+  currentTopic: string | null;
+  learningPath: string | null;
+  skillLevel: string | null;
+  availableOptions: string[];
+  sessionId: string | null;
+  
+  // Error handling
+  hasError: boolean;
+  errorType: string | null;
+  errorMessage: string | null;
+  
+  // Learning progress
+  learningProgress: {
+    vocabularyWords: string[];
+    grammarRules: string[];
+    sessionDuration: number;
+    interactionsCount: number;
+  };
 }
 
 export default function EnglishOnlyScreen() {
@@ -128,11 +146,27 @@ export default function EnglishOnlyScreen() {
     isProcessingAudio: false,
     isNoSpeechAfterProcessing: false,
     isUserReminded: false,
-    needsCorrection: false,
-    correctedSentence: '',
-    correctionType: '',
-    isPlayingCorrection: false,
-    showRepeatAfterMe: false,
+    
+    // Enhanced state initialization
+    conversationStage: 'greeting',
+    currentTopic: null,
+    learningPath: null,
+    skillLevel: null,
+    availableOptions: [],
+    sessionId: null,
+    
+    // Error handling
+    hasError: false,
+    errorType: null,
+    errorMessage: null,
+    
+    // Learning progress
+    learningProgress: {
+      vocabularyWords: [],
+      grammarRules: [],
+      sessionDuration: 0,
+      interactionsCount: 0,
+    },
   });
 
   // Track connection attempts to prevent multiple simultaneous connections
@@ -140,30 +174,33 @@ export default function EnglishOnlyScreen() {
   const maxConnectionAttempts = 3;
 
   // Custom silence detection for English-Only feature
-  const isFirstRecordingRef = useRef(true); // Track if this is the first recording session
-  const hasUserSpokenRef = useRef(false); // Track if user has spoken in current session
-  const isNewSessionAfterAI = useRef(false); // Track if this is a new session after AI spoke
+  const isFirstRecordingRef = useRef(true);
+  const hasUserSpokenRef = useRef(false);
+  const isNewSessionAfterAI = useRef(false);
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
-  const correctionSoundRef = useRef<Audio.Sound | null>(null); // New ref for correction audio
   const scrollViewRef = useRef<any>(null);
-  const isPlayingAudioRef = useRef(false); // Prevent multiple audio sessions
+  const isPlayingAudioRef = useRef(false);
   const [isTalking, setIsTalking] = useState(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechStartTimeRef = useRef<number | null>(null);
   const micAnim = useRef(new Animated.Value(1)).current;
   const isScreenFocusedRef = useRef<boolean>(false);
   const isStoppingRef = useRef(false);
-  const isProcessingAudioRef = useRef(false); // Track processing state immediately
+  const isProcessingAudioRef = useRef(false);
   const lastMessageStepRef = useRef<string | null>(null);
   const greetingInitiatedRef = useRef(false);
+  
+  // Enhanced session tracking
+  const sessionStartTimeRef = useRef<number>(Date.now());
+  const interactionsCountRef = useRef<number>(0);
 
   // Voice Activity Detection threshold
   const VAD_THRESHOLD = CHATGPT_TIMING_CONFIG.VAD_THRESHOLD;
   const SILENCE_DURATION = CHATGPT_TIMING_CONFIG.POST_SPEECH_SILENCE_DURATION;
   const MIN_SPEECH_DURATION = CHATGPT_TIMING_CONFIG.MIN_SPEECH_DURATION;
-  const PROLONGED_PAUSE_DURATION = 7000; // 7 seconds for pause detection
+  const PROLONGED_PAUSE_DURATION = 7000;
 
   // iOS Silence Detection Calibration
   const IOS_VAD_OFFSET_DB = 20;
@@ -177,58 +214,27 @@ export default function EnglishOnlyScreen() {
 
   const [vadThreshold, setVadThreshold] = useState(Platform.OS === 'ios' ? -70 : -45);
 
-  // Processing audio URLs removed for more natural conversation flow
-  // const PROCESSING_AUDIO_URLS = [];
-  
-  // Function to get a random processing audio URL (disabled)
-  const getRandomProcessingAudioURL = () => {
-    console.log(`🎲 Processing audio disabled for natural conversation flow`);
-    return null;
-  };
-  
-  // Alternative: Local audio file for instant playback (if you have the file)
-  // const PROCESSING_AUDIO_URLS = [
-  //   require('../../../assets/audio/processing_audio_1.mp3'),
-  //   require('../../../assets/audio/processing_audio_2.mp3'),
-  //   require('../../../assets/audio/processing_audio_3.mp3'),
-  //   require('../../../assets/audio/processing_audio_4.mp3')
-  // ];
-
-  // Pre-load processing audio for faster playback (disabled for natural flow)
-  const preloadProcessingAudio = async () => {
-    try {
-      console.log('🔄 Processing audio pre-loading disabled for natural conversation flow');
-      // No processing audio to pre-load
-    } catch (error) {
-      console.log('⚠️ Processing audio pre-loading disabled:', error);
-    }
-  };
-
   // Handle screen focus and blur events
   useFocusEffect(
     useCallback(() => {
-      console.log('English-Only screen focused - initializing...');
+      console.log('English-Only screen focused - initializing enhanced system...');
       isScreenFocusedRef.current = true;
       
       initializeAudio();
-      
-      // Pre-load processing audio for faster playback
-      preloadProcessingAudio();
+      initializeEnhancedSession();
       
       // Set initial loading state
       setState(prev => ({ 
         ...prev, 
         currentStep: 'waiting',
-        currentMessageText: 'Connecting to server...',
+        currentMessageText: 'Connecting to enhanced AI tutor...',
         isConnected: false
       }));
       
       connectToWebSocket();
       
-      // Note: Greeting will be handled after WebSocket connection is established
-
       return () => {
-        console.log('English-Only screen losing focus - cleaning up...');
+        console.log('English-Only screen losing focus - cleaning up enhanced system...');
         isScreenFocusedRef.current = false;
         cleanup();
       };
@@ -243,6 +249,33 @@ export default function EnglishOnlyScreen() {
     };
   }, []);
 
+  // Enhanced session initialization
+  const initializeEnhancedSession = () => {
+    sessionStartTimeRef.current = Date.now();
+    interactionsCountRef.current = 0;
+    
+    setState(prev => ({
+      ...prev,
+      conversationStage: 'greeting',
+      currentTopic: null,
+      learningPath: null,
+      skillLevel: null,
+      availableOptions: [],
+      sessionId: null,
+      hasError: false,
+      errorType: null,
+      errorMessage: null,
+      learningProgress: {
+        vocabularyWords: [],
+        grammarRules: [],
+        sessionDuration: 0,
+        interactionsCount: 0,
+      },
+    }));
+    
+    console.log('🚀 [ENHANCED] New learning session initialized');
+  };
+
   // Prolonged pause detection - only after user has spoken at least once
   useEffect(() => {
     if (state.silenceStartTime && !state.isAISpeaking && !state.isListening && state.lastUserInput) {
@@ -253,6 +286,24 @@ export default function EnglishOnlyScreen() {
       }
     }
   }, [state.silenceStartTime, state.isAISpeaking, state.isListening, state.isPauseDetected, state.lastUserInput]);
+
+  // Update learning progress
+  useEffect(() => {
+    const updateProgress = () => {
+      const sessionDuration = Date.now() - sessionStartTimeRef.current;
+      setState(prev => ({
+        ...prev,
+        learningProgress: {
+          ...prev.learningProgress,
+          sessionDuration,
+          interactionsCount: interactionsCountRef.current,
+        },
+      }));
+    };
+
+    const progressInterval = setInterval(updateProgress, 1000);
+    return () => clearInterval(progressInterval);
+  }, []);
 
   const initializeAudio = async () => {
     try {
@@ -276,7 +327,6 @@ export default function EnglishOnlyScreen() {
     }
     greetingInitiatedRef.current = true;
 
-
     // Check if WebSocket is connected before sending greeting
     if (!isEnglishOnlySocketConnected()) {
       console.log('❌ WebSocket not connected, cannot send greeting');
@@ -285,26 +335,26 @@ export default function EnglishOnlyScreen() {
         currentStep: 'waiting',
         isGreeting: false,
         isAISpeaking: false,
-        currentMessageText: 'Connecting to server...',
+        currentMessageText: 'Connecting to enhanced AI tutor...',
       }));
       return;
     }
 
     try {
-      console.log('🎤 Playing personalized greeting...');
+      console.log('🎤 Playing enhanced personalized greeting...');
       setState(prev => ({ 
         ...prev, 
         currentStep: 'greeting',
         isGreeting: true,
         isAISpeaking: true,
-        isListening: false, // Ensure listening is stopped during greeting
-        currentMessageText: `Hi ${state.userName}, I'm your AI English tutor. How can I help?`,
+        isListening: false,
+        currentMessageText: `Hi ${state.userName}, I'm your enhanced AI English tutor. I can help you with Vocabulary, Sentence Structure, Grammar, Topic Discussion, and Pronunciation Practice. What would you like to learn today?`,
       }));
 
       // Unload any previous sound
       if (soundRef.current) {
         const currentSound = soundRef.current;
-        soundRef.current = null; // Clear reference first to prevent race conditions
+        soundRef.current = null;
         await currentSound.unloadAsync();
       }
 
@@ -316,16 +366,16 @@ export default function EnglishOnlyScreen() {
         shouldDuckAndroid: true,
       });
 
-      // Send greeting request to backend
+      // Send enhanced greeting request to backend
       sendEnglishOnlyMessage(JSON.stringify({
         type: 'greeting',
         user_name: state.userName,
       }));
 
-      console.log('✅ Greeting request sent to backend');
+      console.log('✅ Enhanced greeting request sent to backend');
 
     } catch (error) {
-      console.error('Failed to play greeting:', error);
+      console.error('Failed to play enhanced greeting:', error);
       setState(prev => ({ 
         ...prev, 
         currentStep: 'waiting',
@@ -337,12 +387,22 @@ export default function EnglishOnlyScreen() {
   };
 
   const handleProlongedPause = async () => {
-    console.log('⏰ Prolonged pause detected, prompting user...');
+    console.log('⏰ Prolonged pause detected, prompting user with context-aware message...');
     
-    // Prevent multiple pause detections
     if (state.isPauseDetected) {
       console.log('⏰ Pause already detected, skipping...');
       return;
+    }
+    
+    // Context-aware pause message based on current learning path
+    let pauseMessage = `Would you like to learn anything else, ${state.userName}?`;
+    
+    if (state.learningPath === 'vocabulary_learning') {
+      pauseMessage = `Would you like to continue learning vocabulary, or try something else, ${state.userName}?`;
+    } else if (state.learningPath === 'sentence_practice') {
+      pauseMessage = `Would you like to continue practicing sentence structure, or try something else, ${state.userName}?`;
+    } else if (state.learningPath === 'topic_discussion' && state.currentTopic) {
+      pauseMessage = `Would you like to continue discussing ${state.currentTopic}, or try something else, ${state.userName}?`;
     }
     
     setState(prev => ({
@@ -350,28 +410,41 @@ export default function EnglishOnlyScreen() {
       isPauseDetected: true,
       currentStep: 'speaking',
       isAISpeaking: true,
-      currentMessageText: `Would you like to learn anything else, ${state.userName}?`,
+      currentMessageText: pauseMessage,
     }));
 
-    // Send pause detection message to backend
+    // Send enhanced pause detection message to backend
     sendEnglishOnlyMessage(JSON.stringify({
       type: 'prolonged_pause',
       user_name: state.userName,
+      current_stage: state.conversationStage,
+      current_topic: state.currentTopic,
     }));
   };
 
   const handleSilenceAfterAI = async () => {
-    console.log('⏰ User silent after AI, prompting with "Would you be there?"');
+    console.log('⏰ User silent after AI, prompting with context-aware message...');
     
     // Stop current recording if any
     if (recordingRef.current) {
       try {
         const currentRecording = recordingRef.current;
-        recordingRef.current = null; // Clear reference first to prevent race conditions
+        recordingRef.current = null;
         await currentRecording.stopAndUnloadAsync();
       } catch (error) {
         console.error('Error stopping recording for silence after AI:', error);
       }
+    }
+
+    // Context-aware reminder based on learning path
+    let reminderMessage = `Are you still there, ${state.userName}?`;
+    
+    if (state.learningPath === 'vocabulary_learning') {
+      reminderMessage = `Are you still there, ${state.userName}? We were working on vocabulary. Would you like to continue?`;
+    } else if (state.learningPath === 'sentence_practice') {
+      reminderMessage = `Are you still there, ${state.userName}? We were practicing sentence structure. Would you like to continue?`;
+    } else if (state.learningPath === 'topic_discussion' && state.currentTopic) {
+      reminderMessage = `Are you still there, ${state.userName}? We were discussing ${state.currentTopic}. Would you like to continue?`;
     }
 
     setState(prev => ({
@@ -379,25 +452,27 @@ export default function EnglishOnlyScreen() {
       isUserReminded: true,
       currentStep: 'speaking',
       isAISpeaking: true,
-      currentMessageText: `Would you be there?`,
+      currentMessageText: reminderMessage,
     }));
 
-    // Send silence after AI message to backend
+    // Send enhanced silence after AI message to backend
     sendEnglishOnlyMessage(JSON.stringify({
       type: 'user_silent_after_ai',
       user_name: state.userName,
+      current_stage: state.conversationStage,
+      learning_path: state.learningPath,
     }));
   };
 
   // Handle user response to pause prompt
   const handleFirstTimeSilence = async () => {
-    console.log('🔇 Handling first time silence - playing no speech message (frontend only)');
+    console.log('🔇 Handling first time silence - playing enhanced no speech message');
     
     // Stop current recording
     if (recordingRef.current) {
       try {
         const currentRecording = recordingRef.current;
-        recordingRef.current = null; // Clear reference first to prevent race conditions
+        recordingRef.current = null;
         await currentRecording.stopAndUnloadAsync();
       } catch (error) {
         console.error('Error stopping recording for first time silence:', error);
@@ -406,32 +481,30 @@ export default function EnglishOnlyScreen() {
 
     // Reset first recording flag since we've handled the silence
     isFirstRecordingRef.current = false;
-    console.log('🔄 Silence handled, switching to normal mode');
+    console.log('🔄 Silence handled, switching to enhanced mode');
 
-    // Set state to show no speech detected with animation (like conversation.tsx)
+    // Set state to show enhanced no speech detected message
     setState(prev => ({
       ...prev,
       currentStep: 'waiting',
       isAISpeaking: false,
       isListening: false,
-      isNoSpeechDetected: true, // Show no speech detected animation
-      currentMessageText: 'No speech detected. Please try speaking again.',
+      isNoSpeechDetected: true,
+      currentMessageText: 'No speech detected. Please try speaking again. I\'m here to help you learn English!',
     }));
 
-    // Play pre-recorded TTS audio directly in frontend (no backend call)
-    await playNoSpeechDetectedAudio();
+    // Play enhanced no speech detected audio
+    await playEnhancedNoSpeechDetectedAudio();
 
-    console.log('✅ No speech detected handled in frontend only');
+    console.log('✅ Enhanced no speech detected handled');
   };
 
-  const playNoSpeechDetectedAudio = async () => {
-    console.log('🔊 Playing no speech detected audio in frontend...');
+  const playEnhancedNoSpeechDetectedAudio = async () => {
+    console.log('🔊 Playing enhanced no speech detected audio...');
     
     try {
-      // Use expo-speech to play the audio directly (like conversation.tsx)
-      const noSpeechText = 'No speech detected. Please try speaking again.';
+      const noSpeechText = 'No speech detected. Please try speaking again. I\'m here to help you learn English!';
       
-      // Set state to show AI speaking animation
       setState(prev => ({
         ...prev,
         currentStep: 'speaking',
@@ -440,38 +513,31 @@ export default function EnglishOnlyScreen() {
         currentMessageText: noSpeechText,
       }));
 
-      // Play the audio using expo-speech
       await Speech.speak(noSpeechText, {
         language: 'en-US',
         rate: 0.8,
         pitch: 1.0,
         onDone: () => {
-          console.log('🎵 No speech detected audio finished playing, restarting recording');
+          console.log('🎵 Enhanced no speech detected audio finished playing, restarting recording');
           setState(prev => ({
             ...prev,
             currentStep: 'waiting',
             isAISpeaking: false,
-            isNoSpeechDetected: false, // Clear no speech detected state
+            isNoSpeechDetected: false,
             currentMessageText: '',
             silenceStartTime: Date.now(),
           }));
 
-          // Restart recording after no speech detected audio finishes
           setTimeout(() => {
             if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
-              console.log('🎤 Restarting recording after no speech detected audio finished');
-              // Keep existing flags as they are - don't reset isFirstRecording inappropriately
+              console.log('🎤 Restarting recording after enhanced no speech detected audio finished');
               hasUserSpokenRef.current = false;
-              // Don't reset isFirstRecordingRef.current here - it should stay as it was
-              // Don't reset isNewSessionAfterAI.current here - it should stay as it was
-              console.log('🔄 [NO_SPEECH_DETECTED] Restart recording while preserving flag states');
               startRecording();
             }
-          }, 1000); // 1 second delay before restarting recording
+          }, 1000);
         },
         onError: (error: any) => {
-          console.error('Error playing no speech detected audio:', error);
-          // Fallback: restart recording even if audio fails
+          console.error('Error playing enhanced no speech detected audio:', error);
           setState(prev => ({
             ...prev,
             currentStep: 'waiting',
@@ -481,9 +547,7 @@ export default function EnglishOnlyScreen() {
           }));
           setTimeout(() => {
             if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
-              // Keep existing flags in error fallback too
               hasUserSpokenRef.current = false;
-              console.log('🔄 [NO_SPEECH_DETECTED] Restart recording in onError while preserving flag states');
               startRecording();
             }
           }, 1000);
@@ -491,8 +555,7 @@ export default function EnglishOnlyScreen() {
       });
 
     } catch (error) {
-      console.error('Failed to play no speech detected audio:', error);
-      // Fallback: restart recording
+      console.error('Failed to play enhanced no speech detected audio:', error);
       setState(prev => ({
         ...prev,
         currentStep: 'waiting',
@@ -509,12 +572,12 @@ export default function EnglishOnlyScreen() {
   };
 
   const handlePauseResponse = (userResponse: string) => {
-    console.log('⏰ User response to pause prompt:', userResponse);
+    console.log('⏰ User response to enhanced pause prompt:', userResponse);
     
     const response = userResponse.toLowerCase().trim();
     
     if (response.includes('yes') || response.includes('continue') || response.includes('more')) {
-      console.log('⏰ User wants to continue, resuming conversation...');
+      console.log('⏰ User wants to continue, resuming enhanced conversation...');
       setState(prev => ({
         ...prev,
         isPauseDetected: false,
@@ -524,84 +587,21 @@ export default function EnglishOnlyScreen() {
         silenceStartTime: Date.now(),
       }));
       
-      // Start listening again after a short delay
       setTimeout(() => {
         if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
-          console.log('🎤 Resuming conversation after pause response');
+          console.log('🎤 Resuming enhanced conversation after pause response');
           startRecording();
         }
       }, 1000);
     } else {
-      console.log('⏰ User wants to end session, showing mic button...');
+      console.log('⏰ User wants to end session, showing enhanced mic button...');
       setState(prev => ({
         ...prev,
         isPauseDetected: false,
         currentStep: 'waiting',
         isAISpeaking: false,
-        currentMessageText: 'Press the mic button to continue learning!',
+        currentMessageText: 'Press the mic button to continue learning with our enhanced AI tutor!',
         silenceStartTime: null,
-      }));
-    }
-  };
-
-  const playCorrectionAudio = async (audioUri: string) => {
-    console.log('🎯 Playing correction audio for repeat after me...');
-    
-    try {
-      // Set state to show correction is playing
-      setState(prev => ({
-        ...prev,
-        isPlayingCorrection: true,
-        showRepeatAfterMe: true,
-        currentStep: 'speaking',
-        isAISpeaking: true,
-      }));
-
-      // Stop any existing correction audio
-      if (correctionSoundRef.current) {
-        try {
-          const currentSound = correctionSoundRef.current;
-          correctionSoundRef.current = null;
-          await currentSound.stopAsync();
-          await currentSound.unloadAsync();
-        } catch (error) {
-          console.log('Error stopping existing correction audio:', error);
-        }
-      }
-
-      // Create and play correction audio
-      const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
-      correctionSoundRef.current = sound;
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          console.log('🎯 Correction audio finished, showing repeat after me prompt');
-          setState(prev => ({
-            ...prev,
-            isPlayingCorrection: false,
-            isAISpeaking: false,
-            currentStep: 'waiting',
-            currentMessageText: `Now repeat after me: "${state.correctedSentence}"`,
-          }));
-
-          // Start listening for user to repeat
-          setTimeout(() => {
-            if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-              console.log('🎤 Starting to listen for user repetition');
-              startRecording();
-            }
-          }, 2000); // 2 second delay to let user prepare
-        }
-      });
-
-      await sound.playAsync();
-    } catch (error) {
-      console.error('Failed to play correction audio:', error);
-      setState(prev => ({
-        ...prev,
-        isPlayingCorrection: false,
-        showRepeatAfterMe: false,
-        currentStep: 'waiting',
       }));
     }
   };
@@ -613,93 +613,96 @@ export default function EnglishOnlyScreen() {
       setState(prev => ({ 
         ...prev, 
         currentMessageText: 'Connection failed. Please check your internet and try again.',
-        currentStep: 'error'
+        currentStep: 'error',
+        hasError: true,
+        errorType: 'connection_failed',
+        errorMessage: 'Maximum connection attempts reached'
       }));
       return;
     }
 
     connectionAttemptsRef.current++;
-    console.log(`🔌 Starting WebSocket connection (attempt ${connectionAttemptsRef.current}/${maxConnectionAttempts})...`);
+    console.log(`🔌 Starting enhanced WebSocket connection (attempt ${connectionAttemptsRef.current}/${maxConnectionAttempts})...`);
     
     connectEnglishOnlySocket(
-      (data: any) => handleWebSocketMessage(data),
-      (audioBuffer: ArrayBuffer) => handleAudioData(audioBuffer),
-      () => handleWebSocketClose()
+      (data: any) => handleEnhancedWebSocketMessage(data),
+      (audioBuffer: ArrayBuffer) => handleEnhancedAudioData(audioBuffer),
+      () => handleEnhancedWebSocketClose()
     );
 
     // Set connection timeout
     const connectionTimeout = setTimeout(() => {
       if (!isEnglishOnlySocketConnected()) {
-        console.log(`⚠️ WebSocket connection timeout (attempt ${connectionAttemptsRef.current})`);
+        console.log(`⚠️ Enhanced WebSocket connection timeout (attempt ${connectionAttemptsRef.current})`);
         setState(prev => ({ 
           ...prev, 
-          currentMessageText: `Connection attempt ${connectionAttemptsRef.current} failed. Retrying...`,
-          currentStep: 'error'
+          currentMessageText: `Enhanced connection attempt ${connectionAttemptsRef.current} failed. Retrying...`,
+          currentStep: 'error',
+          hasError: true,
+          errorType: 'connection_timeout',
+          errorMessage: `Connection attempt ${connectionAttemptsRef.current} timed out`
         }));
         
-        // Retry connection after timeout
         setTimeout(() => {
           if (isScreenFocusedRef.current && !state.isConnected) {
-            console.log('🔄 Retrying WebSocket connection...');
+            console.log('🔄 Retrying enhanced WebSocket connection...');
             connectToWebSocket();
           }
         }, 2000);
       } else {
-        console.log('✅ Connection established before timeout, clearing timeout');
-        connectionAttemptsRef.current = 0; // Reset attempts on success
+        console.log('✅ Enhanced connection established before timeout, clearing timeout');
+        connectionAttemptsRef.current = 0;
       }
-    }, 12000); // 12 second timeout (increased to be less than WebSocket timeout)
+    }, 12000);
 
     const interval = setInterval(() => {
       if (isEnglishOnlySocketConnected()) {
-        console.log("✅ English-Only Socket verified connected");
-        connectionAttemptsRef.current = 0; // Reset attempts on successful connection
+        console.log("✅ Enhanced English-Only Socket verified connected");
+        connectionAttemptsRef.current = 0;
         setState(prev => ({ 
           ...prev, 
           isConnected: true,
-          currentMessageText: '', // Clear any loading/error messages
-          currentStep: 'waiting'
+          currentMessageText: '',
+          currentStep: 'waiting',
+          hasError: false,
+          errorType: null,
+          errorMessage: null
         }));
         clearInterval(interval);
         clearTimeout(connectionTimeout);
         
-        // Auto-start with greeting if param is set and connection is ready
+        // Auto-start with enhanced greeting if param is set and connection is ready
         if (autoStart === 'true' && isScreenFocusedRef.current) {
-          console.log('🎯 Connection established, now playing greeting...');
+          console.log('🎯 Enhanced connection established, now playing greeting...');
           setTimeout(() => {
             if (isScreenFocusedRef.current) {
               playGreeting();
             }
-          }, 200); // Short delay after connection
+          }, 200);
         }
       }
     }, 100);
   };
 
-  const handleWebSocketMessage = (data: any) => {
+  const handleEnhancedWebSocketMessage = (data: any) => {
     if (!isScreenFocusedRef.current) {
-      console.log('Screen not focused, ignoring WebSocket message');
+      console.log('Screen not focused, ignoring enhanced WebSocket message');
       return;
     }
 
-    console.log('Received English-Only WebSocket message:', data);
+    console.log('Received enhanced English-Only WebSocket message:', data);
+    interactionsCountRef.current++;
     
-    // Log the new analysis data if available
+    // Log enhanced analysis data if available
     if (data.analysis) {
-      console.log('🔍 [ANALYSIS]', {
-        is_correct: data.analysis.is_correct,
-        intent: data.analysis.intent,
-        should_continue: data.analysis.should_continue_conversation,
+      console.log('🔍 [ENHANCED_ANALYSIS]', {
+        next_stage: data.analysis.next_stage,
+        current_topic: data.analysis.current_topic,
+        needs_correction: data.analysis.needs_correction,
+        correction_type: data.analysis.correction_type,
+        learning_activity: data.analysis.learning_activity,
+        session_progress: data.analysis.session_progress,
         step: data.step
-      });
-    }
-
-    // Log correction data if available
-    if (data.needs_correction) {
-      console.log('🔍 [CORRECTION]', {
-        needs_correction: data.needs_correction,
-        corrected_sentence: data.corrected_sentence,
-        correction_type: data.correction_type
       });
     }
 
@@ -711,13 +714,14 @@ export default function EnglishOnlyScreen() {
 
     const newMessage: Message = {
       id: Date.now().toString(),
-      text: data.conversation_text || data.response || 'AI response',
+      text: data.conversation_text || data.response || 'Enhanced AI response',
       isAI: true,
       timestamp: new Date(),
+      stage: data.conversation_stage || data.step,
+      analysis: data.analysis || {},
     };
 
     // Track if this is a response to user speech (not greeting or pause)
-    // Updated to handle both 'correction' and 'conversation' steps from the new conversational AI
     const isResponseToUserSpeech = (data.step === 'correction' || data.step === 'conversation') && data.original_text;
     const isPausePrompt = data.step === 'pause_detected';
     const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
@@ -727,9 +731,7 @@ export default function EnglishOnlyScreen() {
     // Immediately update the last message step ref to prevent race conditions
     lastMessageStepRef.current = data.step;
 
-    // 🎯 REMOVED: No longer handling processing_started step from backend
-    // Frontend now plays pre-generated audio immediately when processing starts
-
+    // Update enhanced state with backend data
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, newMessage],
@@ -739,57 +741,60 @@ export default function EnglishOnlyScreen() {
       isNoSpeechDetected: isNoSpeechDetected,
       isNoSpeechAfterProcessing: isNoSpeechAfterProcessing,
       isUserReminded: isUserReminded,
-      isProcessingAudio: false, // Clear processing state for all responses
-      currentMessageText: data.conversation_text || data.response || 'AI response',
-      // Don't set isAISpeaking to false here - let handleAudioData manage it
+      isProcessingAudio: false,
+      currentMessageText: data.conversation_text || data.response || 'Enhanced AI response',
+      
+      // Enhanced state updates
+      conversationStage: data.conversation_stage || prev.conversationStage,
+      currentTopic: data.current_topic || prev.currentTopic,
+      learningPath: data.learning_path || prev.learningPath,
+      skillLevel: data.skill_level || prev.skillLevel,
+      availableOptions: data.available_options || prev.availableOptions,
+      sessionId: data.session_id || prev.sessionId,
+      
+      // Update learning progress
+      learningProgress: {
+        ...prev.learningProgress,
+        interactionsCount: interactionsCountRef.current,
+      },
+      
       // Update lastUserInput if this is a response to user speech
       lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
-      // Update correction-related states
-      needsCorrection: data.needs_correction || false,
-      correctedSentence: data.corrected_sentence || '',
-      correctionType: data.correction_type || '',
-      showRepeatAfterMe: data.needs_correction && data.corrected_sentence ? true : false,
     }));
 
-    // Handle no speech detected response from backend
+    // Handle enhanced no speech detected response from backend
     if (isNoSpeechDetected) {
-      // Don't handle no_speech if we're currently processing audio
       if (isProcessingAudioRef.current || state.isProcessingAudio) {
-        console.log('🔇 Ignoring no_speech response - currently processing audio (ref: ' + isProcessingAudioRef.current + ', state: ' + state.isProcessingAudio + ')');
+        console.log('🔇 Ignoring no_speech response - currently processing audio');
         return;
       }
       
-      console.log('🔇 Backend detected no speech - playing no speech detected audio');
-      // Reset hasUserSpoken flag since backend detected no speech
+      console.log('🔇 Backend detected no speech - playing enhanced no speech detected audio');
       hasUserSpokenRef.current = false;
-      // Play no speech detected audio and restart recording
+      
       setTimeout(() => {
         if (isScreenFocusedRef.current) {
-          playNoSpeechDetectedAudio();
+          playEnhancedNoSpeechDetectedAudio();
         }
-      }, 500); // Short delay before playing audio
+      }, 500);
     }
 
-    // Handle no speech detected after processing response from backend
+    // Handle enhanced no speech detected after processing response from backend
     if (isNoSpeechAfterProcessing) {
       console.log('🔇 Backend detected no speech after processing - clearing processing state and preparing for restart');
-      // Clear processing state immediately
       isProcessingAudioRef.current = false;
-      // Reset hasUserSpoken flag since backend detected no speech after processing
       hasUserSpokenRef.current = false;
-      // Don't reset isFirstRecordingRef.current - preserve existing flag state
-      console.log('🔄 [NO_SPEECH_AFTER_PROCESSING] Cleared processing state while preserving flag states');
-      // The audio will be handled in handleAudioData and playAudio functions
+      console.log('🔄 [ENHANCED_NO_SPEECH_AFTER_PROCESSING] Cleared processing state while preserving flag states');
     }
 
     // Handle final AI response (correction or conversation) - clear processing state
     if (isResponseToUserSpeech) {
-      console.log(`✅ Received final AI response (${data.step}), clearing processing state`);
-      console.log(`🔍 [${data.step}] Clearing isProcessingAudio, proceeding with response`);
-      isProcessingAudioRef.current = false; // Clear ref immediately
+      console.log(`✅ Received enhanced final AI response (${data.step}), clearing processing state`);
+      console.log(`🔍 [${data.step}] Clearing isProcessingAudio, proceeding with enhanced response`);
+      isProcessingAudioRef.current = false;
       setState(prev => ({
         ...prev,
-        isProcessingAudio: false, // Clear processing state for final response
+        isProcessingAudio: false,
       }));
     }
 
@@ -799,9 +804,9 @@ export default function EnglishOnlyScreen() {
     }, 100);
   };
 
-  const handleAudioData = async (audioBuffer: ArrayBuffer) => {
+  const handleEnhancedAudioData = async (audioBuffer: ArrayBuffer) => {
     if (!isScreenFocusedRef.current) {
-      console.log('Screen not focused, ignoring audio data');
+      console.log('Screen not focused, ignoring enhanced audio data');
       return;
     }
 
@@ -832,42 +837,26 @@ export default function EnglishOnlyScreen() {
 
     try {
       const base64 = Buffer.from(audioBuffer).toString('base64');
-      const audioUri = `${FileSystem.cacheDirectory}english_only_audio_${Date.now()}.mp3`;
+      const audioUri = `${FileSystem.cacheDirectory}enhanced_english_only_audio_${Date.now()}.mp3`;
 
       await FileSystem.writeAsStringAsync(audioUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // If a high-priority audio message arrives, interrupt the current audio.
-      // This prevents a race condition where a "no speech" response is ignored
-      // because the initial "processing" audio is still playing.
-      const isHighPriority = lastMessageStepRef.current === 'no_speech_detected_after_processing' || lastMessageStepRef.current === 'correction';
+      // If a high-priority audio message arrives, interrupt the current audio
+      const isHighPriority = lastMessageStepRef.current === 'no_speech_detected_after_processing' || 
+                            lastMessageStepRef.current === 'correction';
       if (isHighPriority && isPlayingAudioRef.current) {
-        console.log('🎵 [High Priority] Interrupting current audio for new message.');
+        console.log('🎵 [High Priority] Interrupting current audio for new enhanced message.');
         if (soundRef.current) {
           const currentSound = soundRef.current;
-          soundRef.current = null; // Clear reference first to prevent race conditions
+          soundRef.current = null;
           
           await currentSound.stopAsync();
           await currentSound.unloadAsync();
         }
-        // Stop processing audio if it's playing (disabled for natural flow)
-        // if (audioManager.isAudioPlaying('processing_audio') ||
-        //     audioManager.isAudioPlaying('processing_audio_0') ||
-        //     audioManager.isAudioPlaying('processing_audio_1') ||
-        //     audioManager.isAudioPlaying('processing_audio_2') ||
-        //     audioManager.isAudioPlaying('processing_audio_3')) {
-        //   console.log('🎵 [High Priority] Stopping processing audio for new message.');
-        //   audioManager.stopCurrentAudio();
-        // }
         isPlayingAudioRef.current = false;
       }
-      // Processing audio interruption removed for natural flow
-      // if (isProcessingAudioRef.current) {
-      //   console.log('Interrupting filler audio to play AI response immediately.');
-      //   await audioManager.stopCurrentAudio();
-      //   isProcessingAudioRef.current = false;
-      // }
 
       // Check if this is greeting audio, no speech detected audio, or processing audio
       const isGreeting = state.isGreeting;
@@ -875,41 +864,33 @@ export default function EnglishOnlyScreen() {
       const isNoSpeechAfterProcessing = state.isNoSpeechAfterProcessing;
       const isUserReminded = state.isUserReminded;
 
-      console.log(`🎵 [Audio Data] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
+      console.log(`🎵 [Enhanced Audio Data] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
 
       // Only update state if not already speaking to prevent unnecessary re-renders
       setState(prev => {
         if (prev.isAISpeaking) {
-          // Already speaking, just update the audio URI
           return {
             ...prev,
             currentAudioUri: audioUri,
           };
         } else {
-          // Not speaking, set all speaking-related states
           return {
             ...prev,
             currentAudioUri: audioUri,
             currentStep: 'speaking',
             isAISpeaking: true,
-            isListening: false, // Ensure listening is stopped
+            isListening: false,
           };
         }
       });
 
-      // Check if this is correction audio (second audio buffer)
-      if (state.needsCorrection && state.correctedSentence && !state.isPlayingCorrection) {
-        console.log('🎯 Detected correction audio, playing with repeat after me behavior');
-        await playCorrectionAudio(audioUri);
-      } else {
-        await playAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
-      }
+      await playEnhancedAudio(audioUri, isGreeting, isNoSpeechDetected, isNoSpeechAfterProcessing, isUserReminded);
     } catch (error) {
-      console.error('Failed to handle audio data:', error);
+      console.error('Failed to handle enhanced audio data:', error);
     }
   };
 
-  const handleWebSocketClose = () => {
+  const handleEnhancedWebSocketClose = () => {
     setState(prev => ({
       ...prev,
       isConnected: false,
@@ -922,23 +903,20 @@ export default function EnglishOnlyScreen() {
       isNoSpeechAfterProcessing: false,
       isUserReminded: false,
       currentMessageText: '',
+      hasError: true,
+      errorType: 'websocket_closed',
+      errorMessage: 'Connection to enhanced AI tutor was lost'
     }));
   };
 
-  const playAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false, isNoSpeechAfterProcessing = false, isUserReminded = false) => {
-    console.log(`🎵 [PlayAudio] Starting with isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
+  const playEnhancedAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false, 
+                                 isNoSpeechAfterProcessing = false, isUserReminded = false) => {
+    console.log(`🎵 [Enhanced PlayAudio] Starting with isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
     
     if (!isScreenFocusedRef.current) {
-      console.log('Screen not focused, skipping audio playback');
+      console.log('Screen not focused, skipping enhanced audio playback');
       return;
     }
-
-    // Prevent multiple audio sessions
-    // This check is now handled more intelligently in `handleAudioData` to prevent race conditions.
-    // if (isPlayingAudioRef.current) {
-    //   console.log('Audio already playing, skipping new audio session');
-    //   return;
-    // }
 
     isPlayingAudioRef.current = true;
 
@@ -947,7 +925,7 @@ export default function EnglishOnlyScreen() {
       if (soundRef.current) {
         try {
           const currentSound = soundRef.current;
-          soundRef.current = null; // Clear reference first to prevent race conditions
+          soundRef.current = null;
           
           await currentSound.stopAsync();
           await currentSound.unloadAsync();
@@ -967,12 +945,11 @@ export default function EnglishOnlyScreen() {
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
-          console.log(`🎵 [Audio Finished] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
-          // Reset audio playing flag
+          console.log(`🎵 [Enhanced Audio Finished] isGreeting: ${isGreeting}, isNoSpeechDetected: ${isNoSpeechDetected}, isNoSpeechAfterProcessing: ${isNoSpeechAfterProcessing}, isUserReminded: ${isUserReminded}`);
           isPlayingAudioRef.current = false;
           
           if (isGreeting) {
-            console.log('🎵 [Audio Branch] Greeting audio finished playing, starting to listen');
+            console.log('🎵 [Enhanced Audio Branch] Greeting audio finished playing, starting to listen');
             setState(prev => ({
               ...prev, 
               currentStep: 'waiting',
@@ -982,50 +959,44 @@ export default function EnglishOnlyScreen() {
               silenceStartTime: Date.now(),
             }));
 
-            // Start listening immediately after greeting finishes
             if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-              console.log('🎤 Starting to listen immediately after greeting finished');
+              console.log('🎤 Starting to listen immediately after enhanced greeting finished');
               startRecording();
             }
           } else if (isNoSpeechDetected) {
-            console.log('🎵 [Audio Branch] No speech detected audio finished playing, restarting recording');
+            console.log('🎵 [Enhanced Audio Branch] No speech detected audio finished playing, restarting recording');
             setState(prev => ({
               ...prev, 
               currentStep: 'waiting',
               isAISpeaking: false,
-              isNoSpeechDetected: false, // Clear no speech detected state
+              isNoSpeechDetected: false,
               currentMessageText: '',
               silenceStartTime: Date.now(),
             }));
 
-            // Restart recording after no speech detected audio finishes
             setTimeout(() => {
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-                console.log('🎤 Restarting recording after no speech detected audio finished');
+                console.log('🎤 Restarting recording after enhanced no speech detected audio finished');
                 startRecording();
               }
-            }, 1000); // 1 second delay before restarting recording
+            }, 1000);
           } else if (isNoSpeechAfterProcessing) {
-            console.log('🎵 [Audio Branch] No speech after processing audio finished playing, restarting recording with 5-second silence detection');
+            console.log('🎵 [Enhanced Audio Branch] No speech after processing audio finished playing, restarting recording with 5-second silence detection');
             setState(prev => ({
               ...prev, 
               currentStep: 'waiting',
               isAISpeaking: false,
-              isNoSpeechAfterProcessing: false, // Clear no speech after processing state
+              isNoSpeechAfterProcessing: false,
               currentMessageText: '',
               silenceStartTime: Date.now(),
             }));
 
-            // Restart recording after no speech after processing audio finishes with 5-second silence detection
             setTimeout(() => {
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-                console.log('🎤 Restarting recording after no speech after processing audio finished');
-                // Don't reset isFirstRecordingRef.current - preserve existing flag state
+                console.log('🎤 Restarting recording after enhanced no speech after processing audio finished');
                 hasUserSpokenRef.current = false;
-                // Don't reset isNewSessionAfterAI.current - preserve existing flag state  
-                console.log('🔄 [NO_SPEECH_AFTER_PROCESSING] Restart recording while preserving flag states');
+                console.log('🔄 [ENHANCED_NO_SPEECH_AFTER_PROCESSING] Restart recording while preserving flag states');
                 
-                // Ensure processing state is cleared before starting recording
                 setState(prev => ({
                   ...prev,
                   isProcessingAudio: false,
@@ -1034,40 +1005,36 @@ export default function EnglishOnlyScreen() {
                 
                 startRecording();
               } else {
-                console.log('🛑 Cannot start recording immediately after no speech after processing, will retry in 500ms');
-                // Retry after a short delay if conditions aren't met
+                console.log('🛑 Cannot start recording immediately after enhanced no speech after processing, will retry in 500ms');
                 setTimeout(() => {
                   if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
-                    console.log('🔄 Retrying startRecording after no speech after processing');
+                    console.log('🔄 Retrying startRecording after enhanced no speech after processing');
                     startRecording();
                   }
                 }, 500);
               }
-            }, 1000); // 1 second delay before restarting recording
+            }, 1000);
           } else if (isUserReminded) {
-            console.log('🎵 [Audio Branch] User reminder audio finished, restarting recording with 5-second silence detection');
+            console.log('🎵 [Enhanced Audio Branch] User reminder audio finished, restarting recording with 5-second silence detection');
             setState(prev => ({
               ...prev, 
               currentStep: 'waiting',
               isAISpeaking: false,
-              isUserReminded: false, // Clear user reminded state
+              isUserReminded: false,
               currentMessageText: '',
               silenceStartTime: Date.now(),
             }));
 
-            // Restart recording after user reminder with initial 5-second silence detection
             setTimeout(() => {
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking) {
-                console.log('🎤 Restarting recording after user reminder');
-                // Don't reset isFirstRecordingRef.current - preserve existing flag state
+                console.log('🎤 Restarting recording after enhanced user reminder');
                 hasUserSpokenRef.current = false;
-                // Don't reset isNewSessionAfterAI.current - preserve existing flag state
-                console.log('🔄 [USER_REMINDED] Restart recording while preserving flag states');
+                console.log('🔄 [ENHANCED_USER_REMINDED] Restart recording while preserving flag states');
                 startRecording();
               }
-            }, 1000); // 1 second delay before restarting recording
+            }, 1000);
           } else {
-            console.log('🎵 [Audio Branch] AI audio finished playing, preparing to listen again');
+            console.log('🎵 [Enhanced Audio Branch] AI audio finished playing, preparing to listen again');
             setState(prev => ({
               ...prev, 
               currentStep: 'waiting',
@@ -1076,12 +1043,10 @@ export default function EnglishOnlyScreen() {
               silenceStartTime: Date.now(),
             }));
             
-            // Log state after update
-            console.log('📊 State updated after AI audio finished');
+            console.log('📊 Enhanced state updated after AI audio finished');
 
-            // Start listening again after a short delay
             setTimeout(() => {
-              console.log('⏰ Timeout triggered for starting recording after AI speech');
+              console.log('⏰ Timeout triggered for starting recording after enhanced AI speech');
               console.log('🔍 Screen focused:', isScreenFocusedRef.current);
               console.log('🔍 Is listening:', state.isListening);
               console.log('🔍 Is AI speaking:', state.isAISpeaking);
@@ -1089,28 +1054,24 @@ export default function EnglishOnlyScreen() {
               console.log('🔍 Is stopping:', isStoppingRef.current);
               
               if (isScreenFocusedRef.current && !state.isListening && !state.isAISpeaking && !state.isProcessingAudio && !isProcessingAudioRef.current) {
-                console.log('🎤 Starting to listen again after AI finished speaking');
-                // DON'T reset isFirstRecording - it should only be true for the very first app load
-                // isFirstRecordingRef.current = true; // ❌ REMOVED: This was causing the bug
-                // Mark this as a new session after AI spoke
+                console.log('🎤 Starting to listen again after enhanced AI finished speaking');
                 isNewSessionAfterAI.current = true;
-                // Reset hasUserSpoken for the new session after AI
                 hasUserSpokenRef.current = false;
-                console.log('🔄 Set isNewSessionAfterAI for user_silent_after_ai logic');
-                console.log('🔄 Reset hasUserSpoken for new session after AI');
+                console.log('🔄 Set isNewSessionAfterAI for enhanced user_silent_after_ai logic');
+                console.log('🔄 Reset hasUserSpoken for new enhanced session after AI');
                 startRecording();
               } else {
                 console.log('🛑 Cannot start recording - conditions not met');
               }
-            }, 1200); // 1.2 second delay before listening again
+            }, 1200);
           }
         }
       });
 
       await sound.playAsync();
     } catch (error) {
-      console.error('Failed to play audio:', error);
-      isPlayingAudioRef.current = false; // Reset flag on error
+      console.error('Failed to play enhanced audio:', error);
+      isPlayingAudioRef.current = false;
       setState(prev => ({ ...prev, currentStep: 'waiting' }));
     }
   };
@@ -1679,19 +1640,6 @@ export default function EnglishOnlyScreen() {
         console.warn('Error unloading sound:', error);
       });
     }
-
-    if (correctionSoundRef.current) {
-      console.log('🔇 Stopping and unloading correction sound...');
-      const currentCorrectionSound = correctionSoundRef.current;
-      correctionSoundRef.current = null;
-      
-      currentCorrectionSound.stopAsync().catch(error => {
-        console.warn('Error stopping correction sound:', error);
-      });
-      currentCorrectionSound.unloadAsync().catch(error => {
-        console.warn('Error unloading correction sound:', error);
-      });
-    }
     
     // Stop processing audio using audioManager (disabled for natural flow)
     // if (audioManager.isAudioPlaying('processing_audio') || 
@@ -1725,12 +1673,6 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
-      // Reset correction-related states
-      needsCorrection: false,
-      correctedSentence: '',
-      correctionType: '',
-      isPlayingCorrection: false,
-      showRepeatAfterMe: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -1757,15 +1699,6 @@ export default function EnglishOnlyScreen() {
       
       currentSound.stopAsync().catch(error => {
         console.warn('Error stopping sound:', error);
-      });
-    }
-
-    if (correctionSoundRef.current) {
-      const currentCorrectionSound = correctionSoundRef.current;
-      correctionSoundRef.current = null;
-      
-      currentCorrectionSound.stopAsync().catch(error => {
-        console.warn('Error stopping correction sound immediately:', error);
       });
     }
     
@@ -1815,12 +1748,6 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
-      // Reset correction-related states
-      needsCorrection: false,
-      correctedSentence: '',
-      correctionType: '',
-      isPlayingCorrection: false,
-      showRepeatAfterMe: false,
     }));
     
     speechStartTimeRef.current = null;
@@ -1948,13 +1875,19 @@ export default function EnglishOnlyScreen() {
 
   const currentAnimation = getCurrentAnimation();
 
+
+
   return (
     <View style={styles.container}>
-      {/* Connection Indicator Dot - Top Right */}
+      {/* Simple Connection Indicator Dot - Top Right */}
       <View style={[
         styles.connectionIndicator,
         { backgroundColor: state.isConnected ? '#58D68D' : '#FF6B6B' }
       ]} />
+
+
+
+
 
       {/* Animation Overlay */}
       <View style={styles.processingOverlay} pointerEvents="box-none">
@@ -1975,27 +1908,6 @@ export default function EnglishOnlyScreen() {
           </>
         )}
       </View>
-
-      {/* Repeat After Me Overlay */}
-      {state.showRepeatAfterMe && (
-        <View style={styles.repeatAfterMeOverlay} pointerEvents="box-none">
-          <View style={styles.repeatAfterMeContainer}>
-            <LinearGradient
-              colors={['#4CAF50', '#45B7A8']}
-              style={styles.repeatAfterMeGradient}
-            >
-              <View style={styles.repeatAfterMeContent}>
-                <Ionicons name="repeat" size={32} color="white" style={styles.repeatIcon} />
-                <Text style={styles.repeatAfterMeTitle}>Repeat After Me</Text>
-                <Text style={styles.correctedSentenceText}>{state.correctedSentence}</Text>
-                {state.currentMessageText && (
-                  <Text style={styles.repeatInstructionText}>{state.currentMessageText}</Text>
-                )}
-              </View>
-            </LinearGradient>
-          </View>
-        </View>
-      )}
 
       {/* Center round button and wrong button */}
       <View style={styles.bottomContainer}>
@@ -2092,6 +2004,9 @@ const styles = StyleSheet.create({
     elevation: 2,
     zIndex: 1000,
   },
+
+
+
   messageContainer: {
     marginBottom: 12,
   },
@@ -2299,55 +2214,5 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#CED4DA',
     opacity: 0.25,
-  },
-  // Repeat After Me styles
-  repeatAfterMeOverlay: {
-    position: 'absolute',
-    top: height * 0.2,
-    left: 20,
-    right: 20,
-    zIndex: 1000,
-  },
-  repeatAfterMeContainer: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  repeatAfterMeGradient: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  repeatAfterMeContent: {
-    alignItems: 'center',
-  },
-  repeatIcon: {
-    marginBottom: 12,
-  },
-  repeatAfterMeTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  correctedSentenceText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 12,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
-  },
-  repeatInstructionText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 20,
   },
 });
