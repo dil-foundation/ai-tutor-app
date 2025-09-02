@@ -8,8 +8,10 @@ import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LanguageModeProvider } from './context/LanguageModeContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
+import UXCamSessionManager from '../components/UXCamSessionManager';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -64,6 +66,7 @@ function RootLayoutNav() {
 
   return (
     <RoleBasedAccess>
+      <UXCamSessionManager />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
@@ -98,10 +101,12 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <LanguageModeProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <StatusBar style="light" />
-          <RootLayoutNav />
-        </ThemeProvider>
+        <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
+          <ThemeProvider value={DefaultTheme}>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+          </ThemeProvider>
+        </UXCamProvider>
       </LanguageModeProvider>
     </AuthProvider>
   );
