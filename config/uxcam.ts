@@ -3,26 +3,26 @@ import { UXCAM_API_KEY } from '@env';
 // UXCam Configuration
 export const UXCamConfig = {
   // Load API key from environment variables
-  API_KEY: UXCAM_API_KEY || 'YOUR_UXCAM_API_KEY_HERE',
+  API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
   
   // Environment configuration
   ENVIRONMENTS: {
     development: {
-      API_KEY: UXCAM_API_KEY || 'YOUR_UXCAM_API_KEY_HERE',
+      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: false,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: true,
     },
     staging: {
-      API_KEY: UXCAM_API_KEY || 'YOUR_UXCAM_API_KEY_HERE',
+      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: false,
     },
     production: {
-      API_KEY: UXCAM_API_KEY || 'YOUR_UXCAM_API_KEY_HERE',
+      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
@@ -122,5 +122,8 @@ export const getCurrentEnvironment = (): 'development' | 'staging' | 'production
 // Get configuration for current environment
 export const getUXCamConfig = () => {
   const environment = getCurrentEnvironment();
-  return UXCamConfig.ENVIRONMENTS[environment];
+  return {
+    ...UXCamConfig,
+    ...UXCamConfig.ENVIRONMENTS[environment],
+  };
 };

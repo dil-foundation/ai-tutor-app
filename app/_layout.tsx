@@ -13,6 +13,29 @@ import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
 
+// UXCam Integration - Mock Implementation for Expo Managed Workflow
+// Note: UXCam requires development builds in Expo, not managed workflow
+let RNUxcam: any = {
+  startWithConfiguration: (configuration: any) => {
+    console.log('🎥 [UXCam Mock] Started with configuration:', configuration);
+    console.log('🎥 [UXCam Mock] API Key:', configuration.userAppKey);
+    console.log('🎥 [UXCam Mock] Note: Real UXCam requires development build');
+  },
+};
+
+// Function to load UXCam SDK (will always use mock in managed workflow)
+const loadUXCamSDK = () => {
+  try {
+    // In Expo managed workflow, UXCam native module won't work
+    // We'll always use mock implementation for now
+    console.log('🎥 [UXCam] Using mock implementation (Expo managed workflow)');
+    return false;
+  } catch (error) {
+    console.log('🎥 [UXCam] Using mock implementation');
+    return false;
+  }
+};
+
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
@@ -20,6 +43,33 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [hasNavigated, setHasNavigated] = useState(false);
+
+  // Initialize UXCam
+  useEffect(() => {
+    const initializeUXCam = () => {
+      try {
+        // Load UXCam SDK (mock in managed workflow)
+        loadUXCamSDK();
+
+        // Create configuration object
+        const configuration = {
+          userAppKey: 'xnayvk2m8m2h8xw-us',
+          enableAutomaticScreenNameTagging: false,
+          enableAdvancedGestureRecognition: true,
+          enableImprovedScreenCapture: true,
+        };
+        
+        // Initialize UXCam with configuration
+        RNUxcam.startWithConfiguration(configuration);
+        console.log('🎥 [UXCam] Mock initialization completed');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('🎥 [UXCam] Failed to initialize:', errorMessage);
+      }
+    };
+
+    initializeUXCam();
+  }, []);
 
   useEffect(() => {
     // Only proceed with navigation after auth state is determined
