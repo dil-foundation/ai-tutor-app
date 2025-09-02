@@ -21,6 +21,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserFullNameSync } from '../../../utils/userUtils';
+import UXCamExample from '../../../components/UXCamExample';
+import { useUXCamContext } from '../../../context/UXCamContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -61,6 +63,7 @@ const defaultUserData = {
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { addEvent, tagScreen } = useUXCamContext();
   const [userData, setUserData] = useState(defaultUserData);
   const [isSigningOut, setIsSigningOut] = useState(false);
   
@@ -94,6 +97,15 @@ export default function ProfileScreen() {
     pulseAnimation.start();
     return () => pulseAnimation.stop();
   }, []);
+
+  // UXCam tracking
+  useEffect(() => {
+    tagScreen('Profile');
+    addEvent('profile_screen_viewed', {
+      user_id: user?.id,
+      timestamp: new Date().toISOString(),
+    });
+  }, [tagScreen, addEvent, user]);
 
   // Rotation animation for decorative elements
   useEffect(() => {
@@ -171,6 +183,12 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
+    // Track sign out attempt
+    addEvent('sign_out_attempted', {
+      user_id: user?.id,
+      timestamp: new Date().toISOString(),
+    });
+
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out? You will need to sign in again to access your account.',
@@ -183,6 +201,12 @@ export default function ProfileScreen() {
             try {
               setIsSigningOut(true);
               console.log('🔐 Signing out user:', user?.email);
+              
+              // Track successful sign out
+              addEvent('sign_out_successful', {
+                user_id: user?.id,
+                timestamp: new Date().toISOString(),
+              });
               
               await signOut();
               
@@ -372,6 +396,24 @@ export default function ProfileScreen() {
               },
             ]}
           >
+            {/* UXCam Test Button */}
+            <TouchableOpacity
+              style={[styles.logoutButton, { marginBottom: 15, backgroundColor: '#007AFF' }]}
+              onPress={() => {
+                // Navigate to UXCam example or show it inline
+                Alert.alert('UXCam Test', 'UXCam integration is working! Check your dashboard for events.');
+              }}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#007AFF', '#0056CC']}
+                style={styles.logoutGradient}
+              >
+                <Ionicons name="analytics" size={20} color="#FFFFFF" />
+                <Text style={styles.logoutButtonText}>Test UXCam</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.logoutButton, isSigningOut && styles.logoutButtonDisabled]}
               onPress={handleSignOut}

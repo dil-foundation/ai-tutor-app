@@ -50,7 +50,13 @@
       "router": {},
       "eas": {
         "projectId": "a791a926-e409-40f2-89c4-9e847b114642"
-      }
+      },
+      "UXCAM_API_KEY": "",
+      "EXPO_PUBLIC_SUPABASE_URL": "",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
+      "ENABLE_UXCAM": "true",
+      "ENABLE_ANALYTICS": "true",
+      "DEBUG_MODE": "false"
     }
   }
 }

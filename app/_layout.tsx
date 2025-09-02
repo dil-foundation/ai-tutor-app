@@ -8,8 +8,10 @@ import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LanguageModeProvider } from './context/LanguageModeContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
+import { Environment } from '../config/environment';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -97,12 +99,14 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <LanguageModeProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <StatusBar style="light" />
-          <RootLayoutNav />
-        </ThemeProvider>
-      </LanguageModeProvider>
+      <UXCamProvider apiKey={Environment.UXCAM_API_KEY}>
+        <LanguageModeProvider>
+          <ThemeProvider value={DefaultTheme}>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+          </ThemeProvider>
+        </LanguageModeProvider>
+      </UXCamProvider>
     </AuthProvider>
   );
 }
