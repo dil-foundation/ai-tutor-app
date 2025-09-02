@@ -737,12 +737,12 @@ export default function ProgressScreen() {
                         style={[
                           styles.barFill, 
                           styles.orangeBar,
-                          { width: `${Math.min(100, (safeData.total_completed_units / 100) * 100)}%` }
+                          { width: `${Math.min(100, (safeData.total_completed_units / 337) * 100)}%` }
                         ]} 
                       />
                     </View>
                     <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_completed_units / 100) * 100)}%
+                      {Math.round((safeData.total_completed_units / 337) * 100)}%
                     </Text>
                   </View>
                 </View>
