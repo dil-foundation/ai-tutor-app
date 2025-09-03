@@ -5,7 +5,15 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
+      "developmentClient": false,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      }
+    },
+    "development-expo-go": {
+      "developmentClient": false,
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug",

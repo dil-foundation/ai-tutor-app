@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:expo-go": "expo start --dev-client=false",
     "start:prod": "expo start --no-dev --minify",
     "reset-project": "node ./scripts/reset-project.js",
     "clean-build": "node ./scripts/clean-build.js",
@@ -26,7 +27,6 @@
     "expo-av": "~15.1.7",
     "expo-blur": "~14.1.4",
     "expo-constants": "~17.1.6",
-    "expo-dev-client": "~5.2.4",
     "expo-file-system": "~18.1.11",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
