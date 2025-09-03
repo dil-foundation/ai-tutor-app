@@ -74,26 +74,34 @@ const createMockUXCam = () => ({
   },
 });
 
-// Use mock for development, real UXCam for production builds
-let UXCam: any;
+// Use mock for development, real RNUxcam for production builds
+let RNUxcam: any;
 let isRealUXCam = false;
 
+// Check if we're in a production build or development build
+const isProductionBuild = !__DEV__ || process.env.EXPO_PUBLIC_USE_MANAGED_WORKFLOW === 'false';
+const isUXCamEnabled = process.env.UXCAM_ENABLED === 'true';
+
 try {
-  // Try to import real UXCam (will fail in Expo managed workflow)
-  const realUXCam = require('react-native-uxcam').default;
+  // Try to import real RNUxcam
+  const realUXCam = require('react-native-ux-cam').default;
   if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
-    UXCam = realUXCam;
+    RNUxcam = realUXCam;
     isRealUXCam = true;
     console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+    console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : 'Development');
+    console.log('🎥 [UXCam] UXCam enabled:', isUXCamEnabled);
   } else {
     throw new Error('UXCam SDK methods not found');
   }
 } catch (error) {
   // Fall back to mock implementation
-  UXCam = createMockUXCam();
+  RNUxcam = createMockUXCam();
   isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation for development');
+  console.log('🎥 [UXCam] Using mock implementation');
+  console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : 'Development');
   console.log('🎥 [UXCam] Error:', error instanceof Error ? error.message : 'Unknown error');
+  console.log('🎥 [UXCam] Note: Use EAS build with proper configuration for real UXCam');
 }
 
 export interface UXCamUserProperties {
@@ -135,8 +143,8 @@ class UXCamService {
       return;
     }
 
-    // Ensure UXCam is available
-    if (!UXCam) {
+    // Ensure RNUxcam is available
+    if (!RNUxcam) {
       console.error('UXCam is not available');
       this.isInitialized = true; // Mark as initialized to prevent retry loops
       return;
@@ -147,7 +155,12 @@ class UXCamService {
       
       // Try different initialization methods based on SDK version
       if (isRealUXCam) {
-        if (typeof UXCam.startWithConfiguration === 'function') {
+        // Add this line to enable iOS screen recordings
+        if (Platform.OS === 'ios') {
+          RNUxcam.optIntoSchematicRecordings();
+        }
+
+        if (typeof RNUxcam.startWithConfiguration === 'function') {
           // New SDK version with configuration object
           const configuration = {
             userAppKey: config.API_KEY,
@@ -155,18 +168,14 @@ class UXCamService {
             enableAdvancedGestureRecognition: true,
             enableImprovedScreenCapture: true,
           };
-          await UXCam.startWithConfiguration(configuration);
+          await RNUxcam.startWithConfiguration(configuration);
           console.log('🎥 [UXCam] Initialized with startWithConfiguration');
-        } else if (typeof UXCam.startWithKey === 'function') {
-          // Legacy SDK version with API key
-          await UXCam.startWithKey(config.API_KEY);
-          console.log('🎥 [UXCam] Initialized with startWithKey');
         } else {
-          throw new Error('No valid UXCam initialization method found');
+          throw new Error('No valid UXCam initialization method found. startWithConfiguration is missing.');
         }
       } else {
         // Mock implementation
-        await UXCam.startWithKey(config.API_KEY);
+        await RNUxcam.startWithKey(config.API_KEY);
         console.log('🎥 [UXCam] Mock implementation initialized');
       }
       
@@ -193,19 +202,19 @@ class UXCamService {
    * Configure privacy settings
    */
   private configurePrivacySettings(): void {
-    if (!UXCam) return;
+    if (!RNUxcam) return;
     
     try {
       // Exclude sensitive screens
       UXCamConfig.PRIVACY.EXCLUDED_SCREENS.forEach(screenName => {
-        UXCam.addScreenNameToIgnore(screenName);
+        RNUxcam.addScreenNameToIgnore(screenName);
       });
 
       // Set up sensitive data masking
-      UXCam.setAutomaticScreenNameTagging(true);
+      RNUxcam.setAutomaticScreenNameTagging(true);
       
       // Configure privacy options
-      UXCam.setUserProperty('privacy_enabled', 'true');
+      RNUxcam.setUserProperty('privacy_enabled', 'true');
     } catch (error) {
       console.error('Failed to configure privacy settings:', error);
     }
@@ -215,24 +224,24 @@ class UXCamService {
    * Configure recording settings
    */
   private configureRecordingSettings(): void {
-    if (!UXCam) return;
+    if (!RNUxcam) return;
     
     try {
       const { RECORDING } = UXCamConfig;
       
       // Set recording quality
-      UXCam.setRecordingQuality(RECORDING.QUALITY);
+      RNUxcam.setRecordingQuality(RECORDING.QUALITY);
       
       // Set frame rate
-      UXCam.setFrameRate(RECORDING.FRAME_RATE);
+      RNUxcam.setFrameRate(RECORDING.FRAME_RATE);
       
       // Configure session settings
       if (RECORDING.MIN_SESSION_DURATION > 0) {
-        UXCam.setMinimumSessionDuration(RECORDING.MIN_SESSION_DURATION);
+        RNUxcam.setMinimumSessionDuration(RECORDING.MIN_SESSION_DURATION);
       }
       
       if (RECORDING.MAX_SESSION_DURATION > 0) {
-        UXCam.setMaximumSessionDuration(RECORDING.MAX_SESSION_DURATION);
+        RNUxcam.setMaximumSessionDuration(RECORDING.MAX_SESSION_DURATION);
       }
     } catch (error) {
       console.error('Failed to configure recording settings:', error);
@@ -243,11 +252,11 @@ class UXCamService {
    * Set up event listeners
    */
   private setupEventListeners(): void {
-    if (!UXCam) return;
+    if (!RNUxcam) return;
     
     try {
       // Error handling
-      UXCam.setAutomaticScreenNameTagging(true);
+      RNUxcam.setAutomaticScreenNameTagging(true);
     } catch (error) {
       console.error('Failed to setup event listeners:', error);
     }
@@ -261,7 +270,7 @@ class UXCamService {
       await this.initialize();
     }
 
-    if (!UXCam) {
+    if (!RNUxcam) {
       console.error('UXCam is not available for session start');
       return;
     }
@@ -273,9 +282,9 @@ class UXCamService {
       }
 
       // Start recording
-      await UXCam.startNewSession();
+      await RNUxcam.startNewSession();
       
-      this.currentSessionId = await UXCam.getSessionUrl();
+      this.currentSessionId = await RNUxcam.getSessionUrl();
       console.log('UXCam session started:', this.currentSessionId);
     } catch (error) {
       console.error('Failed to start UXCam session:', error);
@@ -292,7 +301,7 @@ class UXCamService {
     }
 
     try {
-      await UXCam.stopSessionAndUploadData();
+      await RNUxcam.stopSessionAndUploadData();
       this.currentSessionId = null;
       console.log('UXCam session stopped');
     } catch (error) {
@@ -308,7 +317,7 @@ class UXCamService {
       return;
     }
 
-    if (!UXCam) {
+    if (!RNUxcam) {
       console.error('UXCam is not available for setting user properties');
       return;
     }
@@ -320,7 +329,7 @@ class UXCamService {
       // Set each property
       Object.entries(filteredProperties).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          UXCam.setUserProperty(key, String(value));
+          RNUxcam.setUserProperty(key, String(value));
         }
       });
 
@@ -354,7 +363,7 @@ class UXCamService {
       return;
     }
 
-    if (!UXCam) {
+    if (!RNUxcam) {
       console.error('UXCam is not available for tracking events');
       return;
     }
@@ -369,7 +378,7 @@ class UXCamService {
       const filteredProperties = properties ? this.filterSensitiveProperties(properties) : undefined;
       
       // Track the event
-      UXCam.logEvent(eventName, filteredProperties);
+      RNUxcam.logEvent(eventName, filteredProperties);
       
       console.log('UXCam event tracked:', eventName, filteredProperties);
     } catch (error) {
@@ -385,13 +394,13 @@ class UXCamService {
       return;
     }
 
-    if (!UXCam) {
+    if (!RNUxcam) {
       console.error('UXCam is not available for setting user identity');
       return;
     }
 
     try {
-      UXCam.setUserIdentity(userId);
+      RNUxcam.setUserIdentity(userId);
       
       if (userProperties) {
         await this.setUserProperties(userProperties);
@@ -412,7 +421,7 @@ class UXCamService {
     }
 
     try {
-      UXCam.addScreenNameToIgnore(screenName);
+      RNUxcam.addScreenNameToIgnore(screenName);
       console.log('UXCam screen added to ignore list:', screenName);
     } catch (error) {
       console.error('Failed to add screen to ignore list:', error);
@@ -428,7 +437,7 @@ class UXCamService {
     }
 
     try {
-      UXCam.removeScreenNameToIgnore(screenName);
+      RNUxcam.removeScreenNameToIgnore(screenName);
       console.log('UXCam screen removed from ignore list:', screenName);
     } catch (error) {
       console.error('Failed to remove screen from ignore list:', error);
@@ -444,7 +453,7 @@ class UXCamService {
     }
 
     try {
-      return await UXCam.getSessionUrl();
+      return await RNUxcam.getSessionUrl();
     } catch (error) {
       console.error('Failed to get UXCam session URL:', error);
       return null;
@@ -460,7 +469,7 @@ class UXCamService {
     }
 
     try {
-      return await UXCam.isRecording();
+      return await RNUxcam.isRecording();
     } catch (error) {
       console.error('Failed to check UXCam recording status:', error);
       return false;
@@ -476,7 +485,7 @@ class UXCamService {
     }
 
     try {
-      await UXCam.pauseScreenRecording();
+      await RNUxcam.pauseScreenRecording();
       console.log('UXCam recording paused');
     } catch (error) {
       console.error('Failed to pause UXCam recording:', error);
@@ -492,7 +501,7 @@ class UXCamService {
     }
 
     try {
-      await UXCam.resumeScreenRecording();
+      await RNUxcam.resumeScreenRecording();
       console.log('UXCam recording resumed');
     } catch (error) {
       console.error('Failed to resume UXCam recording:', error);
@@ -508,7 +517,7 @@ class UXCamService {
     }
 
     try {
-      await UXCam.optOutOverall();
+      await RNUxcam.optOutOverall();
       console.log('UXCam opted out');
     } catch (error) {
       console.error('Failed to opt out of UXCam:', error);
@@ -523,13 +532,13 @@ class UXCamService {
       return;
     }
 
-    if (!UXCam) {
+    if (!RNUxcam) {
       console.error('UXCam is not available for opting in');
       return;
     }
 
     try {
-      await UXCam.optIntoSchematicRecordings();
+      await RNUxcam.optIntoSchematicRecordings();
       console.log('UXCam opted in');
     } catch (error) {
       console.error('Failed to opt into UXCam:', error);

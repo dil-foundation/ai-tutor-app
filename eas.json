@@ -28,6 +28,9 @@
         "env": {
           "EXPO_USE_KOTLIN_SYNTHETIC": "false"
         }
+      },
+      "env": {
+        "UXCAM_ENABLED": "true"
       }
     },
     "production": {
