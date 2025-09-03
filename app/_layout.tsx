@@ -13,35 +13,8 @@ import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
 
-// UXCam Integration - Real Implementation for Development Builds
-let RNUxcam: any = null;
-
-// Function to load UXCam SDK
-const loadUXCamSDK = () => {
-  try {
-    // Try to load the real UXCam SDK
-    const UXCamModule = require('react-native-ux-cam');
-    RNUxcam = UXCamModule.default || UXCamModule;
-    
-    if (RNUxcam && typeof RNUxcam.startWithConfiguration === 'function') {
-      console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
-      return true;
-    } else {
-      throw new Error('UXCam SDK methods not found');
-    }
-  } catch (error) {
-    // Fallback to mock implementation
-    console.log('🎥 [UXCam] Using mock implementation (native module not available)');
-    RNUxcam = {
-      startWithConfiguration: (configuration: any) => {
-        console.log('🎥 [UXCam Mock] Started with configuration:', configuration);
-        console.log('🎥 [UXCam Mock] API Key:', configuration.userAppKey);
-        console.log('🎥 [UXCam Mock] Note: Use development build for real tracking');
-      },
-    };
-    return false;
-  }
-};
+// UXCam is now handled by UXCamService and UXCamContext
+// No need for duplicate initialization here
 
 SplashScreen.preventAutoHideAsync();
 
@@ -51,32 +24,8 @@ function RootLayoutNav() {
   const router = useRouter();
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  // Initialize UXCam
-  useEffect(() => {
-    const initializeUXCam = () => {
-      try {
-        // Load UXCam SDK (mock in managed workflow)
-        loadUXCamSDK();
-
-        // Create configuration object
-        const configuration = {
-          userAppKey: 'xnayvk2m8m2h8xw-us',
-          enableAutomaticScreenNameTagging: false,
-          enableAdvancedGestureRecognition: true,
-          enableImprovedScreenCapture: true,
-        };
-        
-        // Initialize UXCam with configuration
-        RNUxcam.startWithConfiguration(configuration);
-        console.log('🎥 [UXCam] Mock initialization completed');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('🎥 [UXCam] Failed to initialize:', errorMessage);
-      }
-    };
-
-    initializeUXCam();
-  }, []);
+  // UXCam initialization is now handled by UXCamContext
+  // No need for manual initialization here
 
   useEffect(() => {
     // Only proceed with navigation after auth state is determined
