@@ -10,6 +10,7 @@ import { LanguageModeProvider } from './context/LanguageModeContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
+import { useUXCam } from '../hooks/useUXCam';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,6 +19,9 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [hasNavigated, setHasNavigated] = useState(false);
+  
+  // Initialize UXCam
+  useUXCam();
 
   useEffect(() => {
     // Only proceed with navigation after auth state is determined
