@@ -76,19 +76,24 @@ const createMockUXCam = () => ({
 
 // Use mock for development, real UXCam for production builds
 let UXCam: any;
+let isRealUXCam = false;
+
 try {
   // Try to import real UXCam (will fail in Expo managed workflow)
   const realUXCam = require('react-native-uxcam').default;
-  if (realUXCam && typeof realUXCam.startWithKey === 'function') {
+  if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
     UXCam = realUXCam;
-    console.log('🎥 [UXCam] Real UXCam SDK loaded');
+    isRealUXCam = true;
+    console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
   } else {
-    throw new Error('UXCam SDK not properly loaded');
+    throw new Error('UXCam SDK methods not found');
   }
 } catch (error) {
   // Fall back to mock implementation
   UXCam = createMockUXCam();
+  isRealUXCam = false;
   console.log('🎥 [UXCam] Using mock implementation for development');
+  console.log('🎥 [UXCam] Error:', error instanceof Error ? error.message : 'Unknown error');
 }
 
 export interface UXCamUserProperties {
@@ -140,8 +145,30 @@ class UXCamService {
     try {
       const config = getUXCamConfig();
       
-      // Initialize UXCam with API key
-      await UXCam.startWithKey(config.API_KEY);
+      // Try different initialization methods based on SDK version
+      if (isRealUXCam) {
+        if (typeof UXCam.startWithConfiguration === 'function') {
+          // New SDK version with configuration object
+          const configuration = {
+            userAppKey: config.API_KEY,
+            enableAutomaticScreenNameTagging: false,
+            enableAdvancedGestureRecognition: true,
+            enableImprovedScreenCapture: true,
+          };
+          await UXCam.startWithConfiguration(configuration);
+          console.log('🎥 [UXCam] Initialized with startWithConfiguration');
+        } else if (typeof UXCam.startWithKey === 'function') {
+          // Legacy SDK version with API key
+          await UXCam.startWithKey(config.API_KEY);
+          console.log('🎥 [UXCam] Initialized with startWithKey');
+        } else {
+          throw new Error('No valid UXCam initialization method found');
+        }
+      } else {
+        // Mock implementation
+        await UXCam.startWithKey(config.API_KEY);
+        console.log('🎥 [UXCam] Mock implementation initialized');
+      }
       
       // Configure privacy settings
       this.configurePrivacySettings();
@@ -153,9 +180,10 @@ class UXCamService {
       this.setupEventListeners();
       
       this.isInitialized = true;
-      console.log('UXCam initialized successfully');
+      console.log('🎥 [UXCam] Initialization completed successfully');
     } catch (error) {
-      console.error('Failed to initialize UXCam:', error);
+      console.error('🎥 [UXCam] Failed to initialize:', error);
+      console.log('🎥 [UXCam] Continuing with mock implementation...');
       // Don't throw error in development, just log it
       this.isInitialized = true; // Mark as initialized to prevent retry loops
     }
