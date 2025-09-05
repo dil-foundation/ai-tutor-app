@@ -9,6 +9,10 @@ const createMockUXCam = () => ({
     console.log('🎥 [UXCam Mock] Started with API key:', apiKey.substring(0, 10) + '...');
     await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async
   },
+  startWithConfiguration: async (config: any) => {
+    console.log('🎥 [UXCam Mock] Started with configuration:', config.userAppKey.substring(0, 10) + '...');
+    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async
+  },
   startNewSession: async () => {
     console.log('🎥 [UXCam Mock] New session started');
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -17,14 +21,17 @@ const createMockUXCam = () => ({
     console.log('🎥 [UXCam Mock] Session stopped and data uploaded');
     await new Promise(resolve => setTimeout(resolve, 50));
   },
-  setUserIdentity: (userId: string) => {
+  setUserIdentity: async (userId: string) => {
     console.log('🎥 [UXCam Mock] User identity set:', userId);
+    await new Promise(resolve => setTimeout(resolve, 50));
   },
-  setUserProperty: (key: string, value: string) => {
+  setUserProperty: async (key: string, value: string) => {
     console.log('🎥 [UXCam Mock] User property set:', key, '=', value);
+    await new Promise(resolve => setTimeout(resolve, 50));
   },
-  logEvent: (eventName: string, properties?: Record<string, any>) => {
+  logEvent: async (eventName: string, properties?: Record<string, any>) => {
     console.log('🎥 [UXCam Mock] Event logged:', eventName, properties);
+    await new Promise(resolve => setTimeout(resolve, 50));
   },
   addScreenNameToIgnore: (screenName: string) => {
     console.log('🎥 [UXCam Mock] Screen ignored:', screenName);
@@ -79,29 +86,33 @@ let RNUxcam: any;
 let isRealUXCam = false;
 
 // Check if we're in a production build or development build
-const isProductionBuild = !__DEV__ || process.env.EXPO_PUBLIC_USE_MANAGED_WORKFLOW === 'false';
-const isUXCamEnabled = process.env.UXCAM_ENABLED === 'true';
+// Use EXPO_DEV_CLIENT to detect custom development client
+const isDevelopmentClient = !!process.env.EXPO_DEV_CLIENT;
+const isProductionBuild = !__DEV__;
 
 try {
-  // Try to import real RNUxcam
-  const realUXCam = require('react-native-ux-cam').default;
-  if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
-    RNUxcam = realUXCam;
-    isRealUXCam = true;
-    console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
-    console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : 'Development');
-    console.log('🎥 [UXCam] UXCam enabled:', isUXCamEnabled);
+  // Try to import real RNUxcam only in dev client or production build
+  if (isDevelopmentClient || isProductionBuild) {
+    const realUXCam = require('react-native-ux-cam').default;
+    if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
+      RNUxcam = realUXCam;
+      isRealUXCam = true;
+      console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+      console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : (isDevelopmentClient ? 'Dev Client' : 'Expo Go'));
+    } else {
+      throw new Error('UXCam SDK methods not found');
+    }
   } else {
-    throw new Error('UXCam SDK methods not found');
+    throw new Error('Not in a dev client or production build, using mock');
   }
 } catch (error) {
-  // Fall back to mock implementation
+  // Fall back to mock implementation for Expo Go
   RNUxcam = createMockUXCam();
   isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation');
-  console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : 'Development');
-  console.log('🎥 [UXCam] Error:', error instanceof Error ? error.message : 'Unknown error');
-  console.log('🎥 [UXCam] Note: Use EAS build with proper configuration for real UXCam');
+  console.log('🎥 [UXCam] Using mock implementation for Expo Go');
+  if (error instanceof Error) {
+    console.log('🎥 [UXCam] Reason:', error.message);
+  }
 }
 
 export interface UXCamUserProperties {
