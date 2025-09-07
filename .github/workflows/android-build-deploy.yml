@@ -1,13 +1,13 @@
 name: Android Build and Deploy
 
 on:
-  push:
-    branches: [main, master]
-    tags:
-      - 'android-v*'
-      - 'android-release-*'
-  pull_request:
-    branches: [main, master]
+  # push:
+  #   branches: [main, master]
+  #   tags:
+  #     - 'android-v*'
+  #     - 'android-release-*'
+  # pull_request:
+  #   branches: [main, master]
   workflow_dispatch:
     inputs:
       release_channel:
