@@ -90,7 +90,39 @@ Ensure your backend server is running and accessible at the configured URL and p
 *   **Audio Playback:** Users can play back their original Urdu recording and the translated English audio.
 *   **Practice Mode:** Users can record themselves speaking the translated English sentence and navigate to a feedback screen (presumably to compare their pronunciation).
 
+## Deployment
+
+This project includes comprehensive deployment pipelines for both iOS and Android platforms with automated CI/CD through GitHub Actions.
+
+### 📱 Production Deployment
+- **iOS**: TestFlight beta testing and App Store production releases
+- **Android**: Direct APK distribution and Google Play Store releases
+- **Automation**: Complete GitHub Actions workflows for both platforms
+
+### 📚 Deployment Documentation
+All deployment-related documentation is organized in the [`deployment/`](deployment/) folder:
+
+- **[Complete Deployment Guide](deployment/README.md)** - Start here for full overview
+- **[iOS Deployment Guide](deployment/IOS_TESTFLIGHT_DEPLOYMENT_GUIDE.md)** - iOS TestFlight and App Store
+- **[Android Deployment Guide](deployment/ANDROID_DEPLOYMENT_GUIDE.md)** - Android APK and Play Store
+- **[Quick Reference](deployment/COMPLETE_DEPLOYMENT_SUMMARY.md)** - Cross-platform summary
+
+### 🚀 Quick Deploy Commands
+```bash
+# iOS TestFlight release
+git tag v1.0.0 && git push origin v1.0.0
+
+# Android APK release
+git tag android-v1.0.0 && git push origin android-v1.0.0
+
+# Production releases (use GitHub Actions workflows)
+# iOS: "iOS App Store Production Release"
+# Android: "Android Play Store Production Release"
+```
+
 ## Important Notes
 
 *   **File System Usage:** The app uses `expo-file-system` to manage audio files, including saving temporary recordings and moving practice audio to a more permanent location within the app's document directory.
 *   **Permissions:** The app requests audio recording permissions.
+*   **Analytics:** Integrated with UXCam for user behavior analytics and session recording.
+*   **Backend Integration:** Connects to Supabase backend for data management and real-time features.

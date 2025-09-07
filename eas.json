@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": false,
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "android": {
         "gradleCommand": ":app:assembleDebug",
         "buildType": "apk"
@@ -15,6 +18,9 @@
     "development-expo-go": {
       "developmentClient": false,
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "android": {
         "gradleCommand": ":app:assembleDebug",
         "buildType": "apk"
@@ -22,6 +28,10 @@
     },
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "enterpriseProvisioning": "universal"
+      },
       "android": {
         "gradleCommand": ":app:assembleRelease",
         "buildType": "apk",
@@ -32,6 +42,26 @@
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "simulator": false,
+        "enterpriseProvisioning": "universal",
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "gradleCommand": ":app:bundleRelease",
+        "buildType": "app-bundle"
+      }
+    },
+    "app-store": {
+      "extends": "production",
+      "ios": {
+        "simulator": false,
+        "enterpriseProvisioning": "universal",
+        "buildConfiguration": "Release"
+      }
+    },
+    "play-store": {
+      "extends": "production",
       "android": {
         "gradleCommand": ":app:bundleRelease",
         "buildType": "app-bundle"
@@ -39,6 +69,42 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "path/to/api-key.json",
+        "track": "internal"
+      }
+    },
+    "preview": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "path/to/api-key.json",
+        "track": "internal"
+      }
+    },
+    "app-store": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id",
+        "releaseChannel": "production"
+      }
+    },
+    "play-store": {
+      "android": {
+        "serviceAccountKeyPath": "path/to/api-key.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

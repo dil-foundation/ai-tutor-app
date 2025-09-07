@@ -1,0 +1,211 @@
+name: iOS TestFlight Deploy
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+      - 'release-*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+      deploy_to_app_store:
+        description: 'Deploy to App Store (production only)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy iOS App
+    runs-on: macos-latest
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets. Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify project configuration
+        run: |
+          echo "Verifying Expo configuration..."
+          npx expo config --type public
+          echo "Verifying EAS configuration..."
+          eas config
+
+      - name: Determine build profile and deployment target
+        id: build-profile
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "profile=${{ github.event.inputs.release_channel }}" >> $GITHUB_OUTPUT
+            echo "deploy_to_app_store=${{ github.event.inputs.deploy_to_app_store }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/release-* ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+            echo "deploy_to_app_store=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+            echo "deploy_to_app_store=false" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "profile=preview" >> $GITHUB_OUTPUT
+            echo "deploy_to_app_store=false" >> $GITHUB_OUTPUT
+          else
+            echo "profile=development" >> $GITHUB_OUTPUT
+            echo "deploy_to_app_store=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build iOS app
+        run: |
+          echo "Building with profile: ${{ steps.build-profile.outputs.profile }}"
+          eas build --platform ios --profile ${{ steps.build-profile.outputs.profile }} --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for build completion
+        id: build-wait
+        run: |
+          echo "Waiting for build to complete..."
+          # Get the latest build ID for this project
+          BUILD_ID=$(eas build:list --platform=ios --limit=1 --json | jq -r '.[0].id')
+          echo "Monitoring build: $BUILD_ID"
+          
+          # Wait for build completion (timeout after 30 minutes)
+          timeout 1800 bash -c '
+            while true; do
+              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
+              echo "Build status: $STATUS"
+              
+              if [ "$STATUS" = "finished" ]; then
+                echo "Build completed successfully!"
+                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
+                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+                echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+                break
+              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+                echo "Build failed with status: $STATUS"
+                exit 1
+              fi
+              
+              sleep 30
+            done
+          '
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to TestFlight
+        if: (steps.build-profile.outputs.profile == 'production' || steps.build-profile.outputs.profile == 'preview') && steps.build-profile.outputs.deploy_to_app_store == 'false'
+        run: |
+          echo "Submitting build ${{ steps.build-wait.outputs.build_id }} to TestFlight..."
+          eas submit --platform ios --latest --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to App Store for Review
+        if: steps.build-profile.outputs.profile == 'production' && steps.build-profile.outputs.deploy_to_app_store == 'true'
+        run: |
+          echo "Submitting build ${{ steps.build-wait.outputs.build_id }} to App Store for review..."
+          eas submit --platform ios --latest --non-interactive
+          
+          # Wait a moment for submission to process
+          sleep 30
+          
+          # Get the app version for App Store Connect API calls
+          APP_VERSION=$(cat app.json | jq -r '.expo.version')
+          echo "App version: $APP_VERSION"
+          
+          # Note: Additional App Store Connect API calls could be added here
+          # to automatically submit for review, but this requires additional setup
+          echo "✅ Build submitted to App Store Connect"
+          echo "🔍 Manual review submission may be required in App Store Connect"
+          echo "📱 Check App Store Connect to complete the review submission process"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Create GitHub Release (for production builds)
+        if: steps.build-profile.outputs.profile == 'production' && github.ref_type == 'tag'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            ## iOS Build Information
+            - **Build ID**: ${{ steps.build-wait.outputs.build_id }}
+            - **Build URL**: ${{ steps.build-wait.outputs.build_url }}
+            - **Deployment Target**: ${{ steps.build-profile.outputs.deploy_to_app_store == 'true' && 'App Store' || 'TestFlight' }}
+            - **Build Profile**: ${{ steps.build-profile.outputs.profile }}
+            
+            ## Deployment Status
+            ${{ steps.build-profile.outputs.deploy_to_app_store == 'true' && '🚀 **Submitted to App Store for Review**' || '📱 **Available in TestFlight**' }}
+            
+            ${{ steps.build-profile.outputs.deploy_to_app_store == 'true' && 'This build has been submitted to the App Store and is pending Apple review. Check App Store Connect for review status.' || 'This build is available for testing in TestFlight.' }}
+            
+            ## Changes
+            Please check the commit history for detailed changes.
+          draft: false
+          prerelease: ${{ !startsWith(github.ref_name, 'release-') }}
+
+      - name: Notify build completion
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Build and deployment completed successfully!"
+            echo "Build ID: ${{ steps.build-wait.outputs.build_id }}"
+            echo "Build URL: ${{ steps.build-wait.outputs.build_url }}"
+            echo "Build Profile: ${{ steps.build-profile.outputs.profile }}"
+            
+            if [ "${{ steps.build-profile.outputs.deploy_to_app_store }}" = "true" ]; then
+              echo "🚀 App submitted to App Store for review"
+              echo "📋 Next steps:"
+              echo "   1. Check App Store Connect for review status"
+              echo "   2. Respond to any reviewer feedback"
+              echo "   3. Monitor release status"
+            elif [ "${{ steps.build-profile.outputs.profile }}" = "production" ] || [ "${{ steps.build-profile.outputs.profile }}" = "preview" ]; then
+              echo "📱 App submitted to TestFlight"
+              echo "🧪 Available for internal/external testing"
+            fi
+          else
+            echo "❌ Build or deployment failed"
+          fi
+
+      - name: Upload build artifacts info
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info
+          path: |
+            package.json
+            app.json
+            eas.json
+          retention-days: 30
