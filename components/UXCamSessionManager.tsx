@@ -19,12 +19,12 @@ const UXCamSessionManager: React.FC = () => {
     isEnabled,
   } = useUXCamContext();
   
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const segments = useSegments();
 
   // Handle authentication state changes
   useEffect(() => {
-    if (!isInitialized || !isEnabled || loading) {
+    if (!isInitialized || !isEnabled || !initialized || loading) {
       return;
     }
 
@@ -64,11 +64,11 @@ const UXCamSessionManager: React.FC = () => {
     };
 
     handleAuthStateChange();
-  }, [user, isInitialized, isEnabled, loading, startSession, stopSession, setUserIdentity, setUserProperties, trackEvent]);
+  }, [user, isInitialized, isEnabled, initialized, loading, startSession, stopSession, setUserIdentity, setUserProperties, trackEvent]);
 
   // Handle navigation changes
   useEffect(() => {
-    if (!isInitialized || !isEnabled || !user) {
+    if (!isInitialized || !isEnabled || !user || !initialized) {
       return;
     }
 
@@ -106,11 +106,11 @@ const UXCamSessionManager: React.FC = () => {
     };
 
     handleNavigationChange();
-  }, [segments, isInitialized, isEnabled, user, trackEvent, addScreenToIgnore]);
+  }, [segments, isInitialized, isEnabled, user, initialized, trackEvent, addScreenToIgnore]);
 
   // Handle app lifecycle events
   useEffect(() => {
-    if (!isInitialized || !isEnabled) {
+    if (!isInitialized || !isEnabled || !initialized) {
       return;
     }
 
@@ -130,7 +130,7 @@ const UXCamSessionManager: React.FC = () => {
     // You can add app state listeners here if needed
     // For now, we'll just track when the component mounts
     handleAppStateChange();
-  }, [isInitialized, isEnabled, user, trackEvent]);
+  }, [isInitialized, isEnabled, user, initialized, trackEvent]);
 
   // This component doesn't render anything
   return null;
