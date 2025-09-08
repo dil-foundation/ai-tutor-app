@@ -93,30 +93,70 @@ jobs:
         id: build-wait
         run: |
           echo "Waiting for build to complete..."
-          # Get the latest build ID for this project
-          BUILD_ID=$(eas build:list --platform=ios --limit=1 --json | jq -r '.[0].id')
+          
+          # Wait a moment for the build to be registered
+          sleep 10
+          
+          # Get the latest build ID for this project with error handling
+          BUILD_LIST_OUTPUT=$(eas build:list --platform=ios --limit=1 --json 2>&1)
+          
+          # Check if the output is valid JSON
+          if ! echo "$BUILD_LIST_OUTPUT" | jq empty 2>/dev/null; then
+            echo "Error: Failed to get build list. Output:"
+            echo "$BUILD_LIST_OUTPUT"
+            exit 1
+          fi
+          
+          # Check if there are any builds
+          BUILD_COUNT=$(echo "$BUILD_LIST_OUTPUT" | jq 'length')
+          if [ "$BUILD_COUNT" -eq 0 ]; then
+            echo "Error: No builds found. The build may not have started properly."
+            exit 1
+          fi
+          
+          BUILD_ID=$(echo "$BUILD_LIST_OUTPUT" | jq -r '.[0].id')
+          
+          # Validate BUILD_ID
+          if [ "$BUILD_ID" = "null" ] || [ -z "$BUILD_ID" ]; then
+            echo "Error: Could not extract build ID from response"
+            echo "Response: $BUILD_LIST_OUTPUT"
+            exit 1
+          fi
+          
           echo "Monitoring build: $BUILD_ID"
           
           # Wait for build completion (timeout after 30 minutes)
-          timeout 1800 bash -c '
+          timeout 1800 bash -c "
             while true; do
-              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
-              echo "Build status: $STATUS"
+              BUILD_STATUS_OUTPUT=\$(eas build:view $BUILD_ID --json 2>&1)
               
-              if [ "$STATUS" = "finished" ]; then
-                echo "Build completed successfully!"
-                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
-                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
-                echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+              # Check if the output is valid JSON
+              if ! echo \"\$BUILD_STATUS_OUTPUT\" | jq empty 2>/dev/null; then
+                echo \"Warning: Invalid JSON response from build:view, retrying...\"
+                echo \"Response: \$BUILD_STATUS_OUTPUT\"
+                sleep 30
+                continue
+              fi
+              
+              STATUS=\$(echo \"\$BUILD_STATUS_OUTPUT\" | jq -r '.status')
+              echo \"Build status: \$STATUS\"
+              
+              if [ \"\$STATUS\" = \"finished\" ]; then
+                echo \"Build completed successfully!\"
+                BUILD_URL=\$(echo \"\$BUILD_STATUS_OUTPUT\" | jq -r '.artifacts.buildUrl // empty')
+                echo \"build_url=\$BUILD_URL\" >> \$GITHUB_OUTPUT
+                echo \"build_id=$BUILD_ID\" >> \$GITHUB_OUTPUT
                 break
-              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
-                echo "Build failed with status: $STATUS"
+              elif [ \"\$STATUS\" = \"errored\" ] || [ \"\$STATUS\" = \"canceled\" ]; then
+                echo \"Build failed with status: \$STATUS\"
                 exit 1
+              elif [ \"\$STATUS\" = \"null\" ] || [ -z \"\$STATUS\" ]; then
+                echo \"Warning: Could not get build status, retrying...\"
               fi
               
               sleep 30
             done
-          '
+          "
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
