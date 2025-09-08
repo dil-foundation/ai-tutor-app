@@ -57,13 +57,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify project configuration
-        run: |
-          echo "Verifying Expo configuration..."
-          npx expo config --type public
-          echo "Verifying EAS configuration..."
-          eas config
-
       - name: Determine build profile and deployment target
         id: build-profile
         run: |
@@ -83,6 +76,13 @@ jobs:
             echo "profile=development" >> $GITHUB_OUTPUT
             echo "deploy_to_app_store=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Verify project configuration
+        run: |
+          echo "Verifying Expo configuration..."
+          npx expo config --type public
+          echo "Verifying EAS configuration for profile: ${{ steps.build-profile.outputs.profile }}"
+          eas config --profile ${{ steps.build-profile.outputs.profile }}
 
       - name: Build iOS app
         run: |
@@ -126,7 +126,14 @@ jobs:
         if: (steps.build-profile.outputs.profile == 'production' || steps.build-profile.outputs.profile == 'preview') && steps.build-profile.outputs.deploy_to_app_store == 'false'
         run: |
           echo "Submitting build ${{ steps.build-wait.outputs.build_id }} to TestFlight..."
-          eas submit --platform ios --latest --non-interactive
+          # Determine submit profile based on build profile
+          if [ "${{ steps.build-profile.outputs.profile }}" = "production" ]; then
+            SUBMIT_PROFILE="production"
+          else
+            SUBMIT_PROFILE="preview"
+          fi
+          echo "Using submit profile: $SUBMIT_PROFILE"
+          eas submit --platform ios --latest --profile $SUBMIT_PROFILE --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
@@ -134,7 +141,7 @@ jobs:
         if: steps.build-profile.outputs.profile == 'production' && steps.build-profile.outputs.deploy_to_app_store == 'true'
         run: |
           echo "Submitting build ${{ steps.build-wait.outputs.build_id }} to App Store for review..."
-          eas submit --platform ios --latest --non-interactive
+          eas submit --platform ios --latest --profile app-store --non-interactive
           
           # Wait a moment for submission to process
           sleep 30
