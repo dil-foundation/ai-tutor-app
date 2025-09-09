@@ -8,10 +8,10 @@ import { Image, ImageStyle, Platform, type StyleProp } from 'react-native';
 
 // Mapping from SF Symbol name (passed as IconSymbol's name prop) to image file and route segment
 const IMAGE_MAPPING = {
-  'graduationcap.fill': { image: require('@/assets/images/learn.png'), routeSegment: 'learn' },
-  'rectangle.inset.filled.on.rectangle': { image: require('@/assets/images/practice.png'), routeSegment: 'practice' },
-  'chart.line.uptrend.xyaxis': { image: require('@/assets/images/progress.png'), routeSegment: 'progress' },
-  'person.fill': { image: require('@/assets/images/profile.png'), routeSegment: 'profile' },
+  'graduationcap.fill': { image: require('../../assets/images/learn.png'), routeSegment: 'learn' },
+  'rectangle.inset.filled.on.rectangle': { image: require('../../assets/images/practice.png'), routeSegment: 'practice' },
+  'chart.line.uptrend.xyaxis': { image: require('../../assets/images/progress.png'), routeSegment: 'progress' },
+  'person.fill': { image: require('../../assets/images/profile.png'), routeSegment: 'profile' },
   // Add other mappings if IconSymbol is used elsewhere with different names
   // For SF Symbols not in this map (e.g., house.fill), they won't render an image on web.
   // We could add a fallback to Ionicons for those if needed.
