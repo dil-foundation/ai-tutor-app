@@ -38,7 +38,7 @@ jobs:
       - name: Install EAS CLI manually
         run: |
           echo "Installing EAS CLI without caching..."
-          npm install -g @expo/eas-cli@latest
+          npm install -g eas-cli@latest
           eas --version
         env:
           # Disable all caching mechanisms
