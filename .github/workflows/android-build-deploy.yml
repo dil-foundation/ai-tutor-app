@@ -11,11 +11,6 @@ on:
         options:
           - production
           - preview
-      deploy_to_play_store:
-        description: 'Deploy to Google Play Store (production only)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   build-and-deploy:
@@ -38,28 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  # Disabled due to GitHub cache service outage
-
-      - name: Clear all caches and install dependencies
-        run: |
-          # Clear all possible cache locations
-          rm -rf node_modules package-lock.json yarn.lock
-          rm -rf ~/.npm ~/.yarn
-          rm -rf /tmp/*
-          
-          # Disable all caching
-          npm config set cache /tmp/npm-cache
-          npm config set package-manager npm
-          
-          # Install dependencies fresh
-          echo "Installing dependencies without cache..."
-          npm install --no-optional --no-audit --no-fund
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+          cache: 'npm'
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -67,6 +41,9 @@ jobs:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build Android app
         run: |
@@ -77,25 +54,13 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Submit to Google Play Store
-        if: github.event.inputs.release_channel == 'production' && github.event.inputs.deploy_to_play_store == 'true'
-        run: |
-          echo "📱 Submitting to Google Play Store..."
-          eas submit --platform android --latest --profile production --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
       - name: Notify completion
         if: always()
         run: |
           if [ "${{ job.status }}" = "success" ]; then
             echo "✅ Build and deployment completed successfully!"
-            if [ "${{ github.event.inputs.deploy_to_play_store }}" = "true" ]; then
-              echo "📱 App submitted to Google Play Store"
-              echo "🏪 Available for review in Google Play Console"
-            else
-              echo "📱 APK ready for direct distribution"
-            fi
+            echo "📱 Android app built successfully"
+            echo "📦 Ready for distribution"
           else
             echo "❌ Build or deployment failed"
             echo "Please check the logs above for details"
