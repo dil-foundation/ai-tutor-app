@@ -4,18 +4,54 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug"
+      }
+    },
+    "development-expo-go": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug"
+      }
+    },
     "preview": {
       "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk",
+        "env": {
+          "EXPO_USE_KOTLIN_SYNTHETIC": "false"
+        }
+      },
+      "env": {
+        "NODE_ENV": "production",
+        "UXCAM_ENABLED": "true"
+      },
       "ios": {
         "simulator": false,
         "buildConfiguration": "Release"
-      },
-      "env": {
-        "NODE_ENV": "production"
       }
     },
     "production": {
       "autoIncrement": true,
+      "android": {
+        "gradleCommand": ":app:bundleRelease",
+        "buildType": "app-bundle"
+      },
       "ios": {
         "simulator": false,
         "buildConfiguration": "Release"
