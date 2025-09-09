@@ -38,7 +38,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  # Temporarily disabled due to GitHub cache service outage
+          # cache: 'npm'  # Disabled due to GitHub cache service outage
+
+      - name: Clear all caches and install dependencies
+        run: |
+          # Clear all possible cache locations
+          rm -rf node_modules package-lock.json yarn.lock
+          rm -rf ~/.npm ~/.yarn
+          rm -rf /tmp/*
+          
+          # Disable all caching
+          npm config set cache /tmp/npm-cache
+          npm config set package-manager npm
+          
+          # Install dependencies fresh
+          echo "Installing dependencies without cache..."
+          npm install --no-optional --no-audit --no-fund
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -46,14 +67,6 @@ jobs:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Install dependencies
-        run: |
-          # Clear any existing node_modules and package-lock.json to avoid cache issues
-          rm -rf node_modules package-lock.json
-          # Ensure we use npm instead of yarn
-          npm config set package-manager npm
-          npm install
 
       - name: Build Android app
         run: |
