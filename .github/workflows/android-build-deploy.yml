@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # cache: 'npm'  # Temporarily disabled due to GitHub cache service issues
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -43,7 +43,9 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          npm install --no-optional --no-audit --no-fund
 
       - name: Build Android app
         run: |
