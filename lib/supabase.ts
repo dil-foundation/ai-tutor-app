@@ -11,16 +11,15 @@ if (typeof globalThis.structuredClone === 'undefined') {
 }
 
 // Get environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables!');
-  console.error('Please create a .env file with your Supabase credentials:');
-  console.error('EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co');
-  console.error('EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key');
-  console.error('Get these from: https://supabase.com/dashboard -> Your Project -> Settings -> API');
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+if (!process.env.EXPO_PUBLIC_SUPABASE_URL || !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
+  console.warn('⚠️ Missing Supabase environment variables - using placeholder values');
+  console.warn('Please create a .env file with your Supabase credentials:');
+  console.warn('EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co');
+  console.warn('EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key');
+  console.warn('Get these from: https://supabase.com/dashboard -> Your Project -> Settings -> API');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
