@@ -3,9 +3,9 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import RoleBasedAccess from '@/components/RoleBasedAccess';
+import { IconSymbol } from '../../components/ui/IconSymbol';
+import { useColorScheme } from '../../hooks/useColorScheme';
+import RoleBasedAccess from '../../components/RoleBasedAccess';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();

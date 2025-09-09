@@ -1,7 +1,7 @@
 // Fallback for using MaterialIcons on Android and web.
 
-import { Colors } from '@/constants/Colors'; // To access active/inactive colors
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '../../constants/Colors'; // To access active/inactive colors
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { useSegments } from 'expo-router'; // Import hooks to get route info
 import { SymbolWeight } from 'expo-symbols';
 import { Image, ImageStyle, Platform, type StyleProp } from 'react-native';
