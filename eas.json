@@ -49,8 +49,8 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "gradleCommand": ":app:bundleRelease",
-        "buildType": "app-bundle"
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk"
       },
       "ios": {
         "simulator": false,
