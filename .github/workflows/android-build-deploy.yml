@@ -48,7 +48,12 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Clear any existing node_modules and package-lock.json to avoid cache issues
+          rm -rf node_modules package-lock.json
+          # Ensure we use npm instead of yarn
+          npm config set package-manager npm
+          npm install
 
       - name: Build Android app
         run: |
