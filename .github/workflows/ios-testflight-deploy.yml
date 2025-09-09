@@ -33,17 +33,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # cache: 'npm'  # Disabled due to GitHub cache service issues
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI manually
+        run: |
+          echo "Installing EAS CLI without caching..."
+          npm install -g eas-cli@latest
+          eas --version
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          npm install --no-optional --no-audit --no-fund
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Build iOS app
         run: |
