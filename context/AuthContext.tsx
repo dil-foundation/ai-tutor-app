@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  initialized: boolean; // Add initialized state
   userRole: string | null;
   isStudent: boolean;
   roleLoading: boolean;
@@ -43,6 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState<boolean>(false); // Add initialized state
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
 
@@ -108,17 +110,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('Attempting to get initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
-        } else {
+        } else if (session) {
+          console.log('Initial session retrieved successfully. User ID:', session.user.id);
+          console.log('Initial Access Token:', session.access_token.substring(0, 20) + '...');
+          console.log('Initial Token Expires At:', new Date(session.expires_at! * 1000));
           setSession(session);
           setUser(session?.user ?? null);
+        } else {
+            console.log('No initial session found.');
+            setSession(null);
+            setUser(null);
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
         setLoading(false);
+        setInitialized(true); // Mark as initialized
       }
     };
 
@@ -128,6 +139,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
+        console.log('Auth state change event:', event);
+        if (session) {
+          console.log('Session exists. User:', session.user?.id);
+          console.log('Access Token:', session.access_token.substring(0, 20) + '...');
+          console.log('Token Expires At:', new Date(session.expires_at! * 1000));
+        } else {
+          console.log('No session found.');
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -204,6 +224,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    initialized, // Add initialized to context value
     userRole,
     isStudent,
     roleLoading,

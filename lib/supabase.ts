@@ -10,12 +10,16 @@ if (typeof globalThis.structuredClone === 'undefined') {
   };
 }
 
-// Get environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+// Environment variables for Supabase
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+// Log environment variables to ensure they are loaded correctly
+console.log('Supabase URL:', supabaseUrl ? 'Loaded' : 'Not Loaded');
+console.log('Supabase Anon Key:', supabaseAnonKey ? 'Loaded' : 'Not Loaded');
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+  throw new Error('Supabase URL or Anon Key is missing. Please check your environment variables.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
