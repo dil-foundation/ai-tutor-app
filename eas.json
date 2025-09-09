@@ -39,7 +39,9 @@
       },
       "env": {
         "NODE_ENV": "production",
-        "UXCAM_ENABLED": "true"
+        "UXCAM_ENABLED": "true",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho"
       },
       "ios": {
         "simulator": false,
@@ -57,7 +59,9 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho"
       }
     }
   },
