@@ -1,0 +1,72 @@
+name: iOS TestFlight Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy iOS App
+    runs-on: macos-latest
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "❌ You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets."
+            echo "Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build iOS app
+        run: |
+          echo "🚀 Building iOS app with profile: ${{ github.event.inputs.release_channel }}"
+          eas build --platform ios --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to TestFlight
+        run: |
+          echo "📱 Submitting to TestFlight..."
+          eas submit --platform ios --latest --profile ${{ github.event.inputs.release_channel }} --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Notify completion
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Build and deployment completed successfully!"
+            echo "📱 App submitted to TestFlight"
+            echo "🧪 Available for internal/external testing"
+          else
+            echo "❌ Build or deployment failed"
+            echo "Please check the logs above for details"
+          fi

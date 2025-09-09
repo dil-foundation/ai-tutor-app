@@ -4,22 +4,6 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      }
-    },
-    "development-expo-go": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      }
-    },
     "preview": {
       "distribution": "internal",
       "android": {
@@ -31,17 +15,34 @@
       },
       "env": {
         "UXCAM_ENABLED": "true"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
       }
     },
     "production": {
       "autoIncrement": true,
-      "android": {
-        "gradleCommand": ":app:bundleRelease",
-        "buildType": "app-bundle"
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
       }
     }
   },
   "submit": {
-    "production": {}
+    "preview": {
+      "ios": {
+        "appleId": "puttareddy@infiniai.tech",
+        "ascAppId": "6751864858",
+        "appleTeamId": "T99RG9BL5A"
+      }
+    },
+    "production": {
+      "ios": {
+        "appleId": "puttareddy@infiniai.tech",
+        "ascAppId": "6751864858",
+        "appleTeamId": "T99RG9BL5A"
+      }
+    }
   }
 }

@@ -1,0 +1,252 @@
+name: Android Build and Deploy
+
+on:
+  # push:
+  #   branches: [main, master]
+  #   tags:
+  #     - 'android-v*'
+  #     - 'android-release-*'
+  # pull_request:
+  #   branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+      deploy_to_play_store:
+        description: 'Deploy to Google Play Store (production only)'
+        required: false
+        default: false
+        type: boolean
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Android App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets. Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify project configuration
+        run: |
+          echo "Verifying Expo configuration..."
+          npx expo config --type public
+
+      - name: Determine build profile and deployment target
+        id: build-profile
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "profile=${{ github.event.inputs.release_channel }}" >> $GITHUB_OUTPUT
+            echo "deploy_to_play_store=${{ github.event.inputs.deploy_to_play_store }}" >> $GITHUB_OUTPUT
+            echo "build_type=${{ github.event.inputs.build_type }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/android-release-* ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+            echo "deploy_to_play_store=true" >> $GITHUB_OUTPUT
+            echo "build_type=aab" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/android-v* ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+            echo "deploy_to_play_store=false" >> $GITHUB_OUTPUT
+            echo "build_type=apk" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "profile=preview" >> $GITHUB_OUTPUT
+            echo "deploy_to_play_store=false" >> $GITHUB_OUTPUT
+            echo "build_type=apk" >> $GITHUB_OUTPUT
+          else
+            echo "profile=development" >> $GITHUB_OUTPUT
+            echo "deploy_to_play_store=false" >> $GITHUB_OUTPUT
+            echo "build_type=apk" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Android app
+        run: |
+          echo "Building with profile: ${{ steps.build-profile.outputs.profile }}"
+          echo "Build type: ${{ steps.build-profile.outputs.build_type }}"
+          
+          if [ "${{ steps.build-profile.outputs.build_type }}" = "aab" ]; then
+            echo "Building Android App Bundle (AAB) for Play Store..."
+            eas build --platform android --profile production --non-interactive --no-wait
+          else
+            echo "Building Android APK..."
+            eas build --platform android --profile ${{ steps.build-profile.outputs.profile }} --non-interactive --no-wait
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for build completion
+        id: build-wait
+        run: |
+          echo "Waiting for build to complete..."
+          # Get the latest build ID for this project
+          BUILD_ID=$(eas build:list --platform=android --limit=1 --json | jq -r '.[0].id')
+          echo "Monitoring build: $BUILD_ID"
+          
+          # Wait for build completion (timeout after 30 minutes)
+          timeout 1800 bash -c '
+            while true; do
+              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
+              echo "Build status: $STATUS"
+              
+              if [ "$STATUS" = "finished" ]; then
+                echo "Build completed successfully!"
+                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
+                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+                echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+                break
+              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+                echo "Build failed with status: $STATUS"
+                exit 1
+              fi
+              
+              sleep 30
+            done
+          '
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download APK/AAB artifact
+        if: steps.build-profile.outputs.profile == 'production' || steps.build-profile.outputs.profile == 'preview'
+        run: |
+          echo "Downloading build artifact..."
+          BUILD_URL="${{ steps.build-wait.outputs.build_url }}"
+          
+          if [ "${{ steps.build-profile.outputs.build_type }}" = "aab" ]; then
+            curl -L -o "dil-tutor-app-${{ steps.build-profile.outputs.profile }}.aab" "$BUILD_URL"
+            echo "Downloaded AAB: dil-tutor-app-${{ steps.build-profile.outputs.profile }}.aab"
+          else
+            curl -L -o "dil-tutor-app-${{ steps.build-profile.outputs.profile }}.apk" "$BUILD_URL"
+            echo "Downloaded APK: dil-tutor-app-${{ steps.build-profile.outputs.profile }}.apk"
+          fi
+
+      - name: Submit to Google Play Store
+        if: steps.build-profile.outputs.profile == 'production' && steps.build-profile.outputs.deploy_to_play_store == 'true'
+        run: |
+          echo "Submitting build ${{ steps.build-wait.outputs.build_id }} to Google Play Store..."
+          eas submit --platform android --latest --non-interactive
+          
+          echo "✅ Build submitted to Google Play Console"
+          echo "🔍 Manual review submission may be required in Google Play Console"
+          echo "📱 Check Google Play Console to complete the review submission process"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload APK/AAB as GitHub artifact
+        if: steps.build-profile.outputs.profile == 'production' || steps.build-profile.outputs.profile == 'preview'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ steps.build-profile.outputs.profile }}-${{ steps.build-profile.outputs.build_type }}
+          path: |
+            *.apk
+            *.aab
+          retention-days: 30
+
+      - name: Create GitHub Release (for production builds)
+        if: steps.build-profile.outputs.profile == 'production' && github.ref_type == 'tag'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Android Release ${{ github.ref_name }}
+          body: |
+            ## Android Build Information
+            - **Build ID**: ${{ steps.build-wait.outputs.build_id }}
+            - **Build URL**: ${{ steps.build-wait.outputs.build_url }}
+            - **Build Type**: ${{ steps.build-profile.outputs.build_type == 'aab' && 'Android App Bundle (AAB)' || 'Android APK' }}
+            - **Deployment Target**: ${{ steps.build-profile.outputs.deploy_to_play_store == 'true' && 'Google Play Store' || 'Direct Distribution' }}
+            - **Build Profile**: ${{ steps.build-profile.outputs.profile }}
+            
+            ## Deployment Status
+            ${{ steps.build-profile.outputs.deploy_to_play_store == 'true' && '🚀 **Submitted to Google Play Store**' || '📱 **Available for Direct Download**' }}
+            
+            ${{ steps.build-profile.outputs.deploy_to_play_store == 'true' && 'This build has been submitted to Google Play Store and is pending review. Check Google Play Console for review status.' || 'This build is available for direct installation or internal distribution.' }}
+            
+            ## Installation
+            ${{ steps.build-profile.outputs.build_type == 'apk' && '📲 **APK Installation**: Download the APK from the build URL and install directly on Android devices.' || '🏪 **Play Store**: This AAB will be available through Google Play Store after review approval.' }}
+            
+            ## Changes
+            Please check the commit history for detailed changes.
+          draft: false
+          prerelease: ${{ !startsWith(github.ref_name, 'android-release-') }}
+
+      - name: Notify build completion
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Android build and deployment completed successfully!"
+            echo "Build ID: ${{ steps.build-wait.outputs.build_id }}"
+            echo "Build URL: ${{ steps.build-wait.outputs.build_url }}"
+            echo "Build Profile: ${{ steps.build-profile.outputs.profile }}"
+            echo "Build Type: ${{ steps.build-profile.outputs.build_type }}"
+            
+            if [ "${{ steps.build-profile.outputs.deploy_to_play_store }}" = "true" ]; then
+              echo "🚀 App submitted to Google Play Store for review"
+              echo "📋 Next steps:"
+              echo "   1. Check Google Play Console for review status"
+              echo "   2. Complete store listing if needed"
+              echo "   3. Respond to any reviewer feedback"
+              echo "   4. Monitor release rollout"
+            elif [ "${{ steps.build-profile.outputs.build_type }}" = "apk" ]; then
+              echo "📱 APK ready for direct distribution"
+              echo "🔗 Download URL: ${{ steps.build-wait.outputs.build_url }}"
+              echo "📲 Install directly on Android devices"
+            else
+              echo "📦 AAB ready for Play Store submission"
+            fi
+          else
+            echo "❌ Android build or deployment failed"
+          fi
+
+      - name: Upload build artifacts info
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-info
+          path: |
+            package.json
+            app.json
+            eas.json
+          retention-days: 30
