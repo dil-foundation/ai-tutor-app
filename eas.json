@@ -11,7 +11,7 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "NODE_ENV": "production",
+        "NODE_ENV": "production"
       }
     },
     "production": {
@@ -21,7 +21,7 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "NODE_ENV": "production",
+        "NODE_ENV": "production"
       }
     }
   },
