@@ -4,6 +4,30 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug"
+      }
+    },
+    "development-expo-go": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {
@@ -23,6 +47,10 @@
     },
     "production": {
       "autoIncrement": true,
+      "android": {
+        "gradleCommand": ":app:bundleRelease",
+        "buildType": "app-bundle"
+      },
       "ios": {
         "simulator": false,
         "buildConfiguration": "Release"
