@@ -12,6 +12,7 @@ import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
@@ -50,7 +51,8 @@ function RootLayoutNav() {
             router.replace('/(tabs)/learn/greeting');
           }
         } catch (error) {
-          console.log('Error checking greeting status:', error);
+          console.error('Error checking greeting status:', error);
+          // Fallback to greeting screen if AsyncStorage fails
           router.replace('/(tabs)/learn/greeting');
         }
         setHasNavigated(true);
@@ -91,7 +93,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error('Font loading error:', error);
+      // Don't throw in production, just log the error
+      if (__DEV__) {
+        throw error;
+      }
+    }
   }, [error]);
 
   useEffect(() => {
@@ -105,15 +113,17 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <LanguageModeProvider>
-        <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
-          <ThemeProvider value={DefaultTheme}>
-            <StatusBar style="light" />
-            <RootLayoutNav />
-          </ThemeProvider>
-        </UXCamProvider>
-      </LanguageModeProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageModeProvider>
+          <UXCamProvider autoInitialize={false} defaultEnabled={true} defaultPrivacyMode={false}>
+            <ThemeProvider value={DefaultTheme}>
+              <StatusBar style="light" />
+              <RootLayoutNav />
+            </ThemeProvider>
+          </UXCamProvider>
+        </LanguageModeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

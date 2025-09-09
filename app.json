@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "diltutorappreact",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dil.lms",
@@ -63,6 +63,12 @@
       "eas": {
         "projectId": "9a1d7eb1-4a6c-4662-9691-bf042019099d"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9a1d7eb1-4a6c-4662-9691-bf042019099d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "owner": "dil-tutor"
   }

@@ -8,14 +8,22 @@
       "distribution": "internal",
       "ios": {
         "simulator": false,
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "bundler": "metro"
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     },
     "production": {
       "autoIncrement": true,
       "ios": {
         "simulator": false,
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "bundler": "metro"
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     }
   },
