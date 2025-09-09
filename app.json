@@ -30,11 +30,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_EXTERNAL_STORAGE"
-      ],
-      "buildToolsVersion": "34.0.0",
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "minSdkVersion": 21
+      ]
     },
     "web": {
       "bundler": "metro",
