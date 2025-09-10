@@ -46,16 +46,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: false
+      - name: Setup Node.js manually
+        run: |
+          echo "Setting up Node.js manually to avoid caching issues..."
+          # Download and install Node.js 20
+          curl -fsSL https://nodejs.org/dist/v20.19.5/node-v20.19.5-linux-x64.tar.xz -o node.tar.xz
+          tar -xf node.tar.xz
+          sudo mv node-v20.19.5-linux-x64 /opt/nodejs
+          echo "/opt/nodejs/bin" >> $GITHUB_PATH
+          node --version
+          npm --version
           
       - name: Install dependencies
         working-directory: ./dil-tutor-app
         run: |
-          echo "Installing dependencies without cache..."
+          echo "Installing dependencies..."
           npm install --no-optional --no-audit --no-fund
         
       - name: Run ESLint
@@ -89,11 +94,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: false
+      - name: Setup Node.js manually
+        run: |
+          echo "Setting up Node.js manually to avoid caching issues..."
+          # Download and install Node.js 20
+          curl -fsSL https://nodejs.org/dist/v20.19.5/node-v20.19.5-darwin-x64.tar.gz -o node.tar.gz
+          tar -xf node.tar.gz
+          sudo mv node-v20.19.5-darwin-x64 /opt/nodejs
+          echo "/opt/nodejs/bin" >> $GITHUB_PATH
+          node --version
+          npm --version
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -105,7 +115,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./dil-tutor-app
         run: |
-          echo "Installing dependencies without cache..."
+          echo "Installing dependencies..."
           npm install --no-optional --no-audit --no-fund
 
       - name: Set environment variables
