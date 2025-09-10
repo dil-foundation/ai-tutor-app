@@ -55,6 +55,19 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "puttareddy@infiniai.tech",
+        "ascAppId": "6751864858",
+        "appleTeamId": "T99RG9BL5A"
+      }
+    },
+    "preview": {
+      "ios": {
+        "appleId": "puttareddy@infiniai.tech",
+        "ascAppId": "6751864858",
+        "appleTeamId": "T99RG9BL5A"
+      }
+    }
   }
 }

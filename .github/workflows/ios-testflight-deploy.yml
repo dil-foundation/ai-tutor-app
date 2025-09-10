@@ -12,6 +12,14 @@ on:
           - production
           - preview
 
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  UXCAM_API_KEY: ${{ secrets.UXCAM_API_KEY }}
+  UXCAM_ENABLED: true
+  EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+  EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+
 jobs:
   build-and-deploy:
     name: Build and Deploy iOS App
@@ -33,43 +41,48 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  # Disabled due to GitHub cache service issues
+          cache: 'npm'
+          cache-dependency-path: 'dil-tutor-app/package-lock.json'
 
-      - name: Install EAS CLI manually
-        run: |
-          echo "Installing EAS CLI without caching..."
-          npm install -g eas-cli@latest
-          eas --version
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
+        working-directory: ./dil-tutor-app
+        run: npm ci
+
+      - name: Set environment variables
+        working-directory: ./dil-tutor-app
         run: |
-          echo "Installing dependencies..."
-          npm install --no-optional --no-audit --no-fund
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+          echo "UXCAM_API_KEY=${{ secrets.UXCAM_API_KEY }}" >> .env.preview
+          echo "UXCAM_ENABLED=true" >> .env.preview
+          echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env.preview
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.preview
+          echo "EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL }}" >> .env.preview
+          echo "EXPO_PUBLIC_USE_MANAGED_WORKFLOW=false" >> .env.preview
+
+      - name: Push environment variables to EAS
+        working-directory: ./dil-tutor-app
+        run: eas env:push ${{ github.event.inputs.release_channel }} --path .env.preview
+
+      - name: Verify environment variables
+        working-directory: ./dil-tutor-app
+        run: eas env:list ${{ github.event.inputs.release_channel }} --format long
 
       - name: Build iOS app
+        working-directory: ./dil-tutor-app
         run: |
           echo "🚀 Building iOS app with profile: ${{ github.event.inputs.release_channel }}"
           eas build --platform ios --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          UXCAM_API_KEY: ${{ secrets.UXCAM_API_KEY }}
-          UXCAM_ENABLED: "true"
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Submit to TestFlight
+        working-directory: ./dil-tutor-app
         run: |
           echo "📱 Submitting to TestFlight..."
           eas submit --platform ios --latest --profile ${{ github.event.inputs.release_channel }} --non-interactive
