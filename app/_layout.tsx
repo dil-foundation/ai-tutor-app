@@ -12,7 +12,6 @@ import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
-import UXCamTest from '../components/UXCamTest';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // UXCam is now handled by UXCamService and UXCamContext
@@ -21,7 +20,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { user, loading, isStudent } = useAuth();
+  const { user, loading, initialized, isStudent } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [hasNavigated, setHasNavigated] = useState(false);
@@ -31,7 +30,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     // Only proceed with navigation after auth state is determined
-    if (loading) return;
+    if (loading || !initialized) return;
 
     const inAuthGroup = segments[0] === 'auth';
 
@@ -61,7 +60,7 @@ function RootLayoutNav() {
       
       checkDestination();
     }
-  }, [user, loading, segments, hasNavigated]);
+  }, [user, loading, initialized, segments, hasNavigated]);
 
   // Reset navigation flag when auth state changes
   useEffect(() => {
@@ -69,14 +68,13 @@ function RootLayoutNav() {
   }, [user, loading]);
 
   // Always show loading screen until auth state is determined
-  if (loading) {
+  if (loading || !initialized) {
     return <LoadingScreen />;
   }
 
   return (
     <RoleBasedAccess>
       <UXCamSessionManager />
-      <UXCamTest />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
