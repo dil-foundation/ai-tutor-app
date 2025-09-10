@@ -50,10 +50,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: false
           
       - name: Install dependencies
         working-directory: ./dil-tutor-app
-        run: npm ci
+        run: |
+          echo "Installing dependencies without cache..."
+          npm install --no-optional --no-audit --no-fund
         
       - name: Run ESLint
         working-directory: ./dil-tutor-app
@@ -90,6 +93,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: false
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -100,7 +104,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./dil-tutor-app
-        run: npm ci
+        run: |
+          echo "Installing dependencies without cache..."
+          npm install --no-optional --no-audit --no-fund
 
       - name: Set environment variables
         working-directory: ./dil-tutor-app
