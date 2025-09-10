@@ -5,7 +5,7 @@
   },
   "build": {
     "development": {
-      "developmentClient": false,
+      "developmentClient": true,
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug",
@@ -14,6 +14,13 @@
       "ios": {
         "simulator": true,
         "buildConfiguration": "Debug"
+      },
+      "env": {
+        "NODE_ENV": "development",
+        "UXCAM_ENABLED": "true",
+        "UXCAM_API_KEY": "xnayvk2m8m2h8xw-us",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho"
       }
     },
     "development-expo-go": {
@@ -52,8 +59,8 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk"
+        "gradleCommand": ":app:bundleRelease",
+        "buildType": "app-bundle"
       },
       "ios": {
         "simulator": false,
