@@ -29,6 +29,11 @@
           "EXPO_USE_KOTLIN_SYNTHETIC": "false"
         }
       },
+      "ios": {
+        "env": {
+          "UXCAM_ENABLED": "true"
+        }
+      },
       "env": {
         "UXCAM_ENABLED": "true"
       }
@@ -38,6 +43,14 @@
       "android": {
         "gradleCommand": ":app:bundleRelease",
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "env": {
+          "UXCAM_ENABLED": "true"
+        }
+      },
+      "env": {
+        "UXCAM_ENABLED": "true"
       }
     }
   },

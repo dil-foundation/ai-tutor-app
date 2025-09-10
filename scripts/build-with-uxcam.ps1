@@ -20,14 +20,18 @@ eas env:push preview --path .env.preview
 Write-Host "📋 Current environment variables:" -ForegroundColor Blue
 eas env:list preview --format long
 
-# Build the app
+# Build the app for both platforms
 Write-Host "🔨 Building Android app with UXCam..." -ForegroundColor Blue
 eas build -p android --profile preview
 
-Write-Host "✅ Build process completed!" -ForegroundColor Green
+Write-Host "🍎 Building iOS app with UXCam..." -ForegroundColor Blue
+eas build -p ios --profile preview
+
+Write-Host "✅ Build process completed for both platforms!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📱 Next steps:" -ForegroundColor Yellow
-Write-Host "1. Install the APK on your device" -ForegroundColor White
+Write-Host "1. Install the APK/IPA on your devices" -ForegroundColor White
 Write-Host "2. Open the app and perform some actions" -ForegroundColor White
 Write-Host "3. Check UXCam dashboard for session data" -ForegroundColor White
 Write-Host "4. If no data appears, check the app logs for UXCam initialization" -ForegroundColor White
+Write-Host "5. Verify both Android and iOS sessions are being recorded" -ForegroundColor White

@@ -20,14 +20,18 @@ eas env:push preview --path .env.preview
 echo "📋 Current environment variables:"
 eas env:list preview --format long
 
-# Build the app
+# Build the app for both platforms
 echo "🔨 Building Android app with UXCam..."
 eas build -p android --profile preview
 
-echo "✅ Build process completed!"
+echo "🍎 Building iOS app with UXCam..."
+eas build -p ios --profile preview
+
+echo "✅ Build process completed for both platforms!"
 echo ""
 echo "📱 Next steps:"
-echo "1. Install the APK on your device"
+echo "1. Install the APK/IPA on your devices"
 echo "2. Open the app and perform some actions"
 echo "3. Check UXCam dashboard for session data"
 echo "4. If no data appears, check the app logs for UXCam initialization"
+echo "5. Verify both Android and iOS sessions are being recorded"
