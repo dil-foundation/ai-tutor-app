@@ -1,4 +1,4 @@
-declare module 'react-native-uxcam' {
+declare module 'react-native-ux-cam' {
   const UXCam: {
     startWithKey: (apiKey: string) => Promise<void>;
     startNewSession: () => Promise<void>;

@@ -45,7 +45,7 @@ The UXCam integration follows a professional, scalable architecture with the fol
 ### 1. Install Dependencies
 
 ```bash
-npm install react-native-uxcam
+npm install react-native-ux-cam
 ```
 
 ### 2. Configure API Key

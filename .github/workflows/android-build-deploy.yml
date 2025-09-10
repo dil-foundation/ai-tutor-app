@@ -64,6 +64,8 @@ jobs:
           eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          UXCAM_API_KEY: ${{ secrets.UXCAM_API_KEY }}
+          UXCAM_ENABLED: "true"
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 

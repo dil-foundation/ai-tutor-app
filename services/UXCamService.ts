@@ -9,6 +9,10 @@ const createMockUXCam = () => ({
     console.log('🎥 [UXCam Mock] Started with API key:', apiKey.substring(0, 10) + '...');
     await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async
   },
+  startWithConfiguration: async (config: any) => {
+    console.log('🎥 [UXCam Mock] Started with configuration:', config.userAppKey.substring(0, 10) + '...');
+    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate async
+  },
   startNewSession: async () => {
     console.log('🎥 [UXCam Mock] New session started');
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -54,7 +58,7 @@ const createMockUXCam = () => ({
     await new Promise(resolve => setTimeout(resolve, 50));
   },
   optIntoSchematicRecordings: async () => {
-    console.log('🎥 [UXCam Mock] Opted in');
+    console.log('🎥 [UXCam Mock] Opted into schematic recordings');
     await new Promise(resolve => setTimeout(resolve, 50));
   },
   setAutomaticScreenNameTagging: (enabled: boolean) => {
@@ -78,22 +82,33 @@ const createMockUXCam = () => ({
 let UXCam: any;
 let isRealUXCam = false;
 
+// Check if we're in a production build or development build
+const isDevelopmentClient = !!process.env.EXPO_DEV_CLIENT;
+const isProductionBuild = !__DEV__;
+
 try {
-  // Try to import real UXCam (will fail in Expo managed workflow)
-  const realUXCam = require('react-native-uxcam').default;
-  if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
-    UXCam = realUXCam;
-    isRealUXCam = true;
-    console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+  // Try to import real UXCam only in dev client or production build
+  if (isDevelopmentClient || isProductionBuild) {
+    const RNUxcam = require('react-native-ux-cam');
+    if (RNUxcam && (typeof RNUxcam.startWithKey === 'function' || typeof RNUxcam.startWithConfiguration === 'function')) {
+      UXCam = RNUxcam;
+      isRealUXCam = true;
+      console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+      console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : 'Dev Client');
+    } else {
+      throw new Error('UXCam SDK methods not found');
+    }
   } else {
-    throw new Error('UXCam SDK methods not found');
+    throw new Error('Not in a dev client or production build, using mock');
   }
 } catch (error) {
-  // Fall back to mock implementation
+  // Fall back to mock implementation for Expo Go
   UXCam = createMockUXCam();
   isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation for development');
-  console.log('🎥 [UXCam] Error:', error instanceof Error ? error.message : 'Unknown error');
+  console.log('🎥 [UXCam] Using mock implementation for Expo Go');
+  if (error instanceof Error) {
+    console.log('🎥 [UXCam] Reason:', error.message);
+  }
 }
 
 export interface UXCamUserProperties {
@@ -147,12 +162,16 @@ class UXCamService {
       
       // Try different initialization methods based on SDK version
       if (isRealUXCam) {
+        // Enable screen recordings for both iOS and Android (required before initialization)
+        if (Platform.OS === 'ios') {
+          UXCam.optIntoSchematicRecordings();
+        }
+
         if (typeof UXCam.startWithConfiguration === 'function') {
           // New SDK version with configuration object
           const configuration = {
             userAppKey: config.API_KEY,
             enableAutomaticScreenNameTagging: false,
-            enableAdvancedGestureRecognition: true,
             enableImprovedScreenCapture: true,
           };
           await UXCam.startWithConfiguration(configuration);
