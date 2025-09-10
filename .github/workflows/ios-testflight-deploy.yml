@@ -33,30 +33,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  # Disabled due to GitHub cache service issues
+          cache: 'npm'
 
-      - name: Install EAS CLI manually
-        run: |
-          echo "Installing EAS CLI without caching..."
-          npm install -g eas-cli@latest
-          eas --version
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: |
-          echo "Installing dependencies..."
-          npm install --no-optional --no-audit --no-fund
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+        run: npm ci
 
       - name: Build iOS app
         run: |
@@ -64,8 +51,6 @@ jobs:
           eas build --platform ios --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Submit to TestFlight
         run: |
