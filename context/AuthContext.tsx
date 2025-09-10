@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  initialized: boolean; // Add initialized state
   userRole: string | null;
   isStudent: boolean;
   roleLoading: boolean;
@@ -43,6 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState<boolean>(false); // Add initialized state
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
 
@@ -119,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error getting initial session:', error);
       } finally {
         setLoading(false);
+        setInitialized(true); // Mark as initialized
       }
     };
 
@@ -204,6 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    initialized, // Add initialized to context value
     userRole,
     isStudent,
     roleLoading,

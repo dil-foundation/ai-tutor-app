@@ -12,6 +12,7 @@ import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
+import UXCamTest from '../components/UXCamTest';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // UXCam is now handled by UXCamService and UXCamContext
@@ -75,6 +76,7 @@ function RootLayoutNav() {
   return (
     <RoleBasedAccess>
       <UXCamSessionManager />
+      <UXCamTest />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
@@ -116,7 +118,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <AuthProvider>
         <LanguageModeProvider>
-          <UXCamProvider autoInitialize={false} defaultEnabled={true} defaultPrivacyMode={false}>
+          <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
             <ThemeProvider value={DefaultTheme}>
               <StatusBar style="light" />
               <RootLayoutNav />
