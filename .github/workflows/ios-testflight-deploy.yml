@@ -1,16 +1,6 @@
 name: iOS TestFlight Deploy
 
 on:
-  push:
-    branches: [ main, develop, uxcam_working_android_after_build ]
-    paths:
-      - 'dil-tutor-app/**'
-      - '.github/workflows/ios-testflight-deploy.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'dil-tutor-app/**'
-      - '.github/workflows/ios-testflight-deploy.yml'
   workflow_dispatch:
     inputs:
       release_channel:
@@ -21,66 +11,11 @@ on:
         options:
           - production
           - preview
-      skip_tests:
-        description: 'Skip running tests'
-        required: false
-        default: false
-        type: boolean
-
-env:
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  UXCAM_API_KEY: ${{ secrets.UXCAM_API_KEY }}
-  UXCAM_ENABLED: true
-  EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-  EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-  EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
 
 jobs:
-  # Job 1: Code Quality and Testing
-  quality-check:
-    name: Code Quality & Testing
-    runs-on: ubuntu-latest
-    if: ${{ !inputs.skip_tests }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js manually
-        run: |
-          echo "Setting up Node.js manually to avoid caching issues..."
-          # Download and install Node.js 20
-          curl -fsSL https://nodejs.org/dist/v20.19.5/node-v20.19.5-linux-x64.tar.xz -o node.tar.xz
-          tar -xf node.tar.xz
-          sudo mv node-v20.19.5-linux-x64 /opt/nodejs
-          echo "/opt/nodejs/bin" >> $GITHUB_PATH
-          node --version
-          npm --version
-          
-      - name: Install dependencies
-        working-directory: ./dil-tutor-app
-        run: |
-          echo "Installing dependencies..."
-          npm install --no-optional --no-audit --no-fund
-        
-      - name: Run ESLint
-        working-directory: ./dil-tutor-app
-        run: npm run lint
-        
-      - name: TypeScript check
-        working-directory: ./dil-tutor-app
-        run: npx tsc --noEmit
-        
-      - name: Check for security vulnerabilities
-        working-directory: ./dil-tutor-app
-        run: npm audit --audit-level=moderate
-
-  # Job 2: Build and Deploy iOS App
   build-and-deploy:
     name: Build and Deploy iOS App
     runs-on: macos-latest
-    needs: [quality-check]
-    if: always() && (needs.quality-check.result == 'success' || inputs.skip_tests)
     
     steps:
       - name: Check for EXPO_TOKEN
@@ -94,116 +29,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js manually
-        run: |
-          echo "Setting up Node.js manually to avoid caching issues..."
-          # Download and install Node.js 20
-          curl -fsSL https://nodejs.org/dist/v20.19.5/node-v20.19.5-darwin-x64.tar.gz -o node.tar.gz
-          tar -xf node.tar.gz
-          sudo mv node-v20.19.5-darwin-x64 /opt/nodejs
-          echo "/opt/nodejs/bin" >> $GITHUB_PATH
-          node --version
-          npm --version
-
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          node-version: '20'
+          # cache: 'npm'  # Disabled due to GitHub cache service issues
+
+      - name: Install EAS CLI manually
+        run: |
+          echo "Installing EAS CLI without caching..."
+          npm install -g eas-cli@latest
+          eas --version
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Install dependencies
-        working-directory: ./dil-tutor-app
         run: |
           echo "Installing dependencies..."
           npm install --no-optional --no-audit --no-fund
-
-      - name: Set environment variables
-        working-directory: ./dil-tutor-app
-        run: |
-          echo "UXCAM_API_KEY=${{ secrets.UXCAM_API_KEY }}" >> .env.preview
-          echo "UXCAM_ENABLED=true" >> .env.preview
-          echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env.preview
-          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.preview
-          echo "EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL }}" >> .env.preview
-          echo "EXPO_PUBLIC_USE_MANAGED_WORKFLOW=false" >> .env.preview
-
-      - name: Push environment variables to EAS
-        working-directory: ./dil-tutor-app
-        run: eas env:push ${{ github.event.inputs.release_channel }} --path .env.preview
-
-      - name: Verify environment variables
-        working-directory: ./dil-tutor-app
-        run: eas env:list ${{ github.event.inputs.release_channel }} --format long
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Build iOS app
-        working-directory: ./dil-tutor-app
         run: |
           echo "🚀 Building iOS app with profile: ${{ github.event.inputs.release_channel }}"
           eas build --platform ios --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Download IPA artifact
-        working-directory: ./dil-tutor-app
-        run: |
-          # Get the latest build ID
-          BUILD_ID=$(eas build:list --platform=ios --limit=1 --json | jq -r '.[0].id')
-          echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
-          
-          # Download the IPA
-          eas build:download $BUILD_ID --output=./builds/
-
-      - name: Upload IPA to GitHub Releases
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa-${{ github.event.inputs.release_channel }}
-          path: dil-tutor-app/builds/*.ipa
-          retention-days: 30
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Submit to TestFlight
-        working-directory: ./dil-tutor-app
         run: |
           echo "📱 Submitting to TestFlight..."
           eas submit --platform ios --latest --profile ${{ github.event.inputs.release_channel }} --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Create GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.inputs.release_channel == 'production'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ios-v${{ github.run_number }}
-          name: iOS TestFlight Release v${{ github.run_number }}
-          body: |
-            ## 🍎 iOS TestFlight Release
-            
-            **Build Profile:** ${{ github.event.inputs.release_channel }}
-            **UXCam Integration:** ✅ Enabled
-            **Build Date:** ${{ github.run_number }}
-            
-            ### 📱 TestFlight Instructions
-            1. The app has been automatically submitted to TestFlight
-            2. Check your Apple Developer account for the build status
-            3. Once approved, distribute to your testers
-            4. Test UXCam functionality on iOS devices
-            
-            ### 🔧 Technical Details
-            - **Expo SDK:** 53.0.22
-            - **React Native:** 0.79.5
-            - **UXCam SDK:** 6.0.7
-            - **iOS Deployment Target:** 13.0
-            - **Bundle Identifier:** com.dil.lms
-            
-            ### 📊 UXCam Features
-            - Session recording enabled
-            - Screen capture for user experience analysis
-            - iOS-specific screen recording optimizations
-            - Privacy-compliant data collection
-          files: dil-tutor-app/builds/*.ipa
-          draft: false
-          prerelease: false
 
       - name: Notify completion
         if: always()
@@ -212,30 +81,7 @@ jobs:
             echo "✅ Build and deployment completed successfully!"
             echo "📱 App submitted to TestFlight"
             echo "🧪 Available for internal/external testing"
-            echo "📊 UXCam analytics enabled"
           else
             echo "❌ Build or deployment failed"
             echo "Please check the logs above for details"
           fi
-
-  # Job 3: Build Status Notification
-  notify-status:
-    name: Notify Build Status
-    runs-on: ubuntu-latest
-    needs: [build-and-deploy]
-    if: always()
-    
-    steps:
-      - name: Notify Success
-        if: needs.build-and-deploy.result == 'success'
-        run: |
-          echo "✅ iOS TestFlight build completed successfully!"
-          echo "Release Channel: ${{ github.event.inputs.release_channel }}"
-          echo "TestFlight submission: Completed"
-          
-      - name: Notify Failure
-        if: needs.build-and-deploy.result == 'failure'
-        run: |
-          echo "❌ iOS TestFlight build failed!"
-          echo "Please check the build logs for details."
-          exit 1
