@@ -34,7 +34,6 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "NODE_ENV": "production",
         "UXCAM_ENABLED": "true"
       }
     },
@@ -49,7 +48,6 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "NODE_ENV": "production",
         "UXCAM_ENABLED": "true"
       }
     }
