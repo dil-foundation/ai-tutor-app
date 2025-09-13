@@ -15,7 +15,15 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "This app uses the microphone to allow you to practice your speaking skills.",
         "NSCameraUsageDescription": "This app uses the camera for UXCam session recording to improve user experience.",
-        "NSPhotoLibraryUsageDescription": "This app may access photo library for UXCam session recording."
+        "NSPhotoLibraryUsageDescription": "This app may access photo library for UXCam session recording.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        }
       }
     },
     "android": {

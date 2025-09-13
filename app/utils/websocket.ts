@@ -8,21 +8,41 @@ export const connectLearnSocket = (
     onAudioData?: (audioBuffer: ArrayBuffer) => void,
     onClose?: () => void
   ) => {
+    // Close existing connection if any
+    if (socket && socket.readyState !== WebSocket.CLOSED) {
+      try {
+        socket.close();
+      } catch (error) {
+        console.warn('Error closing existing socket:', error);
+      }
+    }
+
     const wsUrl = BASE_API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
     const fullUrl = `${wsUrl}/api/ws/learn`;
   
     console.log("WebSocket connecting to:", fullUrl);
   
-    socket = new WebSocket(fullUrl);
-    socket.binaryType = "arraybuffer";
+    try {
+      socket = new WebSocket(fullUrl);
+      socket.binaryType = "arraybuffer";
+    } catch (error) {
+      console.error("Failed to create WebSocket:", error);
+      onClose?.();
+      return;
+    }
     
     // Add connection timeout for faster failure detection
     const connectionTimeout = setTimeout(() => {
-      if (socket.readyState !== WebSocket.OPEN) {
+      if (socket && socket.readyState !== WebSocket.OPEN) {
         console.error("WebSocket connection timeout");
+        try {
+          socket.close();
+        } catch (error) {
+          console.warn('Error closing timed out socket:', error);
+        }
         onClose?.();
       }
-    }, 5000); // 5 second timeout
+    }, 10000); // 10 second timeout (increased for iOS)
   
     socket.onopen = () => {
       console.log("Learn WebSocket Connected");
@@ -30,24 +50,26 @@ export const connectLearnSocket = (
     };
   
     socket.onmessage = (event) => {
-        if (event.data instanceof ArrayBuffer) {
-            onAudioData?.(event.data); // Send ArrayBuffer directly to conversation.tsx
-        } else {
         try {
-          const data = JSON.parse(event.data);
-          onMessage(data);
+          if (event.data instanceof ArrayBuffer) {
+            onAudioData?.(event.data); // Send ArrayBuffer directly to conversation.tsx
+          } else {
+            const data = JSON.parse(event.data);
+            onMessage(data);
+          }
         } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
+          console.error("Failed to process WebSocket message:", error);
         }
-      }
     };
   
     socket.onerror = (e) => {
       console.error("WebSocket error:", e);
+      // Don't call onClose here as it might be called again in onclose
     };
   
-    socket.onclose = () => {
-      console.log("WebSocket closed");
+    socket.onclose = (event) => {
+      console.log("WebSocket closed", event.code, event.reason);
+      clearTimeout(connectionTimeout); // Clear timeout on close
       onClose?.();
     };
   };
@@ -78,18 +100,38 @@ export const connectEnglishOnlySocket = (
     onAudioData?: (audioBuffer: ArrayBuffer) => void,
     onClose?: () => void
   ) => {
+    // Close existing connection if any
+    if (englishOnlySocket && englishOnlySocket.readyState !== WebSocket.CLOSED) {
+      try {
+        englishOnlySocket.close();
+      } catch (error) {
+        console.warn('Error closing existing English-only socket:', error);
+      }
+    }
+
     const wsUrl = BASE_API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
     const fullUrl = `${wsUrl}/api/ws/english-only`;
   
     console.log("English-Only WebSocket connecting to:", fullUrl);
   
-    englishOnlySocket = new WebSocket(fullUrl);
-    englishOnlySocket.binaryType = "arraybuffer";
+    try {
+      englishOnlySocket = new WebSocket(fullUrl);
+      englishOnlySocket.binaryType = "arraybuffer";
+    } catch (error) {
+      console.error("Failed to create English-Only WebSocket:", error);
+      onClose?.();
+      return;
+    }
     
     // Add connection timeout for faster failure detection
     const connectionTimeout = setTimeout(() => {
-      if (englishOnlySocket.readyState !== WebSocket.OPEN) {
+      if (englishOnlySocket && englishOnlySocket.readyState !== WebSocket.OPEN) {
         console.error("English-Only WebSocket connection timeout");
+        try {
+          englishOnlySocket.close();
+        } catch (error) {
+          console.warn('Error closing timed out English-only socket:', error);
+        }
         onClose?.();
       } else {
         console.log("✅ English-Only WebSocket connection successful, timeout cleared");
@@ -102,24 +144,26 @@ export const connectEnglishOnlySocket = (
     };
   
     englishOnlySocket.onmessage = (event) => {
-        if (event.data instanceof ArrayBuffer) {
-            onAudioData?.(event.data); // Send ArrayBuffer directly to english-only.tsx
-        } else {
         try {
-          const data = JSON.parse(event.data);
-          onMessage(data);
+          if (event.data instanceof ArrayBuffer) {
+            onAudioData?.(event.data); // Send ArrayBuffer directly to english-only.tsx
+          } else {
+            const data = JSON.parse(event.data);
+            onMessage(data);
+          }
         } catch (error) {
-          console.error("Failed to parse English-Only WebSocket message:", error);
+          console.error("Failed to process English-Only WebSocket message:", error);
         }
-      }
     };
   
     englishOnlySocket.onerror = (e) => {
       console.error("English-Only WebSocket error:", e);
+      // Don't call onClose here as it might be called again in onclose
     };
   
-    englishOnlySocket.onclose = () => {
-      console.log("English-Only WebSocket closed");
+    englishOnlySocket.onclose = (event) => {
+      console.log("English-Only WebSocket closed", event.code, event.reason);
+      clearTimeout(connectionTimeout); // Clear timeout on close
       onClose?.();
     };
   };

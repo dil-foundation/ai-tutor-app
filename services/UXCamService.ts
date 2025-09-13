@@ -106,12 +106,14 @@ try {
     throw new Error('Not in a dev client or production build, using mock');
   }
 } catch (error) {
-  // Fall back to mock implementation for Expo Go
+  // Always fall back to mock implementation to prevent crashes
   RNUxcam = createMockUXCam();
   isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation for Expo Go');
+  console.log('🎥 [UXCam] Using mock implementation - safe fallback');
   if (error instanceof Error) {
     console.log('🎥 [UXCam] Reason:', error.message);
+  } else {
+    console.log('🎥 [UXCam] Unknown error:', error);
   }
 }
 
@@ -164,11 +166,22 @@ class UXCamService {
     try {
       const config = getUXCamConfig();
       
+      // Validate config before proceeding
+      if (!config || !config.API_KEY) {
+        console.error('UXCam configuration is invalid');
+        this.isInitialized = true; // Mark as initialized to prevent retry loops
+        return;
+      }
+      
       // Try different initialization methods based on SDK version
       if (isRealUXCam) {
-        // Add this line to enable iOS screen recordings
-        if (Platform.OS === 'ios') {
-          RNUxcam.optIntoSchematicRecordings();
+        // Add this line to enable iOS screen recordings with safety check
+        if (Platform.OS === 'ios' && typeof RNUxcam.optIntoSchematicRecordings === 'function') {
+          try {
+            await RNUxcam.optIntoSchematicRecordings();
+          } catch (error) {
+            console.log('UXCam iOS opt-in failed, continuing without it:', error);
+          }
         }
 
         if (typeof RNUxcam.startWithConfiguration === 'function') {

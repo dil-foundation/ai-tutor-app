@@ -12,6 +12,7 @@ import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
@@ -35,11 +36,15 @@ function RootLayoutNav() {
 
     if (!user) {
       // If not authenticated, always go to login first
-      if (!inAuthGroup) {
-        router.replace('/auth/login');
-        setHasNavigated(true);
+      if (!inAuthGroup && !hasNavigated) {
+        try {
+          router.replace('/auth/login');
+          setHasNavigated(true);
+        } catch (error) {
+          console.error('Navigation error to login:', error);
+        }
       }
-    } else if (user && inAuthGroup) {
+    } else if (user && inAuthGroup && !hasNavigated) {
       // If authenticated and in auth group, check where to go
       const checkDestination = async () => {
         try {
@@ -51,7 +56,11 @@ function RootLayoutNav() {
           }
         } catch (error) {
           console.log('Error checking greeting status:', error);
-          router.replace('/(tabs)/learn/greeting');
+          try {
+            router.replace('/(tabs)/learn/greeting');
+          } catch (navError) {
+            console.error('Navigation error to greeting:', navError);
+          }
         }
         setHasNavigated(true);
       };
@@ -71,14 +80,16 @@ function RootLayoutNav() {
   }
 
   return (
-    <RoleBasedAccess>
-      <UXCamSessionManager />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </RoleBasedAccess>
+    <ErrorBoundary>
+      <RoleBasedAccess>
+        <UXCamSessionManager />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </RoleBasedAccess>
+    </ErrorBoundary>
   );
 }
 
@@ -91,29 +102,38 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error('Font loading error:', error);
+      // Don't throw error, just log it and continue
+      // This prevents crashes on iOS when fonts fail to load
+    }
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch((error) => {
+        console.error('Error hiding splash screen:', error);
+      });
     }
   }, [loaded]);
 
-  if (!loaded) {
+  // Always show loading screen until fonts are loaded or error occurs
+  if (!loaded && !error) {
     return <LoadingScreen />;
   }
 
   return (
-    <AuthProvider>
-      <LanguageModeProvider>
-        <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
-          <ThemeProvider value={DefaultTheme}>
-            <StatusBar style="light" />
-            <RootLayoutNav />
-          </ThemeProvider>
-        </UXCamProvider>
-      </LanguageModeProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageModeProvider>
+          <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
+            <ThemeProvider value={DefaultTheme}>
+              <StatusBar style="light" />
+              <RootLayoutNav />
+            </ThemeProvider>
+          </UXCamProvider>
+        </LanguageModeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

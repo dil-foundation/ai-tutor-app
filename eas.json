@@ -31,7 +31,10 @@
       },
       "ios": {
         "simulator": false,
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "env": {
+          "UXCAM_ENABLED": "true"
+        }
       },
       "env": {
         "UXCAM_ENABLED": "true"
@@ -45,7 +48,10 @@
       },
       "ios": {
         "simulator": false,
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "env": {
+          "UXCAM_ENABLED": "true"
+        }
       },
       "env": {
         "UXCAM_ENABLED": "true"

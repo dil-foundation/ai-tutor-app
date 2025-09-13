@@ -13,6 +13,7 @@ export const UXCamConfig = {
       enableCrashHandling: false,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: true,
+      enableUXCam: false, // Disable in development to prevent crashes
     },
     staging: {
       API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
@@ -20,6 +21,7 @@ export const UXCamConfig = {
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: false,
+      enableUXCam: true,
     },
     production: {
       API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
@@ -27,6 +29,7 @@ export const UXCamConfig = {
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: false,
+      enableUXCam: true,
     },
   },
   
