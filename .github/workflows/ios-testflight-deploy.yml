@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: |
           echo "Installing dependencies..."
-          npm install --no-optional --no-audit --no-fund
+          npm install --legacy-peer-deps --no-optional --no-audit --no-fund
         env:
           # Disable all caching mechanisms
           npm_config_cache: /tmp/npm-cache

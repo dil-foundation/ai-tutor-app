@@ -8,7 +8,8 @@ npx expo install --fix
 
 # Clean node modules
 rm -rf node_modules
-npm install
+rm -rf package-lock.json
+npm install --legacy-peer-deps
 
 # Clean iOS build cache
 rm -rf ios/build
