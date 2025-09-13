@@ -66,6 +66,8 @@ export const useUXCam = (): UseUXCamReturn => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize UXCam';
       setError(errorMessage);
       console.error('UXCam initialization error:', err);
+      // Don't throw the error, just log it and continue
+      setIsInitialized(true); // Mark as initialized to prevent retry loops
     }
   }, [uxCamService, clearError]);
 

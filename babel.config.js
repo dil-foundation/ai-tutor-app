@@ -15,6 +15,8 @@ module.exports = function (api) {
           verbose: false,
         },
       ],
+      // Add reanimated plugin for better iOS compatibility
+      'react-native-reanimated/plugin',
     ],
   };
 };

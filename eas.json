@@ -34,7 +34,8 @@
         "buildConfiguration": "Release",
         "env": {
           "UXCAM_ENABLED": "true"
-        }
+        },
+        "resourceClass": "m-medium"
       },
       "env": {
         "UXCAM_ENABLED": "true"
@@ -51,7 +52,8 @@
         "buildConfiguration": "Release",
         "env": {
           "UXCAM_ENABLED": "true"
-        }
+        },
+        "resourceClass": "m-medium"
       },
       "env": {
         "UXCAM_ENABLED": "true"

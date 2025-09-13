@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dil.lms",
+      "deploymentTarget": "13.4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "This app uses the microphone to allow you to practice your speaking skills.",
@@ -21,9 +22,15 @@
           "NSExceptionDomains": {
             "localhost": {
               "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "api.dil.lms-staging.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "1.2"
             }
           }
-        }
+        },
+        "UIBackgroundModes": ["audio"],
+        "UIRequiredDeviceCapabilities": ["armv7"]
       }
     },
     "android": {

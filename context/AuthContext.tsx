@@ -81,9 +81,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setRoleLoading(true);
       setUserRole(null); // Reset role while checking
       
+      const currentUserId = user.id;
       checkUserRole().then(role => {
         // Only update if the user is still the same (prevent race conditions)
-        if (user && user.id === user.id) {
+        if (user && user.id === currentUserId) {
           setUserRole(role);
           setRoleLoading(false);
           console.log('User role set to:', role);
@@ -92,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error checking user role:', error);
         // Fallback to user metadata if available
         const fallbackRole = user?.user_metadata?.role || null;
-        if (user && user.id === user.id) {
+        if (user && user.id === currentUserId) {
           setUserRole(fallbackRole);
           setRoleLoading(false);
           console.log('User role fallback to:', fallbackRole);
