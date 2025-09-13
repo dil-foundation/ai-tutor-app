@@ -30,11 +30,11 @@
         }
       },
       "ios": {
-        "env": {
-          "UXCAM_ENABLED": "true"
-        }
+        "simulator": false,
+        "buildConfiguration": "Release"
       },
       "env": {
+        "NODE_ENV": "production",
         "UXCAM_ENABLED": "true"
       }
     },
@@ -45,11 +45,11 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "env": {
-          "UXCAM_ENABLED": "true"
-        }
+        "simulator": false,
+        "buildConfiguration": "Release"
       },
       "env": {
+        "NODE_ENV": "production",
         "UXCAM_ENABLED": "true"
       }
     }
