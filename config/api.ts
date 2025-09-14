@@ -35,7 +35,7 @@ export { FRONTEND_URL };
  */
 export const fetchAudioFromText = async (text: string): Promise<string | null> => {
   try {
-    const response = await fetch(`${BASE_API_URL}/tts`, {
+    const response = await fetch(`${BASE_API_URL}/tts`, { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
