@@ -1,4 +1,4 @@
-import BASE_API_URL from '@/config/api';
+import BASE_API_URL from '../config/api';
 import { Audio } from 'expo-av';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';

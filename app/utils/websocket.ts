@@ -1,4 +1,4 @@
-import BASE_API_URL from '@/config/api';
+import BASE_API_URL from '../../config/api';
 
 let socket: WebSocket;
 let englishOnlySocket: WebSocket;

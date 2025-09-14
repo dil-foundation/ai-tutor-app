@@ -1,5 +1,5 @@
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedView } from '@/components/ThemedView';
+import ParallaxScrollView from '../../../components/ParallaxScrollView';
+import { ThemedView } from '../../../components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
