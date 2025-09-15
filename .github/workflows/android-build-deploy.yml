@@ -1,0 +1,155 @@
+name: Android Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+      deployment_target:
+        description: 'Deployment target'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - production
+          - beta
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Android App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "❌ You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets."
+            echo "Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: Check for Google Play credentials
+        run: |
+          if [ -z "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}" ]; then
+            echo "❌ You must provide a GOOGLE_PLAY_SERVICE_ACCOUNT_KEY secret for Google Play Store deployment."
+            echo "Learn more: https://docs.expo.dev/submit/android/#google-play-store"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # cache: 'npm'  # Disabled due to GitHub cache service issues
+
+      - name: Install EAS CLI manually
+        run: |
+          echo "Installing EAS CLI without caching..."
+          npm install -g eas-cli@latest
+          eas --version
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
+
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          npm install --no-optional --no-audit --no-fund
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
+
+      - name: Build Android app
+        run: |
+          echo "🚀 Building Android app with profile: ${{ github.event.inputs.release_channel }}"
+          eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Submit to Google Play Store
+        if: github.event.inputs.deployment_target != 'internal'
+        run: |
+          echo "📱 Submitting to Google Play Store (${{ github.event.inputs.deployment_target }} track)..."
+          eas submit --platform android --latest --profile ${{ github.event.inputs.release_channel }} --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
+
+      - name: Download APK for internal distribution
+        if: github.event.inputs.deployment_target == 'internal'
+        run: |
+          echo "📱 Downloading APK for internal distribution..."
+          eas build:list --platform android --limit 1 --json > build_info.json
+          BUILD_URL=$(cat build_info.json | jq -r '.[0].artifacts.buildUrl')
+          echo "Downloading APK from: $BUILD_URL"
+          curl -L -o dil-tutor-app.apk "$BUILD_URL"
+          echo "✅ APK downloaded successfully: dil-tutor-app.apk"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload APK artifact
+        if: github.event.inputs.deployment_target == 'internal'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dil-tutor-app-${{ github.event.inputs.release_channel }}-${{ github.run_number }}
+          path: dil-tutor-app.apk
+          retention-days: 30
+
+      - name: Notify completion
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Build and deployment completed successfully!"
+            if [ "${{ github.event.inputs.deployment_target }}" = "internal" ]; then
+              echo "📱 APK artifact uploaded for internal distribution"
+              echo "📦 Download from GitHub Actions artifacts"
+            else
+              echo "📱 App submitted to Google Play Store (${{ github.event.inputs.deployment_target }} track)"
+              echo "🏪 Available for ${{ github.event.inputs.deployment_target }} testing"
+            fi
+          else
+            echo "❌ Build or deployment failed"
+            echo "Please check the logs above for details"
+          fi
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: always()
+    
+    steps:
+      - name: Deployment Success Notification
+        if: needs.build-and-deploy.result == 'success'
+        run: |
+          echo "🎉 Android deployment successful!"
+          echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
+          echo "🎯 Target: ${{ github.event.inputs.deployment_target }}"
+          echo "⏰ Completed at: $(date)"
+
+      - name: Deployment Failure Notification
+        if: needs.build-and-deploy.result == 'failure'
+        run: |
+          echo "❌ Android deployment failed!"
+          echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
+          echo "🎯 Target: ${{ github.event.inputs.deployment_target }}"
+          echo "⏰ Failed at: $(date)"
+          echo "Please check the build logs for details"
