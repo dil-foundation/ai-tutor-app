@@ -116,25 +116,56 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTabsGroup = segments[0] === '(tabs)';
+    const isIndexRoute = segments.length === 0 as any || (segments.length === 1 && segments[0] === 'index' as any);
+
+    console.log('🔐 [Navigation] Current segments:', segments);
+    console.log('🔐 [Navigation] User:', user ? 'authenticated' : 'not authenticated');
+    console.log('🔐 [Navigation] Loading:', loading);
 
     if (!user) {
       // If not authenticated, always go to login first
-      if (!inAuthGroup) {
+      if (!inAuthGroup && !isIndexRoute) {
+        console.log('🔐 [Navigation] User not authenticated, redirecting to login');
         router.replace('/auth/login');
         setHasNavigated(true);
       }
-    } else if (user && inAuthGroup) {
-      // If authenticated and in auth group, check where to go
+    } else if (user && (inAuthGroup || isIndexRoute)) {
+      // If authenticated and in auth group or index route, check where to go
       const checkDestination = async () => {
         try {
+          console.log('🔐 [Navigation] User authenticated, checking destination');
           const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
           if (hasVisitedLearn === 'true') {
+            console.log('🔐 [Navigation] Redirecting to learn tab');
             router.replace('/(tabs)/learn');
           } else {
+            console.log('🔐 [Navigation] Redirecting to greeting');
             router.replace('/(tabs)/learn/greeting');
           }
         } catch (error) {
-          console.log('Error checking greeting status:', error);
+          console.log('🔐 [Navigation] Error checking greeting status:', error);
+          router.replace('/(tabs)/learn/greeting');
+        }
+        setHasNavigated(true);
+      };
+      
+      checkDestination();
+    } else if (user && !inAuthGroup && !inTabsGroup && !isIndexRoute) {
+      // If authenticated but not in auth or tabs group, redirect to appropriate tab
+      const checkDestination = async () => {
+        try {
+          console.log('🔐 [Navigation] User authenticated but not in tabs, checking destination');
+          const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
+          if (hasVisitedLearn === 'true') {
+            console.log('🔐 [Navigation] Redirecting to learn tab');
+            router.replace('/(tabs)/learn');
+          } else {
+            console.log('🔐 [Navigation] Redirecting to greeting');
+            router.replace('/(tabs)/learn/greeting');
+          }
+        } catch (error) {
+          console.log('🔐 [Navigation] Error checking greeting status:', error);
           router.replace('/(tabs)/learn/greeting');
         }
         setHasNavigated(true);
