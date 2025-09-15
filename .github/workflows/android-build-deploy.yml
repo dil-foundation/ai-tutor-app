@@ -11,6 +11,7 @@ on:
         options:
           - production
           - preview
+          - development
 
 jobs:
   build-and-deploy:
@@ -26,7 +27,6 @@ jobs:
             exit 1
           fi
 
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -34,168 +34,124 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  # Disabled due to GitHub cache service issues
+          cache: 'npm'
 
-      - name: Install EAS CLI manually
-        run: |
-          echo "Installing EAS CLI without caching..."
-          npm install -g eas-cli@latest
-          eas --version
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: |
-          echo "Installing dependencies..."
-          npm install --no-optional --no-audit --no-fund
-        env:
-          # Disable all caching mechanisms
-          npm_config_cache: /tmp/npm-cache
-          npm_config_prefer_offline: false
-          npm_config_audit: false
-          npm_config_fund: false
+        run: npm ci
 
-      - name: Check EAS configuration
+      - name: Verify project configuration
         run: |
-          echo "🔍 Checking EAS configuration..."
-          if [ -f "eas.json" ]; then
-            echo "✅ eas.json found"
-            cat eas.json
-          else
-            echo "❌ eas.json not found - this may cause build issues"
-          fi
-          
-          echo "🔍 Checking for Android-specific configurations..."
-          if [ -f "android/app/build.gradle" ]; then
-            echo "✅ Android build.gradle found"
-          else
-            echo "⚠️ Android build.gradle not found in expected location"
-          fi
+          echo "🔍 Verifying Expo configuration..."
+          npx expo config --type public
 
-      - name: Build Android app with retry
+      - name: Build Android APK
+        id: build-step
         run: |
-          echo "🚀 Building Android app with profile: ${{ github.event.inputs.release_channel }}"
+          echo "🚀 Building Android APK with profile: ${{ github.event.inputs.release_channel }}"
           
-          # Function to attempt build with retry
-          build_with_retry() {
-            local max_attempts=3
-            local attempt=1
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔄 Build attempt $attempt of $max_attempts"
+          # Start the build and capture the build ID
+          BUILD_OUTPUT=$(eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --no-wait --json)
+          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.id')
+          
+          echo "📱 Build ID: $BUILD_ID"
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+          
+          # Wait for build completion with timeout
+          echo "⏳ Waiting for build to complete..."
+          timeout 1800 bash -c '
+            while true; do
+              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
+              echo "📊 Build status: $STATUS"
               
-              if eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait; then
-                echo "✅ Build successful on attempt $attempt"
-                return 0
-              else
-                echo "❌ Build failed on attempt $attempt"
-                if [ $attempt -lt $max_attempts ]; then
-                  echo "⏳ Waiting 30 seconds before retry..."
-                  sleep 30
-                fi
-                attempt=$((attempt + 1))
+              if [ "$STATUS" = "finished" ]; then
+                echo "✅ Build completed successfully!"
+                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
+                echo "🔗 Build URL: $BUILD_URL"
+                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+                break
+              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+                echo "❌ Build failed with status: $STATUS"
+                exit 1
               fi
+              
+              sleep 30
             done
-            
-            echo "❌ All build attempts failed"
-            return 1
-          }
-          
-          # Try building with retry
-          if ! build_with_retry; then
-            echo "🔄 Trying alternative build approach..."
-            echo "📱 Attempting build with --clear-cache flag..."
-            eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait --clear-cache
-          fi
+          '
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
-
       - name: Download APK
         run: |
           echo "📱 Downloading APK..."
+          BUILD_URL="${{ steps.build-step.outputs.build_url }}"
           
-          # Function to download APK with retry
-          download_apk_with_retry() {
-            local max_attempts=3
-            local attempt=1
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔄 Download attempt $attempt of $max_attempts"
-              
-              if eas build:list --platform android --limit 1 --json > build_info.json; then
-                BUILD_URL=$(cat build_info.json | jq -r '.[0].artifacts.buildUrl')
-                echo "📦 Build URL: $BUILD_URL"
-                
-                if curl -L -o dil-tutor-app.apk "$BUILD_URL"; then
-                  echo "✅ APK downloaded successfully: dil-tutor-app.apk"
-                  return 0
-                else
-                  echo "❌ APK download failed on attempt $attempt"
-                fi
+          # Download with retry mechanism
+          for attempt in 1 2 3; do
+            echo "🔄 Download attempt $attempt of 3"
+            if curl -L -o "dil-tutor-app-${{ github.event.inputs.release_channel }}.apk" "$BUILD_URL"; then
+              echo "✅ APK downloaded successfully!"
+              echo "📁 File: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+              break
+            else
+              echo "❌ Download failed on attempt $attempt"
+              if [ $attempt -lt 3 ]; then
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
               else
-                echo "❌ Failed to get build info on attempt $attempt"
+                echo "❌ All download attempts failed"
+                exit 1
               fi
-              
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting 15 seconds before retry..."
-                sleep 15
-              fi
-              attempt=$((attempt + 1))
-            done
-            
-            echo "❌ All download attempts failed"
-            return 1
-          }
-          
-          download_apk_with_retry
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+            fi
+          done
 
-      - name: Upload APK artifact
+      - name: Upload APK as GitHub artifact
         uses: actions/upload-artifact@v4
         with:
           name: dil-tutor-app-${{ github.event.inputs.release_channel }}-${{ github.run_number }}
-          path: dil-tutor-app.apk
+          path: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk
           retention-days: 30
 
-      - name: Notify completion
+      - name: Notify build completion
         if: always()
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Build completed successfully!"
-            echo "📱 APK artifact uploaded for distribution"
-            echo "📦 Download from GitHub Actions artifacts"
-            echo "📁 File: dil-tutor-app.apk"
+            echo "✅ Android APK build completed successfully!"
+            echo "📱 Build ID: ${{ steps.build-step.outputs.build_id }}"
+            echo "🔗 Build URL: ${{ steps.build-step.outputs.build_url }}"
+            echo "📦 Profile: ${{ github.event.inputs.release_channel }}"
+            echo "📁 APK File: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+            echo ""
+            echo "📋 Next Steps:"
+            echo "   1. Download APK from GitHub Actions artifacts"
+            echo "   2. Install directly on Android devices"
+            echo "   3. Distribute to testers or users"
           else
-            echo "❌ Build failed"
+            echo "❌ Android APK build failed"
             echo "Please check the logs above for details"
           fi
 
-  notify-deployment:
-    name: Notify Deployment Status
-    runs-on: ubuntu-latest
-    needs: build-and-deploy
-    if: always()
-    
-    steps:
-      - name: Build Success Notification
-        if: needs.build-and-deploy.result == 'success'
-        run: |
-          echo "🎉 Android build successful!"
-          echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
-          echo "⏰ Completed at: $(date)"
-
-      - name: Build Failure Notification
-        if: needs.build-and-deploy.result == 'failure'
-        run: |
-          echo "❌ Android build failed!"
-          echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
-          echo "⏰ Failed at: $(date)"
-          echo "Please check the build logs for details"
+      - name: Upload build info
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info-${{ github.run_number }}
+          path: |
+            package.json
+            app.json
+            eas.json
+          retention-days: 30
