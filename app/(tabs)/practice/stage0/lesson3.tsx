@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
     Animated,
+    ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchAudioFromText } from '../../../../config/api';
@@ -110,6 +111,7 @@ const vocabularyPages = chunkArray(vocabularyData, 1); // 1 category per page
 const Lesson3Screen: React.FC = () => {
     const [currentPageIndex, setCurrentPageIndex] = useState(0);
     const [playingItem, setPlayingItem] = useState<string | null>(null);
+    const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
     const [showFinishAnimation, setShowFinishAnimation] = useState(false);
 
     // Animation values
@@ -216,11 +218,15 @@ const Lesson3Screen: React.FC = () => {
                             </View>
                             <TouchableOpacity
                                 style={styles.playButtonContainer}
-                                disabled={playingItem !== null}
+                                disabled={playingItem !== null || isAudioLoading !== null}
                                 onPress={async () => {
                                     const audioText = isNumber ? `${item.number} for ${item.english}` : item.english;
+                                    setIsAudioLoading(audioText);
                                     setPlayingItem(audioText);
-                                    await playAudioFromText(audioText, () => setPlayingItem(null));
+                                    await playAudioFromText(audioText, () => {
+                                      setPlayingItem(null)
+                                      setIsAudioLoading(null);
+                                    });
                                 }}
                                 activeOpacity={0.8}
                             >
@@ -236,7 +242,9 @@ const Lesson3Screen: React.FC = () => {
                                         colors={currentCategory?.color || ['#58D68D', '#45B7A8']}
                                         style={styles.playButtonGradient}
                                     >
-                                        {playingItem === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
+                                        {isAudioLoading === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                        ) : playingItem === (isNumber ? `${item.number} for ${item.english}` : item.english) ? (
                                             <Ionicons name="pause" size={20} color="#FFFFFF" />
                                         ) : (
                                             <Ionicons name="play" size={20} color="#FFFFFF" />

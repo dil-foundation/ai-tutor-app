@@ -80,7 +80,7 @@ const StorytellingScreen = () => {
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
@@ -275,12 +275,16 @@ const StorytellingScreen = () => {
       console.log("❌ [AUDIO] Audio already playing");
       return;
     }
+    if (isAudioLoading) {
+      console.log("❌ [AUDIO] Audio is already loading");
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing prompt audio for ID:", currentPromptId);
     console.log("🔗 [AUDIO] Using endpoint:", API_ENDPOINTS.STORYTELLING_AUDIO(currentPromptId));
     
     try {
-      setIsPlayingAudio(true);
+      setIsAudioLoading(true);
       
       const response = await authenticatedFetch(API_ENDPOINTS.STORYTELLING_AUDIO(currentPromptId), {
         method: 'POST'
@@ -308,7 +312,7 @@ const StorytellingScreen = () => {
       console.error("❌ [AUDIO] Error playing audio:", error);
       Alert.alert('Error', 'Network error. Please check your connection.');
     } finally {
-      setIsPlayingAudio(false);
+      setIsAudioLoading(false);
     }
   };
 
@@ -706,17 +710,21 @@ const StorytellingScreen = () => {
                         console.log("🎯 [UI] Play button clicked!");
                         playPromptAudio();
                       }}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     

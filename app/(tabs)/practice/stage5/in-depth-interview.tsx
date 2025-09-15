@@ -77,7 +77,7 @@ const InDepthInterviewScreen = () => {
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
@@ -257,11 +257,11 @@ const InDepthInterviewScreen = () => {
 
   // Play prompt audio
   const playPromptAudio = async () => {
-    if (!currentPrompt || audioPlayer.state.isPlaying) return;
+    if (!currentPrompt || audioPlayer.state.isPlaying || isAudioLoading) return;
 
     console.log("🔄 [AUDIO] Playing prompt audio for ID:", currentPromptId);
+    setIsAudioLoading(true);
     try {
-      setIsPlayingAudio(true);
       
       const response = await authenticatedFetch(API_ENDPOINTS.IN_DEPTH_INTERVIEW(currentPromptId), {
         method: 'POST'
@@ -283,7 +283,7 @@ const InDepthInterviewScreen = () => {
       console.error("❌ [AUDIO] Error playing audio:", error);
       Alert.alert('Error', 'Network error. Please check your connection.');
     } finally {
-      setIsPlayingAudio(false);
+      setIsAudioLoading(false);
     }
   };
 
@@ -677,17 +677,21 @@ const InDepthInterviewScreen = () => {
                     <TouchableOpacity
                       style={styles.playButton}
                       onPress={playPromptAudio}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     

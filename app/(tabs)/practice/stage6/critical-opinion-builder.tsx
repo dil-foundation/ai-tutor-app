@@ -80,7 +80,7 @@ const CriticalOpinionBuilderScreen = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
@@ -184,9 +184,9 @@ const CriticalOpinionBuilderScreen = () => {
 
   // Play topic audio
   const playTopicAudio = async () => {
-    if (!currentTopic || audioPlayer.state.isPlaying) return;
+    if (!currentTopic || audioPlayer.state.isPlaying || isAudioLoading) return;
+    setIsAudioLoading(true);
     try {
-      setIsPlayingAudio(true);
       const response = await authenticatedFetch(API_ENDPOINTS.CRITICAL_OPINION_BUILDER(currentTopicId), {
         method: 'POST'
       });
@@ -202,7 +202,7 @@ const CriticalOpinionBuilderScreen = () => {
       console.error("❌ [AUDIO] Error:", error);
       Alert.alert('Error', 'Network error. Please check your connection.');
     } finally {
-      setIsPlayingAudio(false);
+      setIsAudioLoading(false);
     }
   };
 
@@ -464,9 +464,13 @@ const CriticalOpinionBuilderScreen = () => {
                       </View>
                     </View>
 
-                    <TouchableOpacity style={styles.playButton} onPress={playTopicAudio} disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}>
+                    <TouchableOpacity style={styles.playButton} onPress={playTopicAudio} disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}>
                       <LinearGradient colors={["#58D68D", "#45B7A8"]} style={styles.playButtonGradient}>
-                        <Ionicons name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} size={36} color="#fff" />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} size={36} color="#fff" />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     

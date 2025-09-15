@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
     Animated,
+    ActivityIndicator,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -52,6 +53,7 @@ const appNavigationData = [
 
 const Lesson5Screen: React.FC = () => {
     const [playingWord, setPlayingWord] = useState<string | null>(null);
+    const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
     const [showFinishAnimation, setShowFinishAnimation] = useState(false);
     
     // Animation values
@@ -199,17 +201,23 @@ const Lesson5Screen: React.FC = () => {
                                     >
                                         <TouchableOpacity
                                             style={styles.playButtonCircle}
-                                            disabled={playingWord !== null}
+                                            disabled={playingWord !== null || isAudioLoading !== null}
                                             onPress={async () => {
+                                                setIsAudioLoading(english);
                                                 setPlayingWord(english);
-                                                await playAudioFromText(english, () => setPlayingWord(null));
+                                                await playAudioFromText(english, () => {
+                                                    setPlayingWord(null)
+                                                    setIsAudioLoading(null);
+                                                });
                                             }}
                                         >
                                             <LinearGradient
                                                 colors={['#58D68D', '#45B7A8']}
                                                 style={styles.playButtonGradient}
                                             >
-                                                {playingWord === english ? (
+                                                {isAudioLoading === english ? (
+                                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                                ) : playingWord === english ? (
                                                     <Ionicons name="pause" size={20} color="#FFFFFF" />
                                                 ) : (
                                                     <Ionicons name="play" size={20} color="#FFFFFF" />

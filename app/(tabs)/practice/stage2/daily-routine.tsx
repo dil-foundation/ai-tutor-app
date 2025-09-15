@@ -13,7 +13,8 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
@@ -75,6 +76,7 @@ const DailyRoutineScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCongratulationsAnimation, setShowCongratulationsAnimation] = useState(false);
   const [showRetryAnimation, setShowRetryAnimation] = useState(false);
@@ -305,9 +307,10 @@ const DailyRoutineScreen = () => {
   };
 
   const playPhraseAudio = async () => {
-    if (!currentPhrase || audioPlayer.state.isPlaying) return;
+    if (!currentPhrase || audioPlayer.state.isPlaying || isAudioLoading) return;
 
     console.log("🔄 [AUDIO] Playing phrase audio for ID:", currentTopicId);
+    setIsAudioLoading(true);
     try {
       const response = await authenticatedFetch(API_ENDPOINTS.DAILY_ROUTINE(currentTopicId), {
         method: 'POST'
@@ -328,6 +331,8 @@ const DailyRoutineScreen = () => {
     } catch (error) {
       console.error("❌ [AUDIO] Error playing audio:", error);
       setError('Network error. Please check your connection.');
+    } finally {
+      setIsAudioLoading(false);
     }
   };
 
@@ -649,17 +654,21 @@ const DailyRoutineScreen = () => {
                     <TouchableOpacity
                       style={styles.playButton}
                       onPress={playPhraseAudio}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     
