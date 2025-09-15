@@ -93,27 +93,37 @@ const isProductionBuild = !__DEV__;
 try {
   // Try to import real RNUxcam only in dev client or production build
   if (isDevelopmentClient || isProductionBuild) {
-    const realUXCam = require('react-native-ux-cam').default;
-    if (realUXCam && (typeof realUXCam.startWithKey === 'function' || typeof realUXCam.startWithConfiguration === 'function')) {
-      RNUxcam = realUXCam;
-      isRealUXCam = true;
-      console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
-      console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : (isDevelopmentClient ? 'Dev Client' : 'Expo Go'));
-    } else {
-      throw new Error('UXCam SDK methods not found');
+    try {
+      const uxCamModule = require('react-native-ux-cam');
+      const realUXCam = uxCamModule?.default || uxCamModule;
+      
+      if (realUXCam && typeof realUXCam === 'object' && 
+          (typeof realUXCam.startWithKey === 'function' || 
+           typeof realUXCam.startWithConfiguration === 'function')) {
+        RNUxcam = realUXCam;
+        isRealUXCam = true;
+        console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
+        console.log('🎥 [UXCam] Available methods:', Object.keys(realUXCam).filter(key => typeof realUXCam[key] === 'function'));
+        console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : (isDevelopmentClient ? 'Dev Client' : 'Expo Go'));
+      } else {
+        throw new Error('UXCam SDK methods not found or invalid module structure');
+      }
+    } catch (moduleError) {
+      console.warn('🎥 [UXCam] Failed to load native module:', moduleError);
+      throw new Error('UXCam native module not available');
     }
   } else {
     throw new Error('Not in a dev client or production build, using mock');
   }
 } catch (error) {
-  // Fall back to mock implementation for Expo Go
+  // Fall back to mock implementation for any error
   RNUxcam = createMockUXCam();
   isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation for Expo Go');
+  console.log('🎥 [UXCam] Using mock implementation');
   if (error instanceof Error) {
     console.log('🎥 [UXCam] Reason:', error.message);
   }
-  // Don't throw error, just use mock
+  // Ensure we never throw an error that could crash the app
 }
 
 export interface UXCamUserProperties {
@@ -182,8 +192,16 @@ class UXCamService {
           };
           await RNUxcam.startWithConfiguration(configuration);
           console.log('🎥 [UXCam] Initialized with startWithConfiguration');
+        } else if (typeof RNUxcam.startWithKey === 'function') {
+          // Fallback to older SDK method
+          await RNUxcam.startWithKey(config.API_KEY);
+          console.log('🎥 [UXCam] Initialized with startWithKey (fallback)');
         } else {
-          throw new Error('No valid UXCam initialization method found. startWithConfiguration is missing.');
+          console.warn('🎥 [UXCam] No valid initialization method found, using mock implementation');
+          // Don't throw error, just use mock
+          RNUxcam = createMockUXCam();
+          isRealUXCam = false;
+          await RNUxcam.startWithKey(config.API_KEY);
         }
       } else {
         // Mock implementation

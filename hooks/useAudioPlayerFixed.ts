@@ -1,16 +1,24 @@
-import { useState, useRef, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
 
 // Import Audio with error handling for Turbo module issues
 let Audio: any = null;
 let InterruptionModeIOS: any = null;
+let isAudioAvailable = false;
 
 try {
   const expoAv = require('expo-av');
-  Audio = expoAv.Audio;
-  InterruptionModeIOS = expoAv.InterruptionModeIOS;
+  if (expoAv && expoAv.Audio) {
+    Audio = expoAv.Audio;
+    InterruptionModeIOS = expoAv.InterruptionModeIOS;
+    isAudioAvailable = true;
+    console.log('✅ [Audio] expo-av loaded successfully');
+  } else {
+    throw new Error('expo-av module structure invalid');
+  }
 } catch (error) {
-  console.error('❌ Failed to load expo-av:', error);
+  console.error('❌ [Audio] Failed to load expo-av:', error);
+  console.warn('⚠️ [Audio] Audio functionality will be disabled');
+  isAudioAvailable = false;
 }
 
 interface AudioPlayerState {

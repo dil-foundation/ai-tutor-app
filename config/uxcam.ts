@@ -1,8 +1,16 @@
-import { UXCAM_API_KEY } from '@env';
+// Safe environment variable import with fallback
+let UXCAM_API_KEY: string | undefined;
+try {
+  const envModule = require('@env');
+  UXCAM_API_KEY = envModule?.UXCAM_API_KEY;
+} catch (error) {
+  console.warn('⚠️ [UXCam Config] Failed to load environment variables:', error);
+  UXCAM_API_KEY = undefined;
+}
 
 // UXCam Configuration
 export const UXCamConfig = {
-  // Load API key from environment variables
+  // Load API key from environment variables with safe fallback
   API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
   
   // Environment configuration

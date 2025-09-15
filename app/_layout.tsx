@@ -1,21 +1,48 @@
 // app/_layout.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LanguageModeProvider } from './context/LanguageModeContext';
-import { AuthProvider, useAuth } from '../context/AuthContext';
-import { UXCamProvider } from '../context/UXCamContext';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
-import { ErrorBoundary } from '../components/ErrorBoundary';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { UXCamProvider } from '../context/UXCamContext';
+import { LanguageModeProvider } from './context/LanguageModeContext';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
+
+// Global error handler for unhandled promise rejections and JS errors
+if (typeof global !== 'undefined') {
+  global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+    console.error('🚨 [Global Error Handler] Caught error:', error);
+    console.error('🚨 [Global Error Handler] Is fatal:', isFatal);
+    // Don't crash the app for non-fatal errors
+    if (!isFatal) {
+      console.log('🔄 [Global Error Handler] Non-fatal error, continuing...');
+    }
+  });
+}
+
+// Handle unhandled promise rejections
+const originalHandler = global.Promise?.prototype?.catch;
+if (originalHandler) {
+  global.Promise.prototype.catch = function(onRejected) {
+    return originalHandler.call(this, (error: any) => {
+      console.error('🚨 [Unhandled Promise Rejection]:', error);
+      if (onRejected) {
+        return onRejected(error);
+      }
+      // Don't let unhandled promise rejections crash the app
+      return Promise.resolve();
+    });
+  };
+}
 
 SplashScreen.preventAutoHideAsync();
 
