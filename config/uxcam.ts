@@ -135,9 +135,14 @@ export const getUXCamConfig = () => {
     ...UXCamConfig.ENVIRONMENTS[environment],
   };
   
-  // Validate API key
-  if (!config.API_KEY || config.API_KEY === 'xnayvk2m8m2h8xw-us') {
-    console.warn('UXCam API key not properly configured. Using default key.');
+  // Validate API key and provide safe fallback
+  if (!config.API_KEY) {
+    console.warn('⚠️ [UXCam Config] API key is undefined, using safe fallback');
+    config.API_KEY = 'xnayvk2m8m2h8xw-us';
+  } else if (config.API_KEY === 'xnayvk2m8m2h8xw-us') {
+    console.log('🎥 [UXCam Config] Using default API key');
+  } else {
+    console.log('🎥 [UXCam Config] Using custom API key:', config.API_KEY.substring(0, 8) + '...');
   }
   
   return config;

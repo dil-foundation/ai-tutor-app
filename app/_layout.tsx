@@ -19,29 +19,31 @@ import { LanguageModeProvider } from './context/LanguageModeContext';
 
 // Global error handler for unhandled promise rejections and JS errors
 if (typeof global !== 'undefined') {
-  global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
-    console.error('🚨 [Global Error Handler] Caught error:', error);
-    console.error('🚨 [Global Error Handler] Is fatal:', isFatal);
-    // Don't crash the app for non-fatal errors
-    if (!isFatal) {
-      console.log('🔄 [Global Error Handler] Non-fatal error, continuing...');
-    }
-  });
+  // Type-safe error handler
+  const globalAny = global as any;
+  if (globalAny.ErrorUtils?.setGlobalHandler) {
+    globalAny.ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      console.error('🚨 [Global Error Handler] Caught error:', error);
+      console.error('🚨 [Global Error Handler] Is fatal:', isFatal);
+      // Don't crash the app for non-fatal errors
+      if (!isFatal) {
+        console.log('🔄 [Global Error Handler] Non-fatal error, continuing...');
+      }
+    });
+  }
 }
 
-// Handle unhandled promise rejections
-const originalHandler = global.Promise?.prototype?.catch;
-if (originalHandler) {
-  global.Promise.prototype.catch = function(onRejected) {
-    return originalHandler.call(this, (error: any) => {
-      console.error('🚨 [Unhandled Promise Rejection]:', error);
-      if (onRejected) {
-        return onRejected(error);
-      }
-      // Don't let unhandled promise rejections crash the app
-      return Promise.resolve();
+// Handle unhandled promise rejections safely
+if (typeof global !== 'undefined') {
+  const originalRejectionHandler = global.Promise;
+  if (originalRejectionHandler) {
+    // Set up a global unhandled rejection handler
+    process?.on?.('unhandledRejection', (reason: any, promise: Promise<any>) => {
+      console.error('🚨 [Unhandled Promise Rejection]:', reason);
+      console.error('🚨 [Promise]:', promise);
+      // Don't crash the app
     });
-  };
+  }
 }
 
 SplashScreen.preventAutoHideAsync();
@@ -128,6 +130,19 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      
+      // Initialize UXCam after app is fully loaded
+      setTimeout(async () => {
+        try {
+          const UXCamService = (await import('../services/UXCamService')).default;
+          const uxcamService = UXCamService.getInstance();
+          await uxcamService.initialize();
+          console.log('🎉 [App] UXCam initialized after app load');
+        } catch (error) {
+          console.warn('⚠️ [App] UXCam initialization failed:', error);
+          // Don't crash the app if UXCam fails
+        }
+      }, 2000); // Wait 2 seconds after app loads
     }
   }, [loaded]);
 
@@ -139,7 +154,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <AuthProvider>
         <LanguageModeProvider>
-          <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
+          <UXCamProvider autoInitialize={false} defaultEnabled={true} defaultPrivacyMode={false}>
             <ThemeProvider value={DefaultTheme}>
               <StatusBar style="light" />
               <RootLayoutNav />

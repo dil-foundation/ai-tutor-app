@@ -81,49 +81,89 @@ const createMockUXCam = () => ({
   },
 });
 
-// Use mock for development, real RNUxcam for production builds
-let RNUxcam: any;
+// Safe UXCam module loading with comprehensive error handling
+let RNUxcam: any = null;
 let isRealUXCam = false;
+let uxcamLoadError: string | null = null;
 
 // Check if we're in a production build or development build
-// Use EXPO_DEV_CLIENT to detect custom development client
 const isDevelopmentClient = !!process.env.EXPO_DEV_CLIENT;
 const isProductionBuild = !__DEV__;
 
-try {
-  // Try to import real RNUxcam only in dev client or production build
-  if (isDevelopmentClient || isProductionBuild) {
+// Initialize with mock first to ensure we always have a working implementation
+RNUxcam = createMockUXCam();
+isRealUXCam = false;
+
+// Only attempt to load real UXCam in production or dev client builds
+if (isDevelopmentClient || isProductionBuild) {
+  try {
+    console.log('🎥 [UXCam] Attempting to load native UXCam module...');
+    
+    // Multiple loading strategies
+    let uxCamModule: any = null;
+    
+    // Strategy 1: Direct require
     try {
-      const uxCamModule = require('react-native-ux-cam');
-      const realUXCam = uxCamModule?.default || uxCamModule;
+      uxCamModule = require('react-native-ux-cam');
+    } catch (e1) {
+      console.log('🎥 [UXCam] Strategy 1 failed:', e1);
       
-      if (realUXCam && typeof realUXCam === 'object' && 
-          (typeof realUXCam.startWithKey === 'function' || 
-           typeof realUXCam.startWithConfiguration === 'function')) {
-        RNUxcam = realUXCam;
-        isRealUXCam = true;
-        console.log('🎥 [UXCam] Real UXCam SDK loaded successfully');
-        console.log('🎥 [UXCam] Available methods:', Object.keys(realUXCam).filter(key => typeof realUXCam[key] === 'function'));
-        console.log('🎥 [UXCam] Build type:', isProductionBuild ? 'Production' : (isDevelopmentClient ? 'Dev Client' : 'Expo Go'));
-      } else {
-        throw new Error('UXCam SDK methods not found or invalid module structure');
+      // Strategy 2: Try with different import path
+      try {
+        uxCamModule = require('react-native-ux-cam/lib/index');
+      } catch (e2) {
+        console.log('🎥 [UXCam] Strategy 2 failed:', e2);
+        
+        // Strategy 3: Try NativeModules
+        try {
+          const { NativeModules } = require('react-native');
+          uxCamModule = NativeModules.RNUxcam;
+        } catch (e3) {
+          console.log('🎥 [UXCam] Strategy 3 failed:', e3);
+          throw new Error('All loading strategies failed');
+        }
       }
-    } catch (moduleError) {
-      console.warn('🎥 [UXCam] Failed to load native module:', moduleError);
-      throw new Error('UXCam native module not available');
     }
-  } else {
-    throw new Error('Not in a dev client or production build, using mock');
+    
+    if (!uxCamModule) {
+      throw new Error('UXCam module is null or undefined');
+    }
+    
+    // Extract the actual UXCam object
+    const realUXCam = uxCamModule.default || uxCamModule.RNUxcam || uxCamModule;
+    
+    if (!realUXCam || typeof realUXCam !== 'object') {
+      throw new Error('UXCam module structure is invalid');
+    }
+    
+    // Verify essential methods exist
+    const hasStartWithKey = typeof realUXCam.startWithKey === 'function';
+    const hasStartWithConfiguration = typeof realUXCam.startWithConfiguration === 'function';
+    
+    if (!hasStartWithKey && !hasStartWithConfiguration) {
+      throw new Error('No valid UXCam initialization methods found');
+    }
+    
+    // Success! Use the real UXCam
+    RNUxcam = realUXCam;
+    isRealUXCam = true;
+    
+    console.log('✅ [UXCam] Native UXCam SDK loaded successfully');
+    console.log('🎥 [UXCam] Available methods:', Object.keys(realUXCam).filter(key => typeof realUXCam[key] === 'function'));
+    console.log('🎥 [UXCam] Has startWithKey:', hasStartWithKey);
+    console.log('🎥 [UXCam] Has startWithConfiguration:', hasStartWithConfiguration);
+    
+  } catch (error) {
+    uxcamLoadError = error instanceof Error ? error.message : String(error);
+    console.warn('⚠️ [UXCam] Failed to load native module:', uxcamLoadError);
+    console.log('🎥 [UXCam] Falling back to mock implementation');
+    
+    // Keep the mock implementation we initialized earlier
+    RNUxcam = createMockUXCam();
+    isRealUXCam = false;
   }
-} catch (error) {
-  // Fall back to mock implementation for any error
-  RNUxcam = createMockUXCam();
-  isRealUXCam = false;
-  console.log('🎥 [UXCam] Using mock implementation');
-  if (error instanceof Error) {
-    console.log('🎥 [UXCam] Reason:', error.message);
-  }
-  // Ensure we never throw an error that could crash the app
+} else {
+  console.log('🎥 [UXCam] Running in Expo Go, using mock implementation');
 }
 
 export interface UXCamUserProperties {
@@ -157,79 +197,130 @@ class UXCamService {
   }
 
   /**
-   * Initialize UXCam with configuration
+   * Initialize UXCam with comprehensive error handling
    */
   public async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.log('UXCam already initialized');
+      console.log('🎥 [UXCam] Already initialized');
       return;
     }
 
-    // Ensure RNUxcam is available
+    console.log('🎥 [UXCam] Starting initialization...');
+
+    // Ensure RNUxcam is available (should always be true due to our loading strategy)
     if (!RNUxcam) {
-      console.error('UXCam is not available');
-      this.isInitialized = true; // Mark as initialized to prevent retry loops
-      return;
+      console.error('🎥 [UXCam] RNUxcam is not available, this should not happen');
+      RNUxcam = createMockUXCam();
+      isRealUXCam = false;
     }
 
     try {
       const config = getUXCamConfig();
+      console.log('🎥 [UXCam] Using API key:', config.API_KEY ? config.API_KEY.substring(0, 8) + '...' : 'undefined');
       
-      // Try different initialization methods based on SDK version
+      // Initialize based on available methods
+      let initializationSuccess = false;
+      
       if (isRealUXCam) {
-        // Add this line to enable iOS screen recordings
-        if (Platform.OS === 'ios') {
-          RNUxcam.optIntoSchematicRecordings();
-        }
-
+        console.log('🎥 [UXCam] Attempting real UXCam initialization...');
+        
+        // Strategy 1: Try startWithConfiguration (newer SDK)
         if (typeof RNUxcam.startWithConfiguration === 'function') {
-          // New SDK version with configuration object
-          const configuration = {
-            userAppKey: config.API_KEY,
-            enableAutomaticScreenNameTagging: false,
-            enableAdvancedGestureRecognition: true,
-            enableImprovedScreenCapture: true,
-          };
-          await RNUxcam.startWithConfiguration(configuration);
-          console.log('🎥 [UXCam] Initialized with startWithConfiguration');
-        } else if (typeof RNUxcam.startWithKey === 'function') {
-          // Fallback to older SDK method
-          await RNUxcam.startWithKey(config.API_KEY);
-          console.log('🎥 [UXCam] Initialized with startWithKey (fallback)');
-        } else {
-          console.warn('🎥 [UXCam] No valid initialization method found, using mock implementation');
-          // Don't throw error, just use mock
+          try {
+            const configuration = {
+              userAppKey: config.API_KEY,
+              enableAutomaticScreenNameTagging: false,
+              enableAdvancedGestureRecognition: true,
+              enableImprovedScreenCapture: true,
+            };
+            
+            await RNUxcam.startWithConfiguration(configuration);
+            console.log('✅ [UXCam] Initialized with startWithConfiguration');
+            initializationSuccess = true;
+            
+            // Enable iOS screen recordings if available
+            if (Platform.OS === 'ios' && typeof RNUxcam.optIntoSchematicRecordings === 'function') {
+              try {
+                await RNUxcam.optIntoSchematicRecordings();
+                console.log('✅ [UXCam] iOS schematic recordings enabled');
+              } catch (iosError) {
+                console.warn('⚠️ [UXCam] Failed to enable iOS recordings:', iosError);
+              }
+            }
+            
+          } catch (configError) {
+            console.warn('⚠️ [UXCam] startWithConfiguration failed:', configError);
+          }
+        }
+        
+        // Strategy 2: Try startWithKey (older SDK) if configuration failed
+        if (!initializationSuccess && typeof RNUxcam.startWithKey === 'function') {
+          try {
+            await RNUxcam.startWithKey(config.API_KEY);
+            console.log('✅ [UXCam] Initialized with startWithKey');
+            initializationSuccess = true;
+          } catch (keyError) {
+            console.warn('⚠️ [UXCam] startWithKey failed:', keyError);
+          }
+        }
+        
+        // If real UXCam failed, fall back to mock
+        if (!initializationSuccess) {
+          console.warn('⚠️ [UXCam] Real UXCam initialization failed, switching to mock');
           RNUxcam = createMockUXCam();
           isRealUXCam = false;
-          await RNUxcam.startWithKey(config.API_KEY);
         }
-      } else {
-        // Mock implementation
-        await RNUxcam.startWithKey(config.API_KEY);
-        console.log('🎥 [UXCam] Mock implementation initialized');
       }
       
-      // Configure privacy settings
-      this.configurePrivacySettings();
+      // Initialize mock implementation if needed
+      if (!isRealUXCam) {
+        try {
+          await RNUxcam.startWithKey(config.API_KEY);
+          console.log('✅ [UXCam] Mock implementation initialized');
+          initializationSuccess = true;
+        } catch (mockError) {
+          console.error('❌ [UXCam] Even mock initialization failed:', mockError);
+          // This should never happen, but just in case
+          initializationSuccess = true; // Continue anyway
+        }
+      }
       
-      // Configure recording settings
-      this.configureRecordingSettings();
-      
-      // Set up event listeners
-      this.setupEventListeners();
+      // Configure additional settings only if we have a working UXCam instance
+      if (initializationSuccess) {
+        try {
+          this.configurePrivacySettings();
+          this.configureRecordingSettings();
+          this.setupEventListeners();
+          console.log('✅ [UXCam] Additional configuration completed');
+        } catch (configError) {
+          console.warn('⚠️ [UXCam] Additional configuration failed:', configError);
+          // Don't fail initialization for configuration errors
+        }
+      }
       
       this.isInitialized = true;
-      console.log('🎥 [UXCam] Initialization completed successfully');
+      console.log('🎉 [UXCam] Initialization completed successfully');
+      console.log('🎥 [UXCam] Using:', isRealUXCam ? 'Real UXCam SDK' : 'Mock Implementation');
+      
     } catch (error) {
-      console.error('🎥 [UXCam] Failed to initialize:', error);
-      console.log('🎥 [UXCam] Continuing with mock implementation...');
-      // Don't throw error in development, just log it
-      this.isInitialized = true; // Mark as initialized to prevent retry loops
+      console.error('❌ [UXCam] Critical initialization error:', error);
+      
+      // Last resort: ensure we have a working mock
+      try {
+        RNUxcam = createMockUXCam();
+        isRealUXCam = false;
+        this.isInitialized = true;
+        console.log('🔄 [UXCam] Recovered with mock implementation');
+      } catch (recoveryError) {
+        console.error('💥 [UXCam] Recovery failed:', recoveryError);
+        // Mark as initialized anyway to prevent infinite loops
+        this.isInitialized = true;
+      }
     }
   }
 
   /**
-   * Configure privacy settings
+   * Configure privacy settings with safe method calls
    */
   private configurePrivacySettings(): void {
     if (!RNUxcam) return;
@@ -237,16 +328,30 @@ class UXCamService {
     try {
       // Exclude sensitive screens
       UXCamConfig.PRIVACY.EXCLUDED_SCREENS.forEach(screenName => {
-        RNUxcam.addScreenNameToIgnore(screenName);
+        this.safeCall(() => RNUxcam.addScreenNameToIgnore(screenName), 'addScreenNameToIgnore');
       });
 
       // Set up sensitive data masking
-      RNUxcam.setAutomaticScreenNameTagging(true);
+      this.safeCall(() => RNUxcam.setAutomaticScreenNameTagging(true), 'setAutomaticScreenNameTagging');
       
       // Configure privacy options
-      RNUxcam.setUserProperty('privacy_enabled', 'true');
+      this.safeCall(() => RNUxcam.setUserProperty('privacy_enabled', 'true'), 'setUserProperty');
+      
+      console.log('✅ [UXCam] Privacy settings configured');
     } catch (error) {
-      console.error('Failed to configure privacy settings:', error);
+      console.warn('⚠️ [UXCam] Failed to configure privacy settings:', error);
+    }
+  }
+
+  /**
+   * Safe method call wrapper
+   */
+  private safeCall(fn: () => any, methodName: string): any {
+    try {
+      return fn();
+    } catch (error) {
+      console.warn(`⚠️ [UXCam] ${methodName} failed:`, error);
+      return null;
     }
   }
 
