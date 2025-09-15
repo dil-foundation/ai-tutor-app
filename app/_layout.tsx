@@ -19,8 +19,8 @@ import { LanguageModeProvider } from './context/LanguageModeContext';
 // Global error handlers to prevent crashes
 if (typeof global !== 'undefined') {
   // Handle JavaScript errors
-  const originalErrorHandler = global.ErrorUtils?.getGlobalHandler?.();
-  global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+  const originalErrorHandler = (global as any).ErrorUtils?.getGlobalHandler?.();
+  (global as any).ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
     console.error('🚨 [Global Error Handler] Caught error:', error);
     console.error('🚨 [Global Error Handler] Is fatal:', isFatal);
     console.error('🚨 [Global Error Handler] Stack:', error.stack);
@@ -41,8 +41,8 @@ if (typeof global !== 'undefined') {
   });
 
   // Handle unhandled promise rejections
-  const originalRejectionHandler = global.onunhandledrejection;
-  global.onunhandledrejection = (event: any) => {
+  const originalRejectionHandler = (global as any).onunhandledrejection;
+  (global as any).onunhandledrejection = (event: any) => {
     console.error('🚨 [Unhandled Promise Rejection]:', event.reason);
     console.error('🚨 [Unhandled Promise Rejection] Stack:', event.reason?.stack);
     
@@ -60,9 +60,9 @@ if (typeof global !== 'undefined') {
   };
 
   // Add native crash protection
-  if (global.nativeCallSyncHook) {
-    const originalNativeCallSyncHook = global.nativeCallSyncHook;
-    global.nativeCallSyncHook = function(moduleID: number, methodID: number, params: any[]) {
+  if ((global as any).nativeCallSyncHook) {
+    const originalNativeCallSyncHook = (global as any).nativeCallSyncHook;
+    (global as any).nativeCallSyncHook = function(moduleID: number, methodID: number, params: any[]) {
       try {
         return originalNativeCallSyncHook.call(this, moduleID, methodID, params);
       } catch (error) {
@@ -76,11 +76,11 @@ if (typeof global !== 'undefined') {
 }
 
 // Hermes memory management
-if (typeof global !== 'undefined' && global.HermesInternal) {
+if (typeof global !== 'undefined' && (global as any).HermesInternal) {
   // Enable garbage collection optimizations
-  if (global.HermesInternal.enableSamplingProfiler) {
+  if ((global as any).HermesInternal.enableSamplingProfiler) {
     try {
-      global.HermesInternal.enableSamplingProfiler();
+      (global as any).HermesInternal.enableSamplingProfiler();
     } catch (error) {
       console.warn('⚠️ [Hermes] Could not enable sampling profiler:', error);
     }
@@ -89,10 +89,10 @@ if (typeof global !== 'undefined' && global.HermesInternal) {
   // Force garbage collection periodically to prevent memory buildup
   setInterval(() => {
     try {
-      if (global.gc) {
-        global.gc();
-      } else if (global.HermesInternal?.gc) {
-        global.HermesInternal.gc();
+      if ((global as any).gc) {
+        (global as any).gc();
+      } else if ((global as any).HermesInternal?.gc) {
+        (global as any).HermesInternal.gc();
       }
     } catch (error) {
       // Ignore GC errors
