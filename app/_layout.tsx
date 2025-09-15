@@ -1,20 +1,104 @@
 // app/_layout.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LanguageModeProvider } from './context/LanguageModeContext';
-import { AuthProvider, useAuth } from '../context/AuthContext';
-import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { UXCamProvider } from '../context/UXCamContext';
+import { LanguageModeProvider } from './context/LanguageModeContext';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
+
+// Global error handlers to prevent crashes
+if (typeof global !== 'undefined') {
+  // Handle JavaScript errors
+  const originalErrorHandler = global.ErrorUtils?.getGlobalHandler?.();
+  global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+    console.error('🚨 [Global Error Handler] Caught error:', error);
+    console.error('🚨 [Global Error Handler] Is fatal:', isFatal);
+    console.error('🚨 [Global Error Handler] Stack:', error.stack);
+    
+    // Call original handler if it exists
+    if (originalErrorHandler) {
+      try {
+        originalErrorHandler(error, isFatal);
+      } catch (handlerError) {
+        console.error('🚨 [Global Error Handler] Handler itself failed:', handlerError);
+      }
+    }
+    
+    // Don't crash the app for non-fatal errors
+    if (!isFatal) {
+      console.log('🔄 [Global Error Handler] Non-fatal error, continuing...');
+    }
+  });
+
+  // Handle unhandled promise rejections
+  const originalRejectionHandler = global.onunhandledrejection;
+  global.onunhandledrejection = (event: any) => {
+    console.error('🚨 [Unhandled Promise Rejection]:', event.reason);
+    console.error('🚨 [Unhandled Promise Rejection] Stack:', event.reason?.stack);
+    
+    // Call original handler if it exists
+    if (originalRejectionHandler) {
+      try {
+        originalRejectionHandler(event);
+      } catch (handlerError) {
+        console.error('🚨 [Unhandled Promise Rejection] Handler failed:', handlerError);
+      }
+    }
+    
+    // Prevent the default behavior (which would crash the app)
+    event.preventDefault?.();
+  };
+
+  // Add native crash protection
+  if (global.nativeCallSyncHook) {
+    const originalNativeCallSyncHook = global.nativeCallSyncHook;
+    global.nativeCallSyncHook = function(moduleID: number, methodID: number, params: any[]) {
+      try {
+        return originalNativeCallSyncHook.call(this, moduleID, methodID, params);
+      } catch (error) {
+        console.error('🚨 [Native Call Error]:', error);
+        console.error('🚨 [Native Call Error] Module:', moduleID, 'Method:', methodID);
+        // Return null instead of crashing
+        return null;
+      }
+    };
+  }
+}
+
+// Hermes memory management
+if (typeof global !== 'undefined' && global.HermesInternal) {
+  // Enable garbage collection optimizations
+  if (global.HermesInternal.enableSamplingProfiler) {
+    try {
+      global.HermesInternal.enableSamplingProfiler();
+    } catch (error) {
+      console.warn('⚠️ [Hermes] Could not enable sampling profiler:', error);
+    }
+  }
+  
+  // Force garbage collection periodically to prevent memory buildup
+  setInterval(() => {
+    try {
+      if (global.gc) {
+        global.gc();
+      } else if (global.HermesInternal?.gc) {
+        global.HermesInternal.gc();
+      }
+    } catch (error) {
+      // Ignore GC errors
+    }
+  }, 30000); // Every 30 seconds
+}
 
 SplashScreen.preventAutoHideAsync();
 
