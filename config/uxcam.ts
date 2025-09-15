@@ -122,8 +122,15 @@ export const getCurrentEnvironment = (): 'development' | 'staging' | 'production
 // Get configuration for current environment
 export const getUXCamConfig = () => {
   const environment = getCurrentEnvironment();
-  return {
+  const config = {
     ...UXCamConfig,
     ...UXCamConfig.ENVIRONMENTS[environment],
   };
+  
+  // Validate API key
+  if (!config.API_KEY || config.API_KEY === 'xnayvk2m8m2h8xw-us') {
+    console.warn('UXCam API key not properly configured. Using default key.');
+  }
+  
+  return config;
 };

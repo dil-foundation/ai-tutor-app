@@ -113,6 +113,7 @@ try {
   if (error instanceof Error) {
     console.log('🎥 [UXCam] Reason:', error.message);
   }
+  // Don't throw error, just use mock
 }
 
 export interface UXCamUserProperties {

@@ -12,6 +12,7 @@ import { UXCamProvider } from '../context/UXCamContext';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
@@ -91,7 +92,10 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error('Font loading error:', error);
+      // Don't throw error, just log it
+    }
   }, [error]);
 
   useEffect(() => {
@@ -105,15 +109,17 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <LanguageModeProvider>
-        <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
-          <ThemeProvider value={DefaultTheme}>
-            <StatusBar style="light" />
-            <RootLayoutNav />
-          </ThemeProvider>
-        </UXCamProvider>
-      </LanguageModeProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageModeProvider>
+          <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
+            <ThemeProvider value={DefaultTheme}>
+              <StatusBar style="light" />
+              <RootLayoutNav />
+            </ThemeProvider>
+          </UXCamProvider>
+        </LanguageModeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
