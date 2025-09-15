@@ -30,7 +30,7 @@ if (typeof global !== 'undefined') {
       try {
         originalErrorHandler(error, isFatal);
       } catch (handlerError) {
-        console.error('🚨 [Global Error Handler] Handler itself failed:', handlerError);
+        console.error('🚨 [Global Error Handler] Handler itself failed:', handlerError); 
       }
     }
     
