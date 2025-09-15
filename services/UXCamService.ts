@@ -81,90 +81,17 @@ const createMockUXCam = () => ({
   },
 });
 
-// Safe UXCam module loading with comprehensive error handling
+// COMPLETELY DISABLE UXCAM TO PREVENT CRASHES
+// UXCam is disabled until the crash issue is resolved
 let RNUxcam: any = null;
 let isRealUXCam = false;
-let uxcamLoadError: string | null = null;
+let uxcamLoadError: string | null = 'UXCam disabled to prevent crashes';
 
-// Check if we're in a production build or development build
-const isDevelopmentClient = !!process.env.EXPO_DEV_CLIENT;
-const isProductionBuild = !__DEV__;
+console.log('🚫 [UXCam] DISABLED - UXCam completely disabled to prevent app crashes');
 
-// Initialize with mock first to ensure we always have a working implementation
+// Always use mock implementation - no native module loading
 RNUxcam = createMockUXCam();
 isRealUXCam = false;
-
-// Only attempt to load real UXCam in production or dev client builds
-if (isDevelopmentClient || isProductionBuild) {
-  try {
-    console.log('🎥 [UXCam] Attempting to load native UXCam module...');
-    
-    // Multiple loading strategies
-    let uxCamModule: any = null;
-    
-    // Strategy 1: Direct require
-    try {
-      uxCamModule = require('react-native-ux-cam');
-    } catch (e1) {
-      console.log('🎥 [UXCam] Strategy 1 failed:', e1);
-      
-      // Strategy 2: Try with different import path
-      try {
-        uxCamModule = require('react-native-ux-cam/lib/index');
-      } catch (e2) {
-        console.log('🎥 [UXCam] Strategy 2 failed:', e2);
-        
-        // Strategy 3: Try NativeModules
-        try {
-          const { NativeModules } = require('react-native');
-          uxCamModule = NativeModules.RNUxcam;
-        } catch (e3) {
-          console.log('🎥 [UXCam] Strategy 3 failed:', e3);
-          throw new Error('All loading strategies failed');
-        }
-      }
-    }
-    
-    if (!uxCamModule) {
-      throw new Error('UXCam module is null or undefined');
-    }
-    
-    // Extract the actual UXCam object
-    const realUXCam = uxCamModule.default || uxCamModule.RNUxcam || uxCamModule;
-    
-    if (!realUXCam || typeof realUXCam !== 'object') {
-      throw new Error('UXCam module structure is invalid');
-    }
-    
-    // Verify essential methods exist
-    const hasStartWithKey = typeof realUXCam.startWithKey === 'function';
-    const hasStartWithConfiguration = typeof realUXCam.startWithConfiguration === 'function';
-    
-    if (!hasStartWithKey && !hasStartWithConfiguration) {
-      throw new Error('No valid UXCam initialization methods found');
-    }
-    
-    // Success! Use the real UXCam
-    RNUxcam = realUXCam;
-    isRealUXCam = true;
-    
-    console.log('✅ [UXCam] Native UXCam SDK loaded successfully');
-    console.log('🎥 [UXCam] Available methods:', Object.keys(realUXCam).filter(key => typeof realUXCam[key] === 'function'));
-    console.log('🎥 [UXCam] Has startWithKey:', hasStartWithKey);
-    console.log('🎥 [UXCam] Has startWithConfiguration:', hasStartWithConfiguration);
-    
-  } catch (error) {
-    uxcamLoadError = error instanceof Error ? error.message : String(error);
-    console.warn('⚠️ [UXCam] Failed to load native module:', uxcamLoadError);
-    console.log('🎥 [UXCam] Falling back to mock implementation');
-    
-    // Keep the mock implementation we initialized earlier
-    RNUxcam = createMockUXCam();
-    isRealUXCam = false;
-  }
-} else {
-  console.log('🎥 [UXCam] Running in Expo Go, using mock implementation');
-}
 
 export interface UXCamUserProperties {
   userId?: string;

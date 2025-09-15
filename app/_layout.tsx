@@ -9,9 +9,9 @@ import { useEffect, useState } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
-import UXCamSessionManager from '../components/UXCamSessionManager';
+// import UXCamSessionManager from '../components/UXCamSessionManager'; // DISABLED
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { UXCamProvider } from '../context/UXCamContext';
+// import { UXCamProvider } from '../context/UXCamContext'; // DISABLED
 import { LanguageModeProvider } from './context/LanguageModeContext';
 
 // UXCam is now handled by UXCamService and UXCamContext
@@ -102,7 +102,7 @@ function RootLayoutNav() {
 
   return (
     <RoleBasedAccess>
-      <UXCamSessionManager />
+      {/* UXCamSessionManager DISABLED to prevent crashes */}
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
@@ -131,18 +131,8 @@ export default function RootLayout() {
     if (loaded) {
       SplashScreen.hideAsync();
       
-      // Initialize UXCam after app is fully loaded
-      setTimeout(async () => {
-        try {
-          const UXCamService = (await import('../services/UXCamService')).default;
-          const uxcamService = UXCamService.getInstance();
-          await uxcamService.initialize();
-          console.log('🎉 [App] UXCam initialized after app load');
-        } catch (error) {
-          console.warn('⚠️ [App] UXCam initialization failed:', error);
-          // Don't crash the app if UXCam fails
-        }
-      }, 2000); // Wait 2 seconds after app loads
+      // UXCam initialization DISABLED to prevent crashes
+      console.log('🚫 [App] UXCam initialization disabled to prevent crashes');
     }
   }, [loaded]);
 
@@ -154,12 +144,11 @@ export default function RootLayout() {
     <ErrorBoundary>
       <AuthProvider>
         <LanguageModeProvider>
-          <UXCamProvider autoInitialize={false} defaultEnabled={true} defaultPrivacyMode={false}>
-            <ThemeProvider value={DefaultTheme}>
-              <StatusBar style="light" />
-              <RootLayoutNav />
-            </ThemeProvider>
-          </UXCamProvider>
+          {/* UXCamProvider DISABLED to prevent crashes */}
+          <ThemeProvider value={DefaultTheme}>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+          </ThemeProvider>
         </LanguageModeProvider>
       </AuthProvider>
     </ErrorBoundary>
