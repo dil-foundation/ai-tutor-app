@@ -59,10 +59,58 @@ jobs:
           npm_config_audit: false
           npm_config_fund: false
 
-      - name: Build Android app
+      - name: Check EAS configuration
+        run: |
+          echo "🔍 Checking EAS configuration..."
+          if [ -f "eas.json" ]; then
+            echo "✅ eas.json found"
+            cat eas.json
+          else
+            echo "❌ eas.json not found - this may cause build issues"
+          fi
+          
+          echo "🔍 Checking for Android-specific configurations..."
+          if [ -f "android/app/build.gradle" ]; then
+            echo "✅ Android build.gradle found"
+          else
+            echo "⚠️ Android build.gradle not found in expected location"
+          fi
+
+      - name: Build Android app with retry
         run: |
           echo "🚀 Building Android app with profile: ${{ github.event.inputs.release_channel }}"
-          eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
+          
+          # Function to attempt build with retry
+          build_with_retry() {
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "🔄 Build attempt $attempt of $max_attempts"
+              
+              if eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait; then
+                echo "✅ Build successful on attempt $attempt"
+                return 0
+              else
+                echo "❌ Build failed on attempt $attempt"
+                if [ $attempt -lt $max_attempts ]; then
+                  echo "⏳ Waiting 30 seconds before retry..."
+                  sleep 30
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "❌ All build attempts failed"
+            return 1
+          }
+          
+          # Try building with retry
+          if ! build_with_retry; then
+            echo "🔄 Trying alternative build approach..."
+            echo "📱 Attempting build with --clear-cache flag..."
+            eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait --clear-cache
+          fi
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
@@ -72,11 +120,41 @@ jobs:
       - name: Download APK
         run: |
           echo "📱 Downloading APK..."
-          eas build:list --platform android --limit 1 --json > build_info.json
-          BUILD_URL=$(cat build_info.json | jq -r '.[0].artifacts.buildUrl')
-          echo "Downloading APK from: $BUILD_URL"
-          curl -L -o dil-tutor-app.apk "$BUILD_URL"
-          echo "✅ APK downloaded successfully: dil-tutor-app.apk"
+          
+          # Function to download APK with retry
+          download_apk_with_retry() {
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "🔄 Download attempt $attempt of $max_attempts"
+              
+              if eas build:list --platform android --limit 1 --json > build_info.json; then
+                BUILD_URL=$(cat build_info.json | jq -r '.[0].artifacts.buildUrl')
+                echo "📦 Build URL: $BUILD_URL"
+                
+                if curl -L -o dil-tutor-app.apk "$BUILD_URL"; then
+                  echo "✅ APK downloaded successfully: dil-tutor-app.apk"
+                  return 0
+                else
+                  echo "❌ APK download failed on attempt $attempt"
+                fi
+              else
+                echo "❌ Failed to get build info on attempt $attempt"
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                echo "⏳ Waiting 15 seconds before retry..."
+                sleep 15
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "❌ All download attempts failed"
+            return 1
+          }
+          
+          download_apk_with_retry
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
@@ -94,6 +172,7 @@ jobs:
             echo "✅ Build completed successfully!"
             echo "📱 APK artifact uploaded for distribution"
             echo "📦 Download from GitHub Actions artifacts"
+            echo "📁 File: dil-tutor-app.apk"
           else
             echo "❌ Build failed"
             echo "Please check the logs above for details"
