@@ -26,7 +26,8 @@
         "gradleCommand": ":app:assembleRelease",
         "buildType": "apk",
         "env": {
-          "EXPO_USE_KOTLIN_SYNTHETIC": "false"
+          "EXPO_USE_KOTLIN_SYNTHETIC": "false",
+          "UXCAM_ENABLED": "true"
         }
       },
       "ios": {
@@ -42,7 +43,10 @@
       "autoIncrement": true,
       "android": {
         "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk"
+        "buildType": "apk",
+        "env": {
+          "UXCAM_ENABLED": "true"
+        }
       },
       "ios": {
         "env": {
