@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # cache: 'npm'  # Disabled due to GitHub cache service issues
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -50,7 +50,15 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          npm install --no-optional --no-audit --no-fund
+        env:
+          # Disable all caching mechanisms
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+          npm_config_audit: false
+          npm_config_fund: false
 
       - name: Verify project configuration
         run: |
@@ -62,34 +70,34 @@ jobs:
         run: |
           echo "🚀 Building Android APK with profile: ${{ github.event.inputs.release_channel }}"
           
-          # Start the build and capture the build ID
-          BUILD_OUTPUT=$(eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --no-wait --json)
-          BUILD_ID=$(echo "$BUILD_OUTPUT" | jq -r '.id')
+          # Start the build and wait for completion
+          echo "⏳ Starting build and waiting for completion..."
+          eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
           
+          # Get the latest build info after completion
+          echo "📱 Getting build information..."
+          BUILD_INFO=$(eas build:list --platform android --limit 1 --json)
+          echo "Build info: $BUILD_INFO"
+          
+          # Extract build ID and URL safely
+          BUILD_ID=$(echo "$BUILD_INFO" | jq -r '.[0].id // empty')
+          BUILD_URL=$(echo "$BUILD_INFO" | jq -r '.[0].artifacts.buildUrl // empty')
+          
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
+            echo "❌ Failed to get build ID"
+            exit 1
+          fi
+          
+          if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
+            echo "❌ Failed to get build URL"
+            exit 1
+          fi
+          
+          echo "✅ Build completed successfully!"
           echo "📱 Build ID: $BUILD_ID"
+          echo "🔗 Build URL: $BUILD_URL"
           echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
-          
-          # Wait for build completion with timeout
-          echo "⏳ Waiting for build to complete..."
-          timeout 1800 bash -c '
-            while true; do
-              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
-              echo "📊 Build status: $STATUS"
-              
-              if [ "$STATUS" = "finished" ]; then
-                echo "✅ Build completed successfully!"
-                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
-                echo "🔗 Build URL: $BUILD_URL"
-                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
-                break
-              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
-                echo "❌ Build failed with status: $STATUS"
-                exit 1
-              fi
-              
-              sleep 30
-            done
-          '
+          echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
@@ -100,12 +108,26 @@ jobs:
           echo "📱 Downloading APK..."
           BUILD_URL="${{ steps.build-step.outputs.build_url }}"
           
+          if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
+            echo "❌ No build URL available, trying to get it from build list..."
+            BUILD_INFO=$(eas build:list --platform android --limit 1 --json)
+            BUILD_URL=$(echo "$BUILD_INFO" | jq -r '.[0].artifacts.buildUrl // empty')
+            
+            if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
+              echo "❌ Still no build URL available"
+              exit 1
+            fi
+            echo "✅ Got build URL from build list: $BUILD_URL"
+          fi
+          
           # Download with retry mechanism
           for attempt in 1 2 3; do
             echo "🔄 Download attempt $attempt of 3"
+            echo "📦 Downloading from: $BUILD_URL"
             if curl -L -o "dil-tutor-app-${{ github.event.inputs.release_channel }}.apk" "$BUILD_URL"; then
               echo "✅ APK downloaded successfully!"
               echo "📁 File: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+              ls -la "dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
               break
             else
               echo "❌ Download failed on attempt $attempt"
@@ -118,6 +140,8 @@ jobs:
               fi
             fi
           done
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload APK as GitHub artifact
         uses: actions/upload-artifact@v4
