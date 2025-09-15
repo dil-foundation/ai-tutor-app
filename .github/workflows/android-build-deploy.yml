@@ -11,6 +11,14 @@ on:
         options:
           - production
           - preview
+      build_type:
+        description: 'Build type (APK or AAB)'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
       deploy_target:
         description: 'Deploy target'
         required: true
@@ -69,8 +77,16 @@ jobs:
 
       - name: Build Android app
         run: |
-          echo "🚀 Building Android app with profile: ${{ github.event.inputs.release_channel }}"
-          eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
+          # Determine the build profile based on build type
+          if [ "${{ github.event.inputs.build_type }}" = "apk" ]; then
+            BUILD_PROFILE="preview"
+            echo "🚀 Building Android APK with profile: $BUILD_PROFILE"
+          else
+            BUILD_PROFILE="${{ github.event.inputs.release_channel }}"
+            echo "🚀 Building Android AAB with profile: $BUILD_PROFILE"
+          fi
+          
+          eas build --platform android --profile $BUILD_PROFILE --non-interactive --wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
