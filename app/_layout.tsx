@@ -112,16 +112,16 @@ function RootLayoutNav() {
       return; // Wait until the auth state is loaded
     }
 
+    const inAuthGroup = segments[0] === 'auth';
     const inApp = segments[0] === '(tabs)';
 
     if (user && !inApp) {
       // If the user is signed in and isn't in the main app section,
       // redirect them to the main tabs screen.
-      // This covers both the initial launch (from index) and being in the auth group.
       router.replace('/(tabs)/learn');
-    } else if (!user) {
-      // If the user is not signed in, redirect them to the login screen.
-      // This handles the initial launch when the user is not logged in.
+    } else if (!user && !inAuthGroup) {
+      // If the user is not signed in and not in the auth group,
+      // redirect them to the login screen.
       router.replace('/auth/login');
     }
   }, [user, loading, segments]);
