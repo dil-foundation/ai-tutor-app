@@ -103,84 +103,30 @@ if (typeof global !== 'undefined' && (global as any).HermesInternal) {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { user, loading, isStudent } = useAuth();
+  const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [hasNavigated, setHasNavigated] = useState(false);
-
-  // UXCam initialization is now handled by UXCamContext
-  // No need for manual initialization here
 
   useEffect(() => {
-    // Only proceed with navigation after auth state is determined
-    if (loading) return;
+    if (loading) {
+      return; // Wait until the auth state is loaded
+    }
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
-    const isIndexRoute = segments.length === 0 as any || (segments.length === 1 && segments[0] === 'index' as any);
 
-    console.log('🔐 [Navigation] Current segments:', segments);
-    console.log('🔐 [Navigation] User:', user ? 'authenticated' : 'not authenticated');
-    console.log('🔐 [Navigation] Loading:', loading);
-
-    if (!user) {
-      // If not authenticated, always go to login first
-      if (!inAuthGroup && !isIndexRoute) {
-        console.log('🔐 [Navigation] User not authenticated, redirecting to login');
-        router.replace('/auth/login');
-        setHasNavigated(true);
-      }
-    } else if (user && (inAuthGroup || isIndexRoute)) {
-      // If authenticated and in auth group or index route, check where to go
-      const checkDestination = async () => {
-        try {
-          console.log('🔐 [Navigation] User authenticated, checking destination');
-          const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
-          if (hasVisitedLearn === 'true') {
-            console.log('🔐 [Navigation] Redirecting to learn tab');
-            router.replace('/(tabs)/learn');
-          } else {
-            console.log('🔐 [Navigation] Redirecting to greeting');
-            router.replace('/(tabs)/learn/greeting');
-          }
-        } catch (error) {
-          console.log('🔐 [Navigation] Error checking greeting status:', error);
-          router.replace('/(tabs)/learn/greeting');
-        }
-        setHasNavigated(true);
-      };
-      
-      checkDestination();
-    } else if (user && !inAuthGroup && !inTabsGroup && !isIndexRoute) {
-      // If authenticated but not in auth or tabs group, redirect to appropriate tab
-      const checkDestination = async () => {
-        try {
-          console.log('🔐 [Navigation] User authenticated but not in tabs, checking destination');
-          const hasVisitedLearn = await AsyncStorage.getItem('hasVisitedLearn');
-          if (hasVisitedLearn === 'true') {
-            console.log('🔐 [Navigation] Redirecting to learn tab');
-            router.replace('/(tabs)/learn');
-          } else {
-            console.log('🔐 [Navigation] Redirecting to greeting');
-            router.replace('/(tabs)/learn/greeting');
-          }
-        } catch (error) {
-          console.log('🔐 [Navigation] Error checking greeting status:', error);
-          router.replace('/(tabs)/learn/greeting');
-        }
-        setHasNavigated(true);
-      };
-      
-      checkDestination();
+    // Centralized redirection logic
+    if (!user && !inAuthGroup) {
+      // If the user is not signed in and not in the auth group,
+      // redirect them to the login page.
+      router.replace('/auth/login');
+    } else if (user && inAuthGroup) {
+      // If the user is signed in and trying to access an auth screen,
+      // redirect them to the main app screen.
+      router.replace('/(tabs)/learn');
     }
-  }, [user, loading, segments, hasNavigated]);
+  }, [user, loading, segments]);
 
-  // Reset navigation flag when auth state changes
-  useEffect(() => {
-    setHasNavigated(false);
-  }, [user, loading]);
-
-  // Always show loading screen until auth state is determined
+  // Prevent rendering until the auth state is loaded
   if (loading) {
     return <LoadingScreen />;
   }
