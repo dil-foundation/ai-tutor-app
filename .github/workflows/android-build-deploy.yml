@@ -11,15 +11,6 @@ on:
         options:
           - production
           - preview
-      deployment_target:
-        description: 'Deployment target'
-        required: true
-        default: 'internal'
-        type: choice
-        options:
-          - internal
-          - production
-          - beta
 
 jobs:
   build-and-deploy:
@@ -35,13 +26,6 @@ jobs:
             exit 1
           fi
 
-      - name: Check for Google Play credentials
-        run: |
-          if [ -z "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}" ]; then
-            echo "❌ You must provide a GOOGLE_PLAY_SERVICE_ACCOUNT_KEY secret for Google Play Store deployment."
-            echo "Learn more: https://docs.expo.dev/submit/android/#google-play-store"
-            exit 1
-          fi
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,19 +68,10 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Submit to Google Play Store
-        if: github.event.inputs.deployment_target != 'internal'
-        run: |
-          echo "📱 Submitting to Google Play Store (${{ github.event.inputs.deployment_target }} track)..."
-          eas submit --platform android --latest --profile ${{ github.event.inputs.release_channel }} --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
 
-      - name: Download APK for internal distribution
-        if: github.event.inputs.deployment_target == 'internal'
+      - name: Download APK
         run: |
-          echo "📱 Downloading APK for internal distribution..."
+          echo "📱 Downloading APK..."
           eas build:list --platform android --limit 1 --json > build_info.json
           BUILD_URL=$(cat build_info.json | jq -r '.[0].artifacts.buildUrl')
           echo "Downloading APK from: $BUILD_URL"
@@ -106,7 +81,6 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload APK artifact
-        if: github.event.inputs.deployment_target == 'internal'
         uses: actions/upload-artifact@v4
         with:
           name: dil-tutor-app-${{ github.event.inputs.release_channel }}-${{ github.run_number }}
@@ -117,16 +91,11 @@ jobs:
         if: always()
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Build and deployment completed successfully!"
-            if [ "${{ github.event.inputs.deployment_target }}" = "internal" ]; then
-              echo "📱 APK artifact uploaded for internal distribution"
-              echo "📦 Download from GitHub Actions artifacts"
-            else
-              echo "📱 App submitted to Google Play Store (${{ github.event.inputs.deployment_target }} track)"
-              echo "🏪 Available for ${{ github.event.inputs.deployment_target }} testing"
-            fi
+            echo "✅ Build completed successfully!"
+            echo "📱 APK artifact uploaded for distribution"
+            echo "📦 Download from GitHub Actions artifacts"
           else
-            echo "❌ Build or deployment failed"
+            echo "❌ Build failed"
             echo "Please check the logs above for details"
           fi
 
@@ -137,19 +106,17 @@ jobs:
     if: always()
     
     steps:
-      - name: Deployment Success Notification
+      - name: Build Success Notification
         if: needs.build-and-deploy.result == 'success'
         run: |
-          echo "🎉 Android deployment successful!"
+          echo "🎉 Android build successful!"
           echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
-          echo "🎯 Target: ${{ github.event.inputs.deployment_target }}"
           echo "⏰ Completed at: $(date)"
 
-      - name: Deployment Failure Notification
+      - name: Build Failure Notification
         if: needs.build-and-deploy.result == 'failure'
         run: |
-          echo "❌ Android deployment failed!"
+          echo "❌ Android build failed!"
           echo "📱 Channel: ${{ github.event.inputs.release_channel }}"
-          echo "🎯 Target: ${{ github.event.inputs.deployment_target }}"
           echo "⏰ Failed at: $(date)"
           echo "Please check the build logs for details"
