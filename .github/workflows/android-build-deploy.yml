@@ -70,64 +70,61 @@ jobs:
         run: |
           echo "🚀 Building Android APK with profile: ${{ github.event.inputs.release_channel }}"
           
-          # Start the build and wait for completion
+          # Start the build and capture the output
           echo "⏳ Starting build and waiting for completion..."
-          eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait
+          BUILD_OUTPUT=$(eas build --platform android --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait 2>&1)
           
-          # Get the latest build info after completion
-          echo "📱 Getting build information..."
-          BUILD_INFO=$(eas build:list --platform android --limit 1 --json)
-          echo "Build info: $BUILD_INFO"
+          echo "Build output:"
+          echo "$BUILD_OUTPUT"
           
-          # Extract build ID and URL safely
-          BUILD_ID=$(echo "$BUILD_INFO" | jq -r '.[0].id // empty')
-          BUILD_URL=$(echo "$BUILD_INFO" | jq -r '.[0].artifacts.buildUrl // empty')
+          # Extract the download URL from the build output
+          BUILD_URL=$(echo "$BUILD_OUTPUT" | grep -o 'https://expo.dev/artifacts/eas/[^[:space:]]*' | head -1)
           
-          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
-            echo "❌ Failed to get build ID"
-            exit 1
-          fi
-          
-          if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
-            echo "❌ Failed to get build URL"
+          if [ -z "$BUILD_URL" ]; then
+            echo "❌ Failed to extract build URL from output"
+            echo "Build output was:"
+            echo "$BUILD_OUTPUT"
             exit 1
           fi
           
           echo "✅ Build completed successfully!"
-          echo "📱 Build ID: $BUILD_ID"
           echo "🔗 Build URL: $BUILD_URL"
-          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
           echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Download APK
+      - name: Download Android Build
         run: |
-          echo "📱 Downloading APK..."
+          echo "📱 Downloading Android build..."
           BUILD_URL="${{ steps.build-step.outputs.build_url }}"
           
-          if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
-            echo "❌ No build URL available, trying to get it from build list..."
-            BUILD_INFO=$(eas build:list --platform android --limit 1 --json)
-            BUILD_URL=$(echo "$BUILD_INFO" | jq -r '.[0].artifacts.buildUrl // empty')
-            
-            if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
-              echo "❌ Still no build URL available"
-              exit 1
-            fi
-            echo "✅ Got build URL from build list: $BUILD_URL"
+          if [ -z "$BUILD_URL" ]; then
+            echo "❌ No build URL available"
+            exit 1
           fi
+          
+          # Determine file extension from URL
+          if [[ "$BUILD_URL" == *.aab ]]; then
+            FILE_EXT="aab"
+            FILE_NAME="dil-tutor-app-${{ github.event.inputs.release_channel }}.aab"
+          else
+            FILE_EXT="apk"
+            FILE_NAME="dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+          fi
+          
+          echo "📦 Downloading $FILE_EXT from: $BUILD_URL"
           
           # Download with retry mechanism
           for attempt in 1 2 3; do
             echo "🔄 Download attempt $attempt of 3"
-            echo "📦 Downloading from: $BUILD_URL"
-            if curl -L -o "dil-tutor-app-${{ github.event.inputs.release_channel }}.apk" "$BUILD_URL"; then
-              echo "✅ APK downloaded successfully!"
-              echo "📁 File: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
-              ls -la "dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+            if curl -L -o "$FILE_NAME" "$BUILD_URL"; then
+              echo "✅ $FILE_EXT downloaded successfully!"
+              echo "📁 File: $FILE_NAME"
+              ls -la "$FILE_NAME"
+              echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
+              echo "FILE_EXT=$FILE_EXT" >> $GITHUB_ENV
               break
             else
               echo "❌ Download failed on attempt $attempt"
@@ -143,29 +140,34 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Upload APK as GitHub artifact
+      - name: Upload Android Build as GitHub artifact
         uses: actions/upload-artifact@v4
         with:
           name: dil-tutor-app-${{ github.event.inputs.release_channel }}-${{ github.run_number }}
-          path: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk
+          path: ${{ env.FILE_NAME }}
           retention-days: 30
 
       - name: Notify build completion
         if: always()
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Android APK build completed successfully!"
-            echo "📱 Build ID: ${{ steps.build-step.outputs.build_id }}"
+            echo "✅ Android build completed successfully!"
             echo "🔗 Build URL: ${{ steps.build-step.outputs.build_url }}"
             echo "📦 Profile: ${{ github.event.inputs.release_channel }}"
-            echo "📁 APK File: dil-tutor-app-${{ github.event.inputs.release_channel }}.apk"
+            echo "📁 File: ${{ env.FILE_NAME }}"
+            echo "📱 File Type: ${{ env.FILE_EXT | upper }}"
             echo ""
             echo "📋 Next Steps:"
-            echo "   1. Download APK from GitHub Actions artifacts"
-            echo "   2. Install directly on Android devices"
-            echo "   3. Distribute to testers or users"
+            echo "   1. Download ${{ env.FILE_EXT | upper }} from GitHub Actions artifacts"
+            if [ "${{ env.FILE_EXT }}" = "apk" ]; then
+              echo "   2. Install directly on Android devices"
+              echo "   3. Distribute to testers or users"
+            else
+              echo "   2. Upload AAB to Google Play Console"
+              echo "   3. Submit for review and release"
+            fi
           else
-            echo "❌ Android APK build failed"
+            echo "❌ Android build failed"
             echo "Please check the logs above for details"
           fi
 
