@@ -133,6 +133,7 @@ export interface UXCamEventData {
 class UXCamService {
   private static instance: UXCamService;
   private isInitialized: boolean = false;
+  private isSessionActive: boolean = false; // Add session state
   private currentSessionId: string | null = null;
   private userProperties: UXCamUserProperties = {};
 
@@ -289,6 +290,11 @@ class UXCamService {
    * Start a new session
    */
   public async startSession(userProperties?: UXCamUserProperties): Promise<void> {
+    if (this.isSessionActive) {
+      console.log('UXCam session already active');
+      return;
+    }
+
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -315,6 +321,7 @@ class UXCamService {
       } else {
         console.log('UXCam session started for authenticated user:', userProperties?.userId);
       }
+      this.isSessionActive = true; // Set session state to active
     } catch (error) {
       console.error('Failed to start UXCam session:', error);
       // Don't throw error in development
@@ -325,6 +332,11 @@ class UXCamService {
    * Stop the current session
    */
   public async stopSession(): Promise<void> {
+    if (!this.isSessionActive) {
+      console.log('No active UXCam session to stop');
+      return;
+    }
+
     if (!this.isInitialized) {
       return;
     }
@@ -332,6 +344,7 @@ class UXCamService {
     try {
       await RNUxcam.stopSessionAndUploadData();
       this.currentSessionId = null;
+      this.isSessionActive = false; // Set session state to inactive
       console.log('UXCam session stopped');
     } catch (error) {
       console.error('Failed to stop UXCam session:', error);
