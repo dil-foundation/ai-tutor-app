@@ -517,7 +517,7 @@ export default function ProgressScreen() {
                       <Text style={styles.integratedStatLabel}>Completed Exercises</Text>
                     </View>
                     <View style={styles.integratedStatItem}>
-                      <Text style={styles.integratedStatValue}>{safeData.total_practice_time}h</Text>
+                      <Text style={styles.integratedStatValue}>{safeData.total_practice_time}</Text>
                       <Text style={styles.integratedStatLabel}>Total Practice Time</Text>
                     </View>
                   </View>
@@ -838,7 +838,7 @@ export default function ProgressScreen() {
                     </View>
                     <Text style={styles.infoRowLabel}>Total Learning Time</Text>
                   </View>
-                  <Text style={styles.infoRowValue}>{safeData.total_practice_time}h</Text>
+                  <Text style={styles.infoRowValue}>{safeData.total_practice_time}</Text>
                 </View>
                 
                 {/* Current Day Streak */}
