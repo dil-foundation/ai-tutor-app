@@ -1,0 +1,293 @@
+name: Android Play Store Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes for Google Play Store'
+        required: false
+        type: string
+        default: 'Bug fixes and performance improvements'
+      release_track:
+        description: 'Release track'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      rollout_percentage:
+        description: 'Rollout percentage (for production track)'
+        required: false
+        default: '100'
+        type: string
+
+jobs:
+  validate-release:
+    name: Validate Release Requirements
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      should_proceed: ${{ steps.validate.outputs.should_proceed }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate release requirements
+        id: validate
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          TRACK="${{ github.event.inputs.release_track }}"
+          ROLLOUT="${{ github.event.inputs.rollout_percentage }}"
+          
+          # Validate version format
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Use semantic versioning (e.g., 1.0.0)"
+            exit 1
+          fi
+          
+          # Check if tag already exists
+          if git tag -l | grep -q "^android-release-$VERSION$"; then
+            echo "❌ Release tag android-release-$VERSION already exists"
+            exit 1
+          fi
+          
+          # Validate rollout percentage
+          if [[ "$TRACK" == "production" ]]; then
+            if [[ ! $ROLLOUT =~ ^[0-9]+$ ]] || [ "$ROLLOUT" -lt 1 ] || [ "$ROLLOUT" -gt 100 ]; then
+              echo "❌ Invalid rollout percentage. Must be between 1 and 100"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Version validation passed: $VERSION"
+          echo "✅ Release track: $TRACK"
+          if [[ "$TRACK" == "production" ]]; then
+            echo "✅ Rollout percentage: $ROLLOUT%"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "should_proceed=true" >> $GITHUB_OUTPUT
+
+  build-and-release:
+    name: Build and Release to Google Play Store
+    runs-on: ubuntu-latest
+    needs: validate-release
+    if: needs.validate-release.outputs.should_proceed == 'true'
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "❌ EXPO_TOKEN secret is required for Google Play Store releases"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update app version
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          echo "Updating app version to $VERSION"
+          
+          # Update version in app.json
+          jq --arg version "$VERSION" '.expo.version = $version' app.json > app.json.tmp
+          mv app.json.tmp app.json
+          
+          # Update version in package.json
+          jq --arg version "$VERSION" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          
+          echo "✅ Version updated to $VERSION"
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add app.json package.json
+          git commit -m "chore: bump Android version to ${{ needs.validate-release.outputs.version }}"
+
+      - name: Create release tag
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          git tag "android-release-$VERSION"
+          git push origin "android-release-$VERSION"
+          echo "✅ Created release tag: android-release-$VERSION"
+
+      - name: Build Android App Bundle for Google Play Store
+        run: |
+          echo "Building Android App Bundle (AAB) for Google Play Store..."
+          eas build --platform android --profile production --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for build completion
+        id: build-wait
+        run: |
+          echo "Waiting for build to complete..."
+          BUILD_ID=$(eas build:list --platform=android --limit=1 --json | jq -r '.[0].id')
+          echo "Monitoring build: $BUILD_ID"
+          
+          timeout 1800 bash -c '
+            while true; do
+              STATUS=$(eas build:view $BUILD_ID --json | jq -r ".status")
+              echo "Build status: $STATUS"
+              
+              if [ "$STATUS" = "finished" ]; then
+                echo "✅ Build completed successfully!"
+                BUILD_URL=$(eas build:view $BUILD_ID --json | jq -r ".artifacts.buildUrl")
+                echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+                echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+                break
+              elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+                echo "❌ Build failed with status: $STATUS"
+                exit 1
+              fi
+              
+              sleep 30
+            done
+          '
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download AAB artifact
+        run: |
+          echo "Downloading AAB artifact..."
+          BUILD_URL="${{ steps.build-wait.outputs.build_url }}"
+          curl -L -o "dil-tutor-app-${{ needs.validate-release.outputs.version }}.aab" "$BUILD_URL"
+          echo "✅ Downloaded AAB: dil-tutor-app-${{ needs.validate-release.outputs.version }}.aab"
+
+      - name: Submit to Google Play Store
+        run: |
+          echo "🚀 Submitting build ${{ steps.build-wait.outputs.build_id }} to Google Play Store..."
+          echo "Release track: ${{ github.event.inputs.release_track }}"
+          
+          # Submit to Google Play Store
+          eas submit --platform android --latest --non-interactive
+          
+          echo "✅ Build submitted to Google Play Console"
+          echo "📋 Next steps:"
+          echo "   1. Check Google Play Console for the build"
+          echo "   2. Complete store listing metadata if needed"
+          echo "   3. Review and publish the release"
+          
+          if [ "${{ github.event.inputs.release_track }}" = "production" ]; then
+            echo "   4. Monitor rollout at ${{ github.event.inputs.rollout_percentage }}%"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: android-release-${{ needs.validate-release.outputs.version }}
+          release_name: Google Play Store Release v${{ needs.validate-release.outputs.version }}
+          body: |
+            # 🚀 Google Play Store Release v${{ needs.validate-release.outputs.version }}
+            
+            ## Release Information
+            - **Version**: ${{ needs.validate-release.outputs.version }}
+            - **Build ID**: ${{ steps.build-wait.outputs.build_id }}
+            - **Build URL**: ${{ steps.build-wait.outputs.build_url }}
+            - **Target**: Google Play Store (${{ github.event.inputs.release_track }} track)
+            - **Status**: Submitted for Review
+            ${{ github.event.inputs.release_track == 'production' && format('- **Rollout**: {0}%', github.event.inputs.rollout_percentage) || '' }}
+            
+            ## Release Notes
+            ${{ github.event.inputs.release_notes }}
+            
+            ## Release Track Details
+            ${{ github.event.inputs.release_track == 'internal' && '🔒 **Internal Testing**: Available to internal testers only' || '' }}
+            ${{ github.event.inputs.release_track == 'alpha' && '🧪 **Alpha Testing**: Available to alpha testers' || '' }}
+            ${{ github.event.inputs.release_track == 'beta' && '🧪 **Beta Testing**: Available to beta testers' || '' }}
+            ${{ github.event.inputs.release_track == 'production' && '🌟 **Production Release**: Available to all users' || '' }}
+            
+            ## Next Steps
+            1. 📱 Check [Google Play Console](https://play.google.com/console) for build status
+            2. 📝 Complete any missing store listing metadata
+            3. 🔍 Review and publish the release
+            4. 📊 Monitor user feedback and crash reports
+            ${{ github.event.inputs.release_track == 'production' && '5. 📈 Monitor rollout progress and increase percentage as needed' || '' }}
+            
+            ## Build Details
+            This release was automatically built and submitted to Google Play Store using GitHub Actions.
+            The AAB (Android App Bundle) is now available in Google Play Console for review and publishing.
+            
+            ---
+            
+            **⚠️ Important**: This build has been submitted to Google Play Console but requires manual review and publishing in Google Play Console to go live.
+          draft: false
+          prerelease: false
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-release-${{ needs.validate-release.outputs.version }}
+          path: |
+            *.aab
+            app.json
+            package.json
+          retention-days: 90
+
+      - name: Push version commit
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Notify completion
+        run: |
+          echo "🎉 Google Play Store release process completed!"
+          echo ""
+          echo "📊 Release Summary:"
+          echo "   Version: ${{ needs.validate-release.outputs.version }}"
+          echo "   Build ID: ${{ steps.build-wait.outputs.build_id }}"
+          echo "   Release Track: ${{ github.event.inputs.release_track }}"
+          echo "   Status: Submitted to Google Play Store"
+          
+          if [ "${{ github.event.inputs.release_track }}" = "production" ]; then
+            echo "   Rollout: ${{ github.event.inputs.rollout_percentage }}%"
+          fi
+          
+          echo ""
+          echo "📋 Next Steps:"
+          echo "   1. Visit Google Play Console"
+          echo "   2. Navigate to your app"
+          echo "   3. Go to 'Release' → '${{ github.event.inputs.release_track }}'"
+          echo "   4. Review the new release"
+          echo "   5. Complete metadata and publish"
+          echo ""
+          echo "🔗 Useful Links:"
+          echo "   - Google Play Console: https://play.google.com/console"
+          echo "   - Build Details: ${{ steps.build-wait.outputs.build_url }}"
+          echo "   - GitHub Release: https://github.com/${{ github.repository }}/releases/tag/android-release-${{ needs.validate-release.outputs.version }}"
