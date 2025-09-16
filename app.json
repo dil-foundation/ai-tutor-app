@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "diltutorappreact",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dil.lms",

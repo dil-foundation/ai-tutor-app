@@ -133,6 +133,7 @@ export interface UXCamEventData {
 class UXCamService {
   private static instance: UXCamService;
   private isInitialized: boolean = false;
+  private isSessionActive: boolean = false; // Add session state
   private currentSessionId: string | null = null;
   private userProperties: UXCamUserProperties = {};
 
@@ -178,6 +179,7 @@ class UXCamService {
             enableAutomaticScreenNameTagging: false,
             enableAdvancedGestureRecognition: true,
             enableImprovedScreenCapture: true,
+            enableIntegrationLogging: true, // Enable debug logging
           };
           await RNUxcam.startWithConfiguration(configuration);
           console.log('🎥 [UXCam] Initialized with startWithConfiguration');
@@ -213,16 +215,21 @@ class UXCamService {
    * Configure privacy settings
    */
   private configurePrivacySettings(): void {
-    if (!RNUxcam) return;
+    if (!RNUxcam || !isRealUXCam) return;
     
     try {
-      // Exclude sensitive screens
-      UXCamConfig.PRIVACY.EXCLUDED_SCREENS.forEach(screenName => {
-        RNUxcam.addScreenNameToIgnore(screenName);
-      });
+      // Check if methods exist before calling them
+      if (typeof RNUxcam.addScreenNameToIgnore === 'function') {
+        // Exclude sensitive screens
+        UXCamConfig.PRIVACY.EXCLUDED_SCREENS.forEach(screenName => {
+          RNUxcam.addScreenNameToIgnore(screenName);
+        });
+      }
 
       // Set up sensitive data masking
-      RNUxcam.setAutomaticScreenNameTagging(true);
+      if (typeof RNUxcam.setAutomaticScreenNameTagging === 'function') {
+        RNUxcam.setAutomaticScreenNameTagging(true);
+      }
       
       // Configure privacy options
       RNUxcam.setUserProperty('privacy_enabled', 'true');
@@ -235,19 +242,23 @@ class UXCamService {
    * Configure recording settings
    */
   private configureRecordingSettings(): void {
-    if (!RNUxcam) return;
+    if (!RNUxcam || !isRealUXCam) return;
     
     try {
       const { RECORDING } = UXCamConfig;
       
       // Set recording quality
-      RNUxcam.setRecordingQuality(RECORDING.QUALITY);
+      if (typeof RNUxcam.setRecordingQuality === 'function') {
+        RNUxcam.setRecordingQuality(RECORDING.QUALITY);
+      }
       
       // Set frame rate
-      RNUxcam.setFrameRate(RECORDING.FRAME_RATE);
+      if (typeof RNUxcam.setFrameRate === 'function') {
+        RNUxcam.setFrameRate(RECORDING.FRAME_RATE);
+      }
       
       // Configure session settings
-      if (RECORDING.MIN_SESSION_DURATION > 0) {
+      if (RECORDING.MIN_SESSION_DURATION > 0 && typeof RNUxcam.setMinimumSessionDuration === 'function') {
         RNUxcam.setMinimumSessionDuration(RECORDING.MIN_SESSION_DURATION);
       }
       
@@ -263,11 +274,13 @@ class UXCamService {
    * Set up event listeners
    */
   private setupEventListeners(): void {
-    if (!RNUxcam) return;
+    if (!RNUxcam || !isRealUXCam) return;
     
     try {
       // Error handling
-      RNUxcam.setAutomaticScreenNameTagging(true);
+      if (typeof RNUxcam.setAutomaticScreenNameTagging === 'function') {
+        RNUxcam.setAutomaticScreenNameTagging(true);
+      }
     } catch (error) {
       console.error('Failed to setup event listeners:', error);
     }
@@ -277,6 +290,11 @@ class UXCamService {
    * Start a new session
    */
   public async startSession(userProperties?: UXCamUserProperties): Promise<void> {
+    if (this.isSessionActive) {
+      console.log('UXCam session already active');
+      return;
+    }
+
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -293,10 +311,17 @@ class UXCamService {
       }
 
       // Start recording
-      await RNUxcam.startNewSession();
+      if (typeof RNUxcam.startNewSession === 'function') {
+        await RNUxcam.startNewSession();
+      }
       
-      this.currentSessionId = await RNUxcam.getSessionUrl();
-      console.log('UXCam session started:', this.currentSessionId);
+      if (typeof RNUxcam.getSessionUrl === 'function') {
+        this.currentSessionId = await RNUxcam.getSessionUrl();
+        console.log('UXCam session started:', this.currentSessionId);
+      } else {
+        console.log('UXCam session started for authenticated user:', userProperties?.userId);
+      }
+      this.isSessionActive = true; // Set session state to active
     } catch (error) {
       console.error('Failed to start UXCam session:', error);
       // Don't throw error in development
@@ -307,6 +332,11 @@ class UXCamService {
    * Stop the current session
    */
   public async stopSession(): Promise<void> {
+    if (!this.isSessionActive) {
+      console.log('No active UXCam session to stop');
+      return;
+    }
+
     if (!this.isInitialized) {
       return;
     }
@@ -314,6 +344,7 @@ class UXCamService {
     try {
       await RNUxcam.stopSessionAndUploadData();
       this.currentSessionId = null;
+      this.isSessionActive = false; // Set session state to inactive
       console.log('UXCam session stopped');
     } catch (error) {
       console.error('Failed to stop UXCam session:', error);

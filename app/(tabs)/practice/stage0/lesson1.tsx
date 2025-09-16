@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
     Animated,
+    ActivityIndicator,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -81,6 +82,7 @@ const alphabetPages = chunkArray(alphabetData, 7);
 const Lesson1Screen: React.FC = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingLetter, setPlayingLetter] = useState<string | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
   
   // Animation values
@@ -193,10 +195,14 @@ const Lesson1Screen: React.FC = () => {
               >
                 <TouchableOpacity
                   style={styles.playButtonCircle}
-                  disabled={playingLetter !== null}
+                  disabled={playingLetter !== null || isAudioLoading !== null}
                   onPress={async () => {
+                    setIsAudioLoading(letter);
                     setPlayingLetter(letter);
-                    await playAudioFromText(`${letter} for ${word}`, () => setPlayingLetter(null));
+                    await playAudioFromText(`${letter} for ${word}`, () => {
+                        setPlayingLetter(null);
+                        setIsAudioLoading(null);
+                    });
                   }}
                   activeOpacity={0.8}
                 >
@@ -204,7 +210,9 @@ const Lesson1Screen: React.FC = () => {
                     colors={playingLetter === letter ? ['#45B7A8', '#58D68D'] : ['#58D68D', '#45B7A8']}
                     style={styles.playButtonGradient}
                   >
-                    {playingLetter === letter ? (
+                    {isAudioLoading === letter ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : playingLetter === letter ? (
                       <Ionicons name="pause" size={20} color="#FFFFFF" />
                     ) : (
                       <Ionicons name="play" size={20} color="#FFFFFF" />

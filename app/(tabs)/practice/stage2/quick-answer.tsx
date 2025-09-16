@@ -13,7 +13,8 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
@@ -74,6 +75,7 @@ const QuickAnswerScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCongratulationsAnimation, setShowCongratulationsAnimation] = useState(false);
   const [showRetryAnimation, setShowRetryAnimation] = useState(false);
@@ -304,9 +306,10 @@ const QuickAnswerScreen = () => {
   };
 
   const playQuestionAudio = async () => {
-    if (!currentQuestion || audioPlayer.state.isPlaying) return;
+    if (!currentQuestion || audioPlayer.state.isPlaying || isAudioLoading) return;
 
     console.log("🔄 [AUDIO] Playing question audio for ID:", currentTopicId);
+    setIsAudioLoading(true);
     try {
       const response = await authenticatedFetch(API_ENDPOINTS.QUICK_ANSWER(currentTopicId), {
         method: 'POST'
@@ -315,8 +318,8 @@ const QuickAnswerScreen = () => {
       const result = await response.json();
       console.log("📊 [AUDIO] Audio response received");
 
-      if (response.ok && result.audio_base64) {
-        const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+      if (response.ok && result.audio_base_64) {
+        const audioUri = `data:audio/mpeg;base64,${result.audio_base_64}`;
         await audioPlayer.loadAudio(audioUri);
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
@@ -327,6 +330,8 @@ const QuickAnswerScreen = () => {
     } catch (error) {
       console.error("❌ [AUDIO] Error playing audio:", error);
       setError('Network error. Please check your connection.');
+    } finally {
+      setIsAudioLoading(false);
     }
   };
 
@@ -651,17 +656,21 @@ const QuickAnswerScreen = () => {
                     <TouchableOpacity
                       style={styles.playButton}
                       onPress={playQuestionAudio}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     
@@ -707,7 +716,7 @@ const QuickAnswerScreen = () => {
                   handleStartRecording();
                 }
               }}
-              disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+              disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted || isAudioLoading}
               activeOpacity={0.8}
             >
               <LinearGradient

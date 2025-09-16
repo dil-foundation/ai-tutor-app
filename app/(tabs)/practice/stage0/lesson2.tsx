@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
     Animated,
+    ActivityIndicator,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -173,6 +174,7 @@ const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => 
 const Lesson2Screen = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
 
   // Animation values
@@ -282,10 +284,14 @@ const Lesson2Screen = () => {
                 >
                   <TouchableOpacity
                     style={styles.playButtonCircle}
-                    disabled={playingKey !== null}
+                    disabled={playingKey !== null || isAudioLoading !== null}
                     onPress={async () => {
+                      setIsAudioLoading(pair.key);
                       setPlayingKey(pair.key);
-                      await playAudioFromText(pair.title, () => setPlayingKey(null));
+                      await playAudioFromText(pair.title, () => {
+                        setPlayingKey(null);
+                        setIsAudioLoading(null);
+                      });
                     }}
                     activeOpacity={0.8}
                   >
@@ -293,7 +299,9 @@ const Lesson2Screen = () => {
                       colors={playingKey === pair.key ? ['#45B7A8', '#58D68D'] : ['#58D68D', '#45B7A8']}
                       style={styles.playButtonGradient}
                     >
-                      {playingKey === pair.key ? (
+                      {isAudioLoading === pair.key ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : playingKey === pair.key ? (
                         <Ionicons name="pause" size={20} color="#FFFFFF" />
                       ) : (
                         <Ionicons name="play" size={20} color="#FFFFFF" />

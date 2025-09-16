@@ -85,7 +85,7 @@ const AcademicPresentationScreen = () => {
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
@@ -232,11 +232,12 @@ const AcademicPresentationScreen = () => {
   // Play topic audio
   const playTopicAudio = async () => {
     console.log('🔄 [AUDIO] Playing topic audio...');
-    if (!currentTopic) {
-      console.log('❌ [AUDIO] No current topic available');
+    if (!currentTopic || audioPlayer.state.isPlaying || isAudioLoading) {
+      console.log('❌ [AUDIO] No current topic, audio already playing, or audio loading');
       return;
     }
 
+    setIsAudioLoading(true);
     try {
       const response = await authenticatedFetch(`${BASE_API_URL}/api/academic-presentation/${currentTopic.id}`, {
         method: 'POST',
@@ -246,22 +247,13 @@ const AcademicPresentationScreen = () => {
         const data = await response.json();
         console.log('✅ [AUDIO] Audio data received');
         
-        // Convert base64 to audio file
-        const audioUri = `${FileSystem.documentDirectory}academic_presentation_${currentTopic.id}.mp3`;
-        await FileSystem.writeAsStringAsync(audioUri, data.audio_base64, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const audioUri = `data:audio/mpeg;base64,${data.audio_base64}`;
         
         console.log('✅ [AUDIO] Audio file saved to:', audioUri);
         
         // Play the audio
         await audioPlayer.loadAudio(audioUri);
         await audioPlayer.playAudio();
-        setIsPlayingAudio(true);
-        
-        // Reset playing state when audio finishes
-        audioPlayer.state.isPlaying = false;
-        setIsPlayingAudio(false);
         
       } else {
         console.log('❌ [AUDIO] Failed to get audio data');
@@ -270,6 +262,8 @@ const AcademicPresentationScreen = () => {
     } catch (error) {
       console.log('❌ [AUDIO] Error playing audio:', error);
       Alert.alert('Error', 'Failed to play topic audio');
+    } finally {
+      setIsAudioLoading(false);
     }
   };
 
@@ -668,17 +662,21 @@ const AcademicPresentationScreen = () => {
                     <TouchableOpacity
                       style={styles.playButton}
                       onPress={playTopicAudio}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     
@@ -734,7 +732,7 @@ const AcademicPresentationScreen = () => {
                   handleStartRecording();
                 }
               }}
-              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted || isAudioLoading}
               activeOpacity={0.8}
             >
               <LinearGradient

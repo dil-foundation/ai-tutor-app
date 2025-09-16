@@ -93,7 +93,7 @@ const MockInterviewScreen = () => {
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showEvaluatingAnimation, setShowEvaluatingAnimation] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isExerciseCompleted, setIsExerciseCompleted] = useState(false);
@@ -274,15 +274,14 @@ const MockInterviewScreen = () => {
 
   // Play question audio - matching storytelling.tsx pattern
   const playQuestionAudio = async () => {
-    if (!currentQuestion || audioPlayer.state.isPlaying) return;
+    if (!currentQuestion || audioPlayer.state.isPlaying || isAudioLoading) return;
 
     console.log("🎯 [AUDIO] playQuestionAudio function called");
     console.log("🎯 [AUDIO] Current question ID:", currentQuestionId);
     console.log("🎯 [AUDIO] Using endpoint:", API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId));
     
+    setIsAudioLoading(true);
     try {
-      setIsPlayingAudio(true);
-      
       const response = await authenticatedFetch(API_ENDPOINTS.MOCK_INTERVIEW_AUDIO(currentQuestionId), {
         method: 'POST'
       });
@@ -313,7 +312,7 @@ const MockInterviewScreen = () => {
       console.error("❌ [AUDIO] Error playing audio:", error);
       Alert.alert('Error', 'Network error. Please check your connection.');
     } finally {
-      setIsPlayingAudio(false);
+      setIsAudioLoading(false);
     }
   };
 
@@ -733,17 +732,21 @@ const MockInterviewScreen = () => {
                         console.log("🎯 [UI] Play button clicked!");
                         playQuestionAudio();
                       }}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     

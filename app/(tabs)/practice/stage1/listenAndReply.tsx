@@ -13,7 +13,8 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import LottieView from 'lottie-react-native';
@@ -70,6 +71,7 @@ const ListenAndReplyScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCongratulationsAnimation, setShowCongratulationsAnimation] = useState(false);
   const [showRetryAnimation, setShowRetryAnimation] = useState(false);
@@ -300,9 +302,10 @@ const ListenAndReplyScreen = () => {
   };
 
   const playDialogueAudio = async () => {
-    if (!currentDialogue || audioPlayer.state.isPlaying) return;
+    if (!currentDialogue || audioPlayer.state.isPlaying || isAudioLoading) return;
 
     console.log("🔄 [AUDIO] Playing dialogue audio for ID:", currentTopicId);
+    setIsAudioLoading(true);
     try {
       const response = await authenticatedFetch(API_ENDPOINTS.LISTEN_AND_REPLY(currentTopicId), {
         method: 'POST'
@@ -323,6 +326,8 @@ const ListenAndReplyScreen = () => {
     } catch (error) {
       console.error("❌ [AUDIO] Error playing audio:", error);
       setError('Network error. Please check your connection.');
+    } finally {
+      setIsAudioLoading(false);
     }
   };
 
@@ -635,17 +640,21 @@ const ListenAndReplyScreen = () => {
                     <TouchableOpacity
                       style={styles.playButton}
                       onPress={playDialogueAudio}
-                      disabled={audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
+                      disabled={isAudioLoading || audioPlayer.state.isPlaying || audioRecorder.state.isRecording}
                     >
                       <LinearGradient
                         colors={["#58D68D", "#45B7A8"]}
                         style={styles.playButtonGradient}
                       >
-                        <Ionicons 
-                          name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
-                          size={36} 
-                          color="#fff" 
-                        />
+                        {isAudioLoading ? (
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons 
+                            name={audioPlayer.state.isPlaying ? 'volume-high' : 'play'} 
+                            size={36} 
+                            color="#fff" 
+                          />
+                        )}
                       </LinearGradient>
                     </TouchableOpacity>
                     
@@ -691,7 +700,7 @@ const ListenAndReplyScreen = () => {
                   handleStartRecording();
                 }
               }}
-              disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+              disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted || isAudioLoading}
               activeOpacity={0.8}
             >
               <LinearGradient

@@ -67,7 +67,7 @@ export const fetchAudioFromText = async (text: string): Promise<string | null> =
 };
 
 
-export default BASE_API_URL;
+export default BASE_API_URL; 
 
 // API endpoints with authentication
 export const API_ENDPOINTS = {

@@ -4,68 +4,50 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      },
-      "ios": {
-        "simulator": true,
-        "buildConfiguration": "Debug"
-      }
-    },
-    "development-expo-go": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      },
-      "ios": {
-        "simulator": true,
-        "buildConfiguration": "Debug"
-      }
-    },
     "preview": {
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk",
-        "env": {
-          "EXPO_USE_KOTLIN_SYNTHETIC": "false"
-        }
-      },
-      "env": {
-        "UXCAM_ENABLED": "true"
+        "buildType": "apk"
       },
       "ios": {
-        "simulator": false,
-        "buildConfiguration": "Release"
+        "simulator": false
+      },
+      "env": {
+        "UXCAM_ENABLED": "true",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.dil.lms-staging.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://dil-dev.lms-staging.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
-        "gradleCommand": ":app:bundleRelease",
-        "buildType": "app-bundle"
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk"
       },
       "ios": {
-        "simulator": false,
-        "buildConfiguration": "Release"
+        "simulator": false
+      },
+      "env": {
+        "UXCAM_ENABLED": "true",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.dil.lms-staging.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://dil-dev.lms-staging.com"
       }
     }
   },
   "submit": {
-    "preview": {
+    "production": {
       "ios": {
         "appleId": "puttareddy@infiniai.tech",
         "ascAppId": "6751864858",
         "appleTeamId": "T99RG9BL5A"
       }
     },
-    "production": {
+    "preview": {
       "ios": {
         "appleId": "puttareddy@infiniai.tech",
         "ascAppId": "6751864858",

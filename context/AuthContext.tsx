@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { FRONTEND_URL } from '../config/api';
 
@@ -108,49 +108,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('Attempting to get initial session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        } else if (session) {
-          console.log('Initial session retrieved successfully. User ID:', session.user.id);
-          console.log('Initial Access Token:', session.access_token.substring(0, 20) + '...');
-          console.log('Initial Token Expires At:', new Date(session.expires_at! * 1000));
-          setSession(session);
-          setUser(session?.user ?? null);
-        } else {
-            console.log('No initial session found.');
-            setSession(null);
-            setUser(null);
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        setLoading(false);
-        setInitialized(true); // Mark as initialized
-      }
-    };
-
-    getInitialSession();
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        console.log('Auth state change event:', event);
-        if (session) {
-          console.log('Session exists. User:', session.user?.id);
-          console.log('Access Token:', session.access_token.substring(0, 20) + '...');
-          console.log('Token Expires At:', new Date(session.expires_at! * 1000));
-        } else {
-          console.log('No session found.');
-        }
-
+      (_event: AuthChangeEvent, session: Session | null) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        // The loading state is already false from the initial session check
       }
     );
 
