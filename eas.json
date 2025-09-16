@@ -32,9 +32,7 @@
       },
       "ios": {
         "env": {
-          "UXCAM_ENABLED": "true",
-          "EXPO_PUBLIC_SUPABASE_URL": "${EXPO_PUBLIC_SUPABASE_URL}",
-          "EXPO_PUBLIC_SUPABASE_ANON_KEY": "${EXPO_PUBLIC_SUPABASE_ANON_KEY}"
+          "UXCAM_ENABLED": "true"
         }
       },
       "env": {
@@ -52,9 +50,7 @@
       },
       "ios": {
         "env": {
-          "UXCAM_ENABLED": "true",
-          "EXPO_PUBLIC_SUPABASE_URL": "${EXPO_PUBLIC_SUPABASE_URL}",
-          "EXPO_PUBLIC_SUPABASE_ANON_KEY": "${EXPO_PUBLIC_SUPABASE_ANON_KEY}"
+          "UXCAM_ENABLED": "true"
         }
       },
       "env": {
