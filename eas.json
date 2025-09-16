@@ -15,10 +15,10 @@
       },
       "env": {
         "UXCAM_ENABLED": "true",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-supabase-url.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-anon-key",
-        "EXPO_PUBLIC_API_BASE_URL": "https://your-api-url.com",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://your-frontend-url.com"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.dil.lms-staging.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://dil-dev.lms-staging.com"
       }
     },
     "production": {
