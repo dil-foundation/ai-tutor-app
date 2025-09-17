@@ -26,6 +26,7 @@ import RoadmapLine from '@/components/progress/RoadmapLine';
 import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
 import CircularProgress from '../../../components/CircularProgress';
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
 
 const { width, height } = Dimensions.get('window');
 
@@ -392,7 +393,7 @@ export default function ProgressScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: Constants.statusBarHeight + 40 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -904,7 +905,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 80,
     paddingBottom: 40,
   },
   header: {
