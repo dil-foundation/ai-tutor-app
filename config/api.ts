@@ -6,9 +6,9 @@ let FRONTEND_URL: string;
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  BASE_API_URL = 'https://api.dil.lms-staging.com';
+  // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
-  // BASE_API_URL = 'http://192.168.1.3:8000';
+  BASE_API_URL = 'http://192.168.1.6:8000';
 
   FRONTEND_URL = 'https://dil-dev.lms-staging.com';
 
@@ -78,6 +78,13 @@ export const API_ENDPOINTS = {
   CHECK_UNLOCKS: (userId: string) => `${BASE_API_URL}/api/progress/check-unlocks/${userId}`,
   GET_CURRENT_TOPIC: `${BASE_API_URL}/api/progress/get-current-topic`,
   COMPREHENSIVE_PROGRESS: `${BASE_API_URL}/api/progress/comprehensive-progress`,
+  
+  // New Auth endpoint
+  SIGNUP: `${BASE_API_URL}/api/auth/signup`,
+
+  // User management
+  GET_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
+  UPDATE_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
   
   // Exercise endpoints
   IN_DEPTH_INTERVIEW: (promptId: number) => `${BASE_API_URL}/api/in-depth-interview/${promptId}`,

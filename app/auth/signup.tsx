@@ -50,6 +50,7 @@ export default function SignupScreen() {
   const [grade, setGrade] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [englishProficiency, setEnglishProficiency] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +62,7 @@ export default function SignupScreen() {
   const [gradeError, setGradeError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [englishProficiencyError, setEnglishProficiencyError] = useState('');
   
   // Grade dropdown state
   const [showGradeDropdown, setShowGradeDropdown] = useState(false);
@@ -148,6 +150,17 @@ export default function SignupScreen() {
     return '';
   };
 
+  const validateEnglishProficiency = (value: string) => {
+    if (!value.trim()) {
+      return 'Please describe your English proficiency';
+    }
+    const wordCount = value.trim().split(/\s+/).length;
+    if (wordCount < 5) {
+      return 'Please write at least 5 words.';
+    }
+    return '';
+  };
+
   const validatePassword = (value: string) => {
     if (!value) {
       return 'Password is required';
@@ -187,6 +200,7 @@ export default function SignupScreen() {
     setGradeError('');
     setPasswordError('');
     setConfirmPasswordError('');
+    setEnglishProficiencyError('');
   };
 
   const validateForm = () => {
@@ -198,6 +212,7 @@ export default function SignupScreen() {
     const gradeValidation = validateGrade(grade);
     const passwordValidation = validatePassword(password);
     const confirmPasswordValidation = validateConfirmPassword(confirmPassword);
+    const englishProficiencyValidation = validateEnglishProficiency(englishProficiency);
 
     setFirstNameError(firstNameValidation);
     setLastNameError(lastNameValidation);
@@ -205,9 +220,10 @@ export default function SignupScreen() {
     setGradeError(gradeValidation);
     setPasswordError(passwordValidation);
     setConfirmPasswordError(confirmPasswordValidation);
+    setEnglishProficiencyError(englishProficiencyValidation);
 
     return !firstNameValidation && !lastNameValidation && !emailValidation && 
-           !gradeValidation && !passwordValidation && !confirmPasswordValidation;
+           !gradeValidation && !passwordValidation && !confirmPasswordValidation && !englishProficiencyValidation;
   };
 
   const handleSignUp = async () => {
@@ -224,68 +240,39 @@ export default function SignupScreen() {
         password: password,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        grade: grade
+        grade: grade,
+        english_proficiency_text: englishProficiency.trim()
       });
 
-      if (error) {
-        if (error.message && error.message.includes('already registered')) {
-          Alert.alert('Error', 'An account with this email already exists.');
-        } else {
-          Alert.alert('Sign Up Failed', error.message || 'Failed to create account');
-        }
+      if (error || !data?.success) {
+        // Handle failed signup
+        const errorMessage = error?.message || data?.message || 'Failed to create account. Please try again.';
+        Alert.alert('Sign Up Failed', errorMessage);
       } else {
-        if (data?.user) {
-          const isNewUser = (Date.now() - new Date(data.user.created_at).getTime()) < 60000; // 1 minute threshold
-
-          if (isNewUser) {
-            console.log('🔐 Student signup successful:', data.user.email);
-            Alert.alert(
-              'Success', 
-              'Account created successfully! Please check your email for a verification link.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Clear form
-                    setFirstName('');
-                    setLastName('');
-                    setEmail('');
-                    setGrade('');
-                    setPassword('');
-                    setConfirmPassword('');
-                    clearErrors();
-                    // Navigate to login
-                    router.push('/auth/login');
-                  }
-                }
-              ]
-            );
-          } else {
-            // This is an existing, unconfirmed user
-            console.log('🔐 Updating metadata for existing unconfirmed user:', data.user.email);
-            Alert.alert(
-              'Success', 
-              'Your information has been updated. Please check your email for a verification link.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Clear form
-                    setFirstName('');
-                    setLastName('');
-                    setEmail('');
-                    setGrade('');
-                    setPassword('');
-                    setConfirmPassword('');
-                    clearErrors();
-                    // Navigate to login
-                    router.push('/auth/login');
-                  }
-                }
-              ]
-            );
-          }
-        }
+        // Handle successful signup
+        console.log('✅ Student signup successful:', data.message);
+        Alert.alert(
+          'Success', 
+          'Account created successfully! Please check your email for a verification link.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Clear form and navigate to login
+                setFirstName('');
+                setLastName('');
+                setEmail('');
+                setGrade('');
+                setPassword('');
+                setConfirmPassword('');
+                setEnglishProficiency('');
+                clearErrors();
+                router.push('/auth/login');
+              }
+            }
+          ],
+          { cancelable: false }
+        );
       }
     } catch (error: any) {
       console.error('🔐 Student signup error:', error);
@@ -461,6 +448,28 @@ export default function SignupScreen() {
                   <Ionicons name="chevron-down" size={20} color="#58D68D" />
                 </TouchableOpacity>
                 {gradeError ? <Text style={styles.errorText}>{gradeError}</Text> : null}
+              </View>
+
+              {/* English Proficiency Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>English Proficiency</Text>
+                <View style={[styles.inputWrapper, styles.textAreaWrapper, englishProficiencyError ? styles.inputError : null]}>
+                  <TextInput
+                    style={styles.textArea}
+                    placeholder="Describe your English level in 2-3 sentences..."
+                    placeholderTextColor="#9CA3AF"
+                    value={englishProficiency}
+                    onChangeText={(text) => {
+                      setEnglishProficiency(text);
+                      if (englishProficiencyError) setEnglishProficiencyError('');
+                    }}
+                    multiline
+                    numberOfLines={3}
+                    autoCapitalize="sentences"
+                    autoCorrect={true}
+                  />
+                </View>
+                {englishProficiencyError ? <Text style={styles.errorText}>{englishProficiencyError}</Text> : null}
               </View>
 
               {/* Password Input */}
@@ -761,6 +770,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
     fontFamily: 'Lexend-Regular',
+  },
+  textAreaWrapper: {
+    paddingVertical: 8,
+    height: 100,
+    alignItems: 'flex-start',
+  },
+  textArea: {
+    flex: 1,
+    fontSize: 16,
+    color: '#111827',
+    fontFamily: 'Lexend-Regular',
+    textAlignVertical: 'top', // For Android
+    height: 80, // Adjust height for multiline
   },
   passwordToggle: {
     padding: 4,
