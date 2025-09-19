@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { FRONTEND_URL } from '../config/api';
+import { FRONTEND_URL, API_ENDPOINTS } from '../config/api';
 
 interface SignUpData {
   email: string;
@@ -9,6 +9,7 @@ interface SignUpData {
   firstName: string;
   lastName: string;
   grade: string;
+  english_proficiency_text: string;
 }
 
 interface AuthContextType {
@@ -147,26 +148,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (signUpData: SignUpData) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          emailRedirectTo: `${FRONTEND_URL}/dashboard`,
-          data: {
-            role: 'student',
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName,
-            grade: signUpData.grade
-          }
-        }
+      const response = await fetch(API_ENDPOINTS.SIGNUP, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signUpData),
       });
-      
-      if (error) {
-        return { data: null, error };
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Use the error message from the backend if available
+        throw new Error(result.detail || 'Sign-up failed');
       }
-      
-      return { data, error: null };
-    } catch (error) {
+
+      return { data: result, error: null };
+    } catch (error: any) {
       return { data: null, error };
     }
   };
