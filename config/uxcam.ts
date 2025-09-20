@@ -1,28 +1,28 @@
-import { UXCAM_API_KEY } from '@env';
+
 
 // UXCam Configuration
 export const UXCamConfig = {
   // Load API key from environment variables
-  API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+  API_KEY: 'xnayvk2m8m2h8xw-us',
   
   // Environment configuration
   ENVIRONMENTS: {
     development: {
-      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: false,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: true,
     },
     staging: {
-      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: false,
     },
     production: {
-      API_KEY: UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: 'xnayvk2m8m2h8xw-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,

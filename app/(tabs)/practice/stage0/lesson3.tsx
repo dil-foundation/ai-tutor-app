@@ -1,21 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Animated,
-    ActivityIndicator,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { fetchAudioFromText } from '../../../../config/api';
 
 const { width, height } = Dimensions.get('window');
@@ -109,6 +109,7 @@ const chunkArray = (arr: any[], chunkSize: number): any[][] => {
 const vocabularyPages = chunkArray(vocabularyData, 1); // 1 category per page
 
 const Lesson3Screen: React.FC = () => {
+    const scrollViewRef = useRef<ScrollView>(null);
     const [currentPageIndex, setCurrentPageIndex] = useState(0);
     const [playingItem, setPlayingItem] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -358,6 +359,8 @@ const Lesson3Screen: React.FC = () => {
     const handleNextOrFinish = () => {
         if (currentPageIndex < lessonPages.length - 1) {
             setCurrentPageIndex(currentPageIndex + 1);
+            // Scroll to top when moving to next page
+            scrollViewRef.current?.scrollTo({ y: 0, animated: true });
         } else {
             console.log('Lesson 3 Finished!');
             setShowFinishAnimation(true);
@@ -441,6 +444,7 @@ const Lesson3Screen: React.FC = () => {
                     ]}
                 >
                     <ScrollView
+                        ref={scrollViewRef}
                         style={styles.scrollView}
                         contentContainerStyle={styles.scrollViewContentContainer}
                         showsVerticalScrollIndicator={false}

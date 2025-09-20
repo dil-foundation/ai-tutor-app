@@ -1,24 +1,23 @@
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  Image,
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
-  Platform,
-  ActivityIndicator,
-  StatusBar,
   Easing,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserFullNameSync } from '../../../utils/userUtils';
 
@@ -71,8 +70,6 @@ export default function ProfileScreen() {
   const [profileScaleAnim] = useState(new Animated.Value(0.7));
   const [headerScaleAnim] = useState(new Animated.Value(0.9));
   const [pulseAnim] = useState(new Animated.Value(1));
-  const [rotationAnim] = useState(new Animated.Value(0));
-
   // Pulse animation for active elements
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -93,20 +90,6 @@ export default function ProfileScreen() {
     );
     pulseAnimation.start();
     return () => pulseAnimation.stop();
-  }, []);
-
-  // Rotation animation for decorative elements
-  useEffect(() => {
-    const rotationAnimation = Animated.loop(
-      Animated.timing(rotationAnim, {
-        toValue: 1,
-        duration: 20000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    rotationAnimation.start();
-    return () => rotationAnimation.stop();
   }, []);
 
   // Enhanced animation on mount
@@ -398,101 +381,6 @@ export default function ProfileScreen() {
           </Animated.View>
 
         </ScrollView>
-
-        {/* Enhanced Decorative Elements */}
-        <Animated.View 
-          style={[
-            styles.decorativeCircle1,
-            {
-              transform: [{
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '360deg'],
-                })
-              }]
-            }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.decorativeCircle2,
-            {
-              transform: [{
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['360deg', '0deg'],
-                })
-              }]
-            }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.decorativeCircle3,
-            {
-              transform: [{
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '360deg'],
-                })
-              }]
-            }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.decorativeCircle4,
-            {
-              transform: [{
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['360deg', '0deg'],
-                })
-              }]
-            }
-          ]} 
-        />
-        
-        {/* Floating Particles */}
-        <Animated.View 
-          style={[
-            styles.particle1,
-            {
-              transform: [{
-                translateY: pulseAnim.interpolate({
-                  inputRange: [1, 1.05],
-                  outputRange: [0, -10],
-                })
-              }]
-            }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.particle2,
-            {
-              transform: [{
-                translateY: pulseAnim.interpolate({
-                  inputRange: [1, 1.05],
-                  outputRange: [0, 15],
-                })
-              }]
-            }
-          ]} 
-        />
-        <Animated.View 
-          style={[
-            styles.particle3,
-            {
-              transform: [{
-                translateY: pulseAnim.interpolate({
-                  inputRange: [1, 1.05],
-                  outputRange: [0, -8],
-                })
-              }]
-            }
-          ]} 
-        />
       </SafeAreaView>
     </View>
   );
@@ -745,71 +633,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
     fontFamily: 'Lexend-Bold',
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(88, 214, 141, 0.08)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(69, 183, 168, 0.08)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(88, 214, 141, 0.05)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.4,
-    left: width * 0.7,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-  },
-  particle1: {
-    position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#6C757D',
-    opacity: 0.3,
-  },
-  particle2: {
-    position: 'absolute',
-    top: height * 0.6,
-    right: width * 0.15,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#ADB5BD',
-    opacity: 0.2,
-  },
-  particle3: {
-    position: 'absolute',
-    bottom: height * 0.3,
-    left: width * 0.2,
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#CED4DA',
-    opacity: 0.25,
   },
 }); 

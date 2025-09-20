@@ -1,19 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useFocusEffect } from 'expo-router';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  BackHandler,
   Dimensions,
+  Platform,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  Platform,
-  BackHandler,
+  View
 } from 'react-native';
 import audioManager from '../../utils/audioManager';
 
@@ -243,12 +242,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    // Ensure full screen coverage
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   centeredContainer: {
     flex: 1,
@@ -257,8 +250,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: '#fff',
     width: '100%',
-    // Ensure full height coverage
-    minHeight: height,
   },
   header: {
     alignItems: 'center',

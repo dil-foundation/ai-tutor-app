@@ -1,22 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Animated,
-    ActivityIndicator,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
-import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
 import { fetchAudioFromText } from '../../../../config/api';
 
 const { width, height } = Dimensions.get('window');
@@ -80,6 +80,7 @@ const chunkArray = (arr: any[], chunkSize: number) => {
 const alphabetPages = chunkArray(alphabetData, 7);
 
 const Lesson1Screen: React.FC = () => {
+  const scrollViewRef = useRef<ScrollView>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingLetter, setPlayingLetter] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -239,6 +240,8 @@ const Lesson1Screen: React.FC = () => {
   const handleNextOrFinish = () => {
     if (currentPageIndex < lessonPages.length - 1) {
       setCurrentPageIndex(currentPageIndex + 1);
+      // Scroll to top when moving to next page
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
       console.log('Lesson 1 Finished!');
       setShowFinishAnimation(true);
@@ -322,6 +325,7 @@ const Lesson1Screen: React.FC = () => {
           ]}
         >
           <ScrollView
+            ref={scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollViewContentContainer}
             showsVerticalScrollIndicator={false}

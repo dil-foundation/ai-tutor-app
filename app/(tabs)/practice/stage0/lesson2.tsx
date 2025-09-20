@@ -1,18 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Animated,
-    ActivityIndicator,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -172,6 +172,7 @@ const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => 
 };
 
 const Lesson2Screen = () => {
+  const scrollViewRef = useRef<ScrollView>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -367,6 +368,8 @@ const Lesson2Screen = () => {
   const handleNextOrFinish = () => {
     if (currentPageIndex < lessonPages.length - 1) {
       setCurrentPageIndex(currentPageIndex + 1);
+      // Scroll to top when moving to next page
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
       console.log('Lesson 2 Finished!');
       setShowFinishAnimation(true);
@@ -450,6 +453,7 @@ const Lesson2Screen = () => {
           ]}
         >
           <ScrollView
+            ref={scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollViewContentContainer}
             showsVerticalScrollIndicator={false}

@@ -1,11 +1,11 @@
 // app/_layout.tsx
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoadingScreen from '../components/LoadingScreen';
 import RoleBasedAccess from '../components/RoleBasedAccess';
 import UXCamSessionManager from '../components/UXCamSessionManager';
@@ -166,15 +166,17 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <LanguageModeProvider>
-        <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
-          <ThemeProvider value={DefaultTheme}>
-            <StatusBar style="light" />
-            <RootLayoutNav />
-          </ThemeProvider>
-        </UXCamProvider>
-      </LanguageModeProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <LanguageModeProvider>
+          <UXCamProvider autoInitialize={true} defaultEnabled={true} defaultPrivacyMode={false}>
+            <ThemeProvider value={DefaultTheme}>
+              <StatusBar style="light" />
+              <RootLayoutNav />
+            </ThemeProvider>
+          </UXCamProvider>
+        </LanguageModeProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

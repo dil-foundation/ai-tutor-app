@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Tabs, useRouter, usePathname } from 'expo-router';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import React, { useMemo } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -11,7 +12,11 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   console.log('[TabLayout] colorScheme:', colorScheme);
+  console.log('[TabLayout] Safe area insets:', insets);
+  console.log('[TabLayout] Platform:', Platform.OS);
+  console.log('[TabLayout] Calculated tab bar height:', Platform.OS === 'ios' ? 65 + insets.bottom : 85);
 
   // Check if we're in conversation screen, greeting, or stage1/stage2 screens to hide tab bar
   const isInConversation = pathname.includes('/conversation');
@@ -25,39 +30,68 @@ export default function TabLayout() {
   const isInStage6 = pathname.includes('/stage6/');
   const shouldHideTabBar = isInConversation || isInStage1 || isInStage2 || isInStage3 || isInStage4 || isInStage5 || isInStage6 || isInEnglishOnly || isInGreeting;
 
+  // Memoize tab bar style to prevent re-calculation on every render
+  const tabBarStyle = useMemo(() => {
+    const baseStyle = {
+      backgroundColor: '#FFFFFF',
+      borderTopColor: 'rgba(0, 0, 0, 0.1)',
+      borderTopWidth: 1,
+      paddingTop: 8,
+      paddingHorizontal: 16,
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 16,
+      display: shouldHideTabBar ? 'none' : 'flex',
+    };
+
+    // Platform-specific safe area handling
+    if (Platform.OS === 'ios') {
+      return {
+        ...baseStyle,
+        height: 65 + insets.bottom,
+        paddingBottom: Math.max(insets.bottom, 8),
+      };
+    } else {
+      // Android with edge-to-edge - ensure proper spacing above navigation
+      const androidBottomPadding = insets.bottom > 0 ? insets.bottom + 8 : 20;
+      return {
+        ...baseStyle,
+        height: 65 + androidBottomPadding,
+        paddingBottom: androidBottomPadding,
+      };
+    }
+  }, [insets.bottom, shouldHideTabBar]);
+
   return (
     <RoleBasedAccess>
-      <Tabs
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <Tabs
         screenOptions={{
           tabBarActiveTintColor: '#58D68D',
           tabBarInactiveTintColor: '#6C757D',
           headerShown: false,
-          tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopColor: 'rgba(0, 0, 0, 0.1)',
-            borderTopWidth: 1,
-            height: 85,
-            paddingTop: 8,
-            paddingBottom: 20,
-            paddingHorizontal: 16,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.1,
-            shadowRadius: 12,
-            elevation: 16,
-            // Hide tab bar when in conversation screen or stage1/stage2 screens
-            display: shouldHideTabBar ? 'none' : 'flex',
-          },
+          tabBarStyle: tabBarStyle,
+          tabBarHideOnKeyboard: true,
+          tabBarBackground: () => (
+            <View style={{ 
+              backgroundColor: '#FFFFFF', 
+              flex: 1,
+              borderTopWidth: 1,
+              borderTopColor: 'rgba(0, 0, 0, 0.1)'
+            }} />
+          ),
           tabBarItemStyle: {
             paddingVertical: 8,
           },
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',
-            marginTop: 4,
+            marginTop: 6, // Increased gap between icon and text
           },
           tabBarIconStyle: {
-            marginBottom: 2,
+            marginBottom: 4, // Increased space below icon
           },
         }}>
         <Tabs.Screen
@@ -173,6 +207,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      </SafeAreaView>
     </RoleBasedAccess>
   );
 }

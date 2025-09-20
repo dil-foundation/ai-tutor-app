@@ -1,32 +1,31 @@
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity,
-  Animated,
-  LayoutAnimation,
-  Platform,
-  UIManager,
-  StatusBar,
-  Alert,
-  RefreshControl,
-  Image,
-  Easing,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../../context/AuthContext';
-import LoadingScreen from '../../../components/LoadingScreen';
-import StageCard from '@/components/progress/StageCard';
 import RoadmapLine from '@/components/progress/RoadmapLine';
-import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
-import CircularProgress from '../../../components/CircularProgress';
+import StageCard from '@/components/progress/StageCard';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  LayoutAnimation,
+  Platform,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  UIManager,
+  View
+} from 'react-native';
+import CircularProgress from '../../../components/CircularProgress';
+import LoadingScreen from '../../../components/LoadingScreen';
+import { useAuth } from '../../../context/AuthContext';
+import { ProgressData, ProgressHelpers } from '../../../utils/progressTracker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -502,12 +501,12 @@ export default function ProgressScreen() {
                   <View style={styles.circularProgressContainer}>
                     <CircularProgress
                       progress={safeData.current_stage.progress}
-                      size={120}
-                      strokeWidth={12}
+                      size={width > 350 ? 120 : 100} // Responsive size
+                      strokeWidth={width > 350 ? 12 : 10} // Responsive stroke width
                       tintColor={COLORS.primary}
                       backgroundColor="rgba(88, 214, 141, 0.1)"
                       textColor={COLORS.text.primary}
-                      textSize={24}
+                      textSize={width > 350 ? 24 : 20} // Responsive text size
                       animate={true}
                       animationDuration={2000}
                     />
@@ -878,11 +877,6 @@ export default function ProgressScreen() {
             </BlurView>
           </Animated.View>
 
-          {/* Enhanced Decorative Elements */}
-          <View style={styles.decorativeCircle1} />
-          <View style={styles.decorativeCircle2} />
-          <View style={styles.decorativeCircle3} />
-          <View style={styles.decorativeCircle4} />
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -1088,6 +1082,7 @@ const styles = StyleSheet.create({
   circularProgressContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: width > 350 ? 0 : 16, // Add margin on small devices when stacked
   },
   circularProgressTitle: {
     fontSize: 16,
@@ -1097,36 +1092,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   integratedProgressSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: width > 350 ? 'row' : 'column', // Stack vertically on small devices
+    alignItems: width > 350 ? 'center' : 'flex-start',
     justifyContent: 'space-between',
     marginTop: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: width > 350 ? 20 : 16,
   },
   integratedStatsContainer: {
     flex: 1,
-    marginLeft: 24,
+    marginLeft: width > 350 ? 24 : 16, // Responsive margin for smaller devices
   },
   integratedStatItem: {
-    flexDirection: 'row',         // Make value and label sit horizontally
-    alignItems: 'center', 
     marginBottom: 16,
+    minHeight: 40, // Ensure enough height for text
   },
   integratedStatValue: {
-    fontSize: 22,
+    fontSize: width > 350 ? 22 : 20, // Responsive font size
     fontWeight: 'bold',
     color: COLORS.text.primary,
     marginBottom: 4,
     fontFamily: 'Lexend-Bold',
-    width: 50,                  
-    textAlign: 'right',         
-    marginRight: 8,             
+    textAlign: 'left',
+    flexShrink: 0, // Prevent text from shrinking
   },
   integratedStatLabel: {
-    fontSize: 14,
+    fontSize: width > 350 ? 14 : 13, // Responsive font size
     color: COLORS.text.secondary,
     textAlign: 'left',
     fontFamily: 'Lexend-Regular',
+    flexWrap: 'wrap', // Allow text to wrap
+    lineHeight: width > 350 ? 20 : 18, // Responsive line height
   },
   detailedStatsCard: {
     marginHorizontal: 20,
@@ -1867,41 +1862,5 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     marginTop: 12,
     fontFamily: 'Lexend-Regular',
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: height * 0.15,
-    right: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(88, 214, 141, 0.08)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: height * 0.25,
-    left: -40,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(69, 183, 168, 0.08)',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.7,
-    right: -30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(88, 214, 141, 0.05)',
-  },
-  decorativeCircle4: {
-    position: 'absolute',
-    bottom: height * 0.4,
-    left: width * 0.7,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
 }); 

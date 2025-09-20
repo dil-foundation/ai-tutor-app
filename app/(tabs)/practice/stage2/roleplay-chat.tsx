@@ -1,29 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState, useRef } from 'react';
-import { 
-  Animated, 
-  Dimensions, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  KeyboardAvoidingView,
   Platform,
-  StatusBar,
   SafeAreaView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TextInput,
-  Alert,
-  KeyboardAvoidingView
+  TouchableOpacity,
+  View
 } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import LottieView from 'lottie-react-native';
-import BASE_API_URL, { API_ENDPOINTS } from '../../../../config/api';
-import { authenticatedFetch } from '../../../../utils/authUtils';
-import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
-import { useAuth } from '../../../../context/AuthContext';
 import LoadingScreen from '../../../../components/LoadingScreen';
+import BASE_API_URL from '../../../../config/api';
+import { useAuth } from '../../../../context/AuthContext';
+import { useAudioPlayerFixed, useAudioRecorder } from '../../../../hooks';
+import { authenticatedFetch } from '../../../../utils/authUtils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -410,7 +410,7 @@ const RoleplayChatScreen = () => {
       audioPlayer.stopAudio();
     }
     setIsNavigatingAway(true);
-    router.push({ pathname: '/practice/stage2' });
+    router.push({ pathname: '/practice/stage2/roleplay-simulation' });
   };
 
   if (authLoading) {
@@ -552,7 +552,7 @@ const RoleplayChatScreen = () => {
                   {isProcessing && (
                     <View style={styles.processingContainer}>
                       <Ionicons name="ellipsis-horizontal" size={24} color="#58D68D" />
-                      <Text style={styles.processingText}>AI is typing...</Text>
+                      <Text style={styles.processingText}>{params.aiCharacter} is responding...</Text>
                     </View>
                   )}
                 </ScrollView>
