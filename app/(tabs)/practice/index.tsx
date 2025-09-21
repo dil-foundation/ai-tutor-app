@@ -3,6 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { 
+  ActivityIndicator,
+  Alert,
   Animated, 
   Dimensions, 
   SafeAreaView, 
@@ -12,6 +14,7 @@ import {
   TouchableOpacity, 
   View 
 } from 'react-native';
+import { useUserProgress } from '../../../hooks/useUserProgress';
 
 const { width, height } = Dimensions.get('window');
 
@@ -76,6 +79,7 @@ const practiceStages = [
 
 export default function PracticeLandingScreen() {
   const router = useRouter();
+  const { progress, loading: progressLoading, error: progressError } = useUserProgress();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
@@ -106,26 +110,72 @@ export default function PracticeLandingScreen() {
     ]).start();
   }, []);
 
-  const navigateToStage = (stagePath: string, stageIndex: number) => {
-    // Add a small scale animation on press for the specific stage
-    Animated.sequence([
-      Animated.timing(stageScaleAnims[stageIndex], {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(stageScaleAnims[stageIndex], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const getStageStatus = (stageIndex: number): 'unlocked' | 'locked' | 'completed' | 'loading' => {
+    if (progressLoading) {
+      return 'loading';
+    }
+    if (!progress || progressError) {
+      return 'locked';
+    }
 
-    router.push(stagePath as any);
+    const { unlocked_stages, assigned_start_stage } = progress;
+
+    if (unlocked_stages && unlocked_stages.includes(stageIndex)) {
+      return 'unlocked';
+    }
+    
+    if (assigned_start_stage !== null && assigned_start_stage !== undefined) {
+      if (stageIndex < assigned_start_stage) {
+        return 'completed';
+      }
+    }
+
+    return 'locked';
+  };
+
+  const navigateToStage = (stagePath: string, stageIndex: number) => {
+    const status = getStageStatus(stageIndex);
+
+    if (status === 'unlocked') {
+      // Add a small scale animation on press for the specific stage
+      Animated.sequence([
+        Animated.timing(stageScaleAnims[stageIndex], {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(stageScaleAnims[stageIndex], {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        router.push(stagePath as any);
+      });
+    } else if (status === 'locked') {
+      Alert.alert(
+        "Stage Locked",
+        "You need to complete previous stages to unlock this one."
+      );
+    } else if (status === 'completed') {
+      Alert.alert(
+        "Stage Completed",
+        "You have already completed this stage."
+      );
+    }
   };
 
   const beginnerStages = practiceStages.filter(stage => stage.category === "Beginner");
   const advancedStages = practiceStages.filter(stage => stage.category === "Advanced");
+
+  if (progressLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#58D68D" />
+        <Text style={styles.loadingText}>Loading Your Progress...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -181,6 +231,10 @@ export default function PracticeLandingScreen() {
 
           {beginnerStages.map((stage, index) => {
             const stageIndex = practiceStages.findIndex(s => s.title === stage.title);
+            const status = getStageStatus(stageIndex);
+            const isLocked = status === 'locked';
+            const isCompleted = status === 'completed';
+
             return (
               <Animated.View
                 key={stage.title}
@@ -199,21 +253,32 @@ export default function PracticeLandingScreen() {
                   style={styles.stageButton}
                   onPress={() => navigateToStage(stage.path, stageIndex)}
                   activeOpacity={0.8}
+                  disabled={status === 'loading'}
                 >
                   <LinearGradient
                     colors={stage.gradient}
-                    style={styles.stageGradient}
+                    style={[styles.stageGradient, isLocked && styles.lockedStage]}
                   >
                     <View style={styles.stageContent}>
                       <View style={styles.stageIconContainer}>
-                        <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
+                        {isLocked ? (
+                          <Ionicons name="lock-closed-outline" size={28} color="#FFFFFF" />
+                        ) : isCompleted ? (
+                          <Ionicons name="checkmark-circle-outline" size={28} color="#FFFFFF" />
+                        ) : (
+                          <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
+                        )}
                       </View>
                       <View style={styles.stageTextContainer}>
                         <Text style={styles.stageTitle}>{stage.title}</Text>
                         <Text style={styles.stageDescription}>{stage.description}</Text>
                       </View>
                       <View style={styles.arrowContainer}>
-                        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                        {isLocked ? (
+                           <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.7)" />
+                        ) : isCompleted ? null : (
+                          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                        )}
                       </View>
                     </View>
                   </LinearGradient>
@@ -245,6 +310,10 @@ export default function PracticeLandingScreen() {
 
           {advancedStages.map((stage, index) => {
             const stageIndex = practiceStages.findIndex(s => s.title === stage.title);
+            const status = getStageStatus(stageIndex);
+            const isLocked = status === 'locked';
+            const isCompleted = status === 'completed';
+            
             return (
               <Animated.View
                 key={stage.title}
@@ -263,21 +332,32 @@ export default function PracticeLandingScreen() {
                   style={styles.stageButton}
                   onPress={() => navigateToStage(stage.path, stageIndex)}
                   activeOpacity={0.8}
+                  disabled={status === 'loading'}
                 >
                   <LinearGradient
                     colors={stage.gradient}
-                    style={styles.stageGradient}
+                    style={[styles.stageGradient, isLocked && styles.lockedStage]}
                   >
                     <View style={styles.stageContent}>
                       <View style={styles.stageIconContainer}>
-                        <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
+                         {isLocked ? (
+                          <Ionicons name="lock-closed-outline" size={28} color="#FFFFFF" />
+                        ) : isCompleted ? (
+                          <Ionicons name="checkmark-circle-outline" size={28} color="#FFFFFF" />
+                        ) : (
+                          <Ionicons name={stage.icon as any} size={28} color="#FFFFFF" />
+                        )}
                       </View>
                       <View style={styles.stageTextContainer}>
                         <Text style={styles.stageTitle}>{stage.title}</Text>
                         <Text style={styles.stageDescription}>{stage.description}</Text>
                       </View>
                       <View style={styles.arrowContainer}>
-                        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                        {isLocked ? (
+                          <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.7)" />
+                        ) : isCompleted ? null : (
+                          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                        )}
                       </View>
                     </View>
                   </LinearGradient>
@@ -330,6 +410,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#6C757D',
   },
   scrollView: {
     flex: 1,
@@ -413,6 +504,9 @@ const styles = StyleSheet.create({
   stageGradient: {
     paddingHorizontal: 24,
     paddingVertical: 20,
+  },
+  lockedStage: {
+    opacity: 0.7,
   },
   stageContent: {
     flexDirection: 'row',
