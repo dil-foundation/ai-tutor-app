@@ -1,0 +1,11 @@
+2025-09-22 22:22:44:779 [Appium] Welcome to Appium v2.19.0 (REV d582dd7111392043f26664ef974e54e41831a808)
+2025-09-22 22:22:44:781 [Appium] Non-default server args:
+2025-09-22 22:22:44:782 [Appium] { address: 'localhost', basePath: '/' }
+2025-09-22 22:22:44:783 [Appium] The autodetected Appium home path: D:\work\DIL-LMS\lms-mobile-app\tests
+2025-09-22 22:22:44:783 [Appium] Attempting to load driver uiautomator2...
+2025-09-22 22:22:44:785 [Appium] Requiring driver at D:\work\DIL-LMS\lms-mobile-app\tests\node_modules\appium-uiautomator2-driver\build\index.js
+2025-09-22 22:22:45:634 [Appium] AndroidUiautomator2Driver has been successfully loaded in 0.850s
+2025-09-22 22:22:45:655 [Appium] Appium REST http interface listener started on http://localhost:4723
+2025-09-22 22:22:45:656 [Appium] Available drivers:
+2025-09-22 22:22:45:656 [Appium]   - uiautomator2@2.19.0 (automationName 'UiAutomator2')
+2025-09-22 22:22:45:657 [Appium] No plugins have been installed. Use the "appium plugin" command to install the one(s) you want to use.
