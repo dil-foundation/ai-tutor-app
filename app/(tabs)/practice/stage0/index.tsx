@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     Animated,
     Dimensions,
@@ -11,8 +11,11 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    ActivityIndicator
 } from 'react-native';
+import { useAuth } from '../../../../context/AuthContext';
+import { ProgressHelpers, ProgressData } from '../../../../utils/progressTracker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,6 +31,9 @@ const lesson4Image = require('../../../../assets/images/04.png');   // Adjusted 
 const lesson5Image = require('../../../../assets/images/05.png');   // Adjusted path
 
 const BeginnerLessonsScreen: React.FC = () => {
+    const { user } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
+    const [completedLessons, setCompletedLessons] = useState<string[]>([]);
     const [fadeAnim] = useState(new Animated.Value(0));
     const [slideAnim] = useState(new Animated.Value(30));
     const [scaleAnim] = useState(new Animated.Value(0.8));
@@ -36,26 +42,69 @@ const BeginnerLessonsScreen: React.FC = () => {
         Array(5).fill(0).map(() => new Animated.Value(1))
     );
 
+    useFocusEffect(
+        useCallback(() => {
+            const fetchProgress = async () => {
+                if (!user) {
+                    setIsLoading(false);
+                    return;
+                }
+                try {
+                    // Force a refresh to bypass cache and get the latest progress
+                    const result = await ProgressHelpers.forceRefreshProgress();
+                    if (result.success && result.data) {
+                        // Define types for clarity
+                        type Stage = ProgressData['stages'][0];
+                        type Exercise = Stage['exercises'][0];
+
+                        const stage0 = result.data.stages.find((stage: Stage) => stage.stage_id === 0);
+
+                        if (stage0 && stage0.exercises) {
+                            const completed: string[] = [];
+                            // The exercises from the backend are missing an 'exercise_id'.
+                            // We can reliably use the array index since the order is guaranteed.
+                            stage0.exercises.forEach((exercise: Exercise, index: number) => {
+                                if (exercise.status === 'completed') {
+                                    // Lesson IDs are 1-based, so add 1 to the 0-based index.
+                                    completed.push(String(index + 1));
+                                }
+                            });
+                            setCompletedLessons(completed);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch Stage 0 progress:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            fetchProgress();
+        }, [user])
+    );
+
     useEffect(() => {
         // Animate elements on mount
-        Animated.parallel([
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 1000,
-                useNativeDriver: true,
-            }),
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 1000,
-                useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-                toValue: 1,
-                duration: 800,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    }, []);
+        if (!isLoading) {
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(scaleAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    }, [isLoading]);
 
     const handleGoBack = () => {
         // router.back() navigates back in the history stack
@@ -99,6 +148,15 @@ const BeginnerLessonsScreen: React.FC = () => {
         // If these are tabs defined in `app/(tabs)/_layout.tsx`, use their direct paths.
 
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#58D68D" />
+                <Text style={styles.loadingText}>Loading Lessons...</Text>
+            </View>
+        );
+    }
 
     const lessons = [
         {
@@ -215,7 +273,9 @@ const BeginnerLessonsScreen: React.FC = () => {
                 </Animated.View>
 
                 {/* Lessons */}
-                {lessons.map((lesson, index) => (
+                {lessons.map((lesson, index) => {
+                    const isCompleted = completedLessons.includes(lesson.id);
+                    return (
                     <Animated.View
                         key={lesson.id}
                         style={[
@@ -231,8 +291,9 @@ const BeginnerLessonsScreen: React.FC = () => {
                     >
                         <TouchableOpacity
                             style={styles.lessonButton}
-                            onPress={() => handleStartLesson(lesson.title, lesson.id, index)}
-                            activeOpacity={0.8}
+                            onPress={() => !isCompleted && handleStartLesson(lesson.title, lesson.id, index)}
+                            activeOpacity={isCompleted ? 1.0 : 0.8}
+                            disabled={isCompleted}
                         >
                             <LinearGradient
                                 colors={lesson.gradient}
@@ -249,20 +310,28 @@ const BeginnerLessonsScreen: React.FC = () => {
                                             <Text style={styles.lessonDescription}>{lesson.description}</Text>
                                         </View>
                                     </View>
-                                    <View style={styles.startButtonContainer}>
-                                        <LinearGradient
-                                            colors={['rgba(255, 255, 255, 0.25)', 'rgba(255, 255, 255, 0.15)']}
-                                            style={styles.startButtonGradient}
-                                        >
-                                            <Text style={styles.startButtonText}>Start</Text>
-                                            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                                        </LinearGradient>
-                                    </View>
+                                    {!isCompleted && (
+                                        <View style={styles.startButtonContainer}>
+                                            <LinearGradient
+                                                colors={['rgba(255, 255, 255, 0.25)', 'rgba(255, 255, 255, 0.15)']}
+                                                style={styles.startButtonGradient}
+                                            >
+                                                <Text style={styles.startButtonText}>Start</Text>
+                                                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                                            </LinearGradient>
+                                        </View>
+                                    )}
                                 </View>
+                                {isCompleted && (
+                                    <View style={styles.completedOverlay}>
+                                        <Ionicons name="checkmark-circle" size={64} color="rgba(255, 255, 255, 0.9)" />
+                                        <Text style={styles.completedText}>Completed</Text>
+                                    </View>
+                                )}
                             </LinearGradient>
                         </TouchableOpacity>
                     </Animated.View>
-                ))}
+                )})}
 
                 {/* Progress Info Card */}
                 <Animated.View
@@ -304,6 +373,17 @@ const BeginnerLessonsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#6C757D',
+    },
     container: {
         flex: 1,
         paddingTop: 60,
@@ -482,6 +562,22 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0, 0, 0, 0.1)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 1,
+    },
+    completedOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(46, 204, 113, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 20,
+    },
+    completedText: {
+        color: '#FFFFFF',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 8,
+        textShadowColor: 'rgba(0, 0, 0, 0.25)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
     progressCard: {
         marginTop: 20,

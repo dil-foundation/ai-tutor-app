@@ -26,6 +26,7 @@ import RoadmapLine from '@/components/progress/RoadmapLine';
 import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
 import CircularProgress from '../../../components/CircularProgress';
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,12 +53,6 @@ const COLORS = {
   },
   border: 'rgba(255, 255, 255, 0.2)',
   shadow: 'rgba(0, 0, 0, 0.1)',
-};
-
-const getStageStatus = (stage: any) => {
-  if (stage.completed) return 'completed';
-  if (stage.unlocked || stage.progress > 0) return 'in_progress';
-  return 'locked';
 };
 
 const getStatusColor = (status: string) => {
@@ -392,7 +387,7 @@ export default function ProgressScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: Constants.statusBarHeight + 40 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -548,8 +543,9 @@ export default function ProgressScreen() {
             
             {safeData.stages.length > 0 ? (
               safeData.stages.map((stage, idx) => {
-                const status = getStageStatus(stage);
                 const isExpanded = expandedStage === idx;
+                const status = stage.completed ? 'completed' : stage.unlocked ? 'in_progress' : 'locked';
+                
                 return (
                   <View key={stage.stage_id} style={{ 
                     position: 'relative', 
@@ -567,6 +563,7 @@ export default function ProgressScreen() {
                     <StageCard
                       index={idx}
                       stage={{
+                        id: stage.stage_id,
                         stage: stage.name,
                         subtitle: stage.subtitle,
                         completed: stage.completed,
@@ -574,6 +571,7 @@ export default function ProgressScreen() {
                         exercises: stage.exercises,
                         unlocked: stage.unlocked,
                       }}
+                      currentStageId={safeData.current_stage.id}
                       expanded={isExpanded}
                       onPress={() => handleStagePress(idx)}
                     >
@@ -904,7 +902,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 80,
     paddingBottom: 40,
   },
   header: {

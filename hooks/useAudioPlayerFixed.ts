@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Platform } from 'react-native';
+import { useAudioSession } from './useAudioSession'; // Import the new hook
 
 // Import Audio with error handling for Turbo module issues
 let Audio: any = null;
@@ -31,6 +32,8 @@ interface UseAudioPlayerReturn {
 }
 
 export const useAudioPlayerFixed = (): UseAudioPlayerReturn => {
+  useAudioSession('play'); // Configure audio session for playback
+
   const [state, setState] = useState<AudioPlayerState>({
     isPlaying: false,
     isLoaded: false,
@@ -66,21 +69,8 @@ export const useAudioPlayerFixed = (): UseAudioPlayerReturn => {
         soundRef.current = null;
       }
 
-      // Set audio mode for playback
-      console.log('🔄 useAudioPlayerFixed: Setting audio mode for playback...');
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
-          interruptionModeIOS: InterruptionModeIOS?.DoNotMix || 1,
-        });
-        console.log('✅ useAudioPlayerFixed: Audio mode set successfully');
-      } catch (e) {
-        console.log('⚠️ useAudioPlayerFixed: Error setting audio mode:', e);
-      }
-
+      // Set audio mode for playback - REMOVED as it's now handled by useAudioSession
+      
       // Load the audio file
       console.log('🔄 useAudioPlayerFixed: Creating sound from URI...');
       const { sound } = await Audio.Sound.createAsync(

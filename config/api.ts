@@ -74,10 +74,18 @@ export const API_ENDPOINTS = {
   // Progress tracking
   INITIALIZE_PROGRESS: `${BASE_API_URL}/api/progress/initialize-progress`,
   RECORD_TOPIC_ATTEMPT: `${BASE_API_URL}/api/progress/record-topic-attempt`,
+  COMPLETE_LESSON: `${BASE_API_URL}/api/progress/complete-lesson`,
   GET_USER_PROGRESS: (userId: string) => `${BASE_API_URL}/api/progress/user-progress/${userId}`,
   CHECK_UNLOCKS: (userId: string) => `${BASE_API_URL}/api/progress/check-unlocks/${userId}`,
   GET_CURRENT_TOPIC: `${BASE_API_URL}/api/progress/get-current-topic`,
   COMPREHENSIVE_PROGRESS: `${BASE_API_URL}/api/progress/comprehensive-progress`,
+  
+  // New Auth endpoint
+  SIGNUP: `${BASE_API_URL}/api/auth/signup`,
+
+  // User management
+  GET_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
+  UPDATE_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
   
   // Exercise endpoints
   IN_DEPTH_INTERVIEW: (promptId: number) => `${BASE_API_URL}/api/in-depth-interview/${promptId}`,

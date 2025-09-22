@@ -33,6 +33,7 @@ interface Exercise {
 interface StageCardProps {
   index: number;
   stage: {
+    id: number;
     stage: string;
     subtitle: string;
     completed: boolean;
@@ -40,15 +41,32 @@ interface StageCardProps {
     exercises: Exercise[];
     unlocked: boolean;
   };
+  currentStageId: number;
   expanded: boolean;
   onPress: () => void;
   children?: React.ReactNode;
 }
 
-const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children }) => {
-  const status = stage.completed ? 'completed' : stage.unlocked ? 'in_progress' : 'locked';
+const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children, currentStageId }) => {
+  const isCurrent = stage.id === currentStageId;
+
+  // --- BEGIN FIX: Prioritize 'completed' status ---
+  // The status of a stage is determined in a specific order:
+  // 1. If it's completed, it's always 'completed'.
+  // 2. If it's not completed but is unlocked, it's 'in_progress'.
+  // 3. Otherwise, it's 'locked'.
+  let status: 'completed' | 'in_progress' | 'locked';
+  if (stage.completed) {
+    status = 'completed';
+  } else if (stage.unlocked) {
+    status = 'in_progress';
+  } else {
+    status = 'locked';
+  }
+  // --- END FIX ---
+
   const clampedProgress = Math.round(stage.progress);
-  const isActive = status === 'in_progress';
+  const isActive = status === 'in_progress' && isCurrent;
 
   const getStatusColor = () => {
     switch (status) {
@@ -114,6 +132,10 @@ const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, 
                 {status === 'locked' ? (
                   <View style={styles.lockedIconContainer}>
                     <Ionicons name="lock-closed" size={24} color={COLORS.text.tertiary} />
+                  </View>
+                ) : status === 'completed' ? (
+                  <View style={styles.completedIconContainer}>
+                    <Ionicons name="checkmark-circle" size={28} color={COLORS.success} />
                   </View>
                 ) : (
                   <View style={styles.expandIconContainer}>
@@ -265,6 +287,13 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(156, 163, 175, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

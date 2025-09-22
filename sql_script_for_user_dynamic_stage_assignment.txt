@@ -1,0 +1,28 @@
+-- Add a column to store the user's self-assessed English proficiency text
+ALTER TABLE public.ai_tutor_user_progress_summary
+ADD COLUMN english_proficiency_text TEXT;
+
+-- Add a column to store the AI-assigned starting stage
+ALTER TABLE public.ai_tutor_user_progress_summary
+ADD COLUMN assigned_start_stage INTEGER;
+
+-- Add comments to the new columns for clarity and documentation
+COMMENT ON COLUMN public.ai_tutor_user_progress_summary.english_proficiency_text IS 'User-provided text describing their English proficiency during sign-up.';
+COMMENT ON COLUMN public.ai_tutor_user_progress_summary.assigned_start_stage IS 'The initial stage assigned to the user based on their proficiency text.';
+
+
+
+
+
+
+
+22-9-2025 : 07:06pm
+
+-- Remove the old constraint if it exists
+ALTER TABLE public.ai_tutor_user_progress_summary 
+DROP CONSTRAINT IF EXISTS user_progress_summary_current_stage_check;
+
+-- Add the new, correct constraint
+ALTER TABLE public.ai_tutor_user_progress_summary
+ADD CONSTRAINT user_progress_summary_current_stage_check 
+CHECK (current_stage >= 0 AND current_stage <= 6);
