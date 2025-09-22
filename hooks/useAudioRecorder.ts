@@ -3,6 +3,7 @@ import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Platform, Alert } from 'react-native';
 import CHATGPT_TIMING_CONFIG, { getSilenceDuration, logTimingInfo } from '../utils/chatgptTimingConfig';
+import { useAudioSession } from './useAudioSession';
 
 interface AudioRecorderState {
   isRecording: boolean;
@@ -27,6 +28,8 @@ interface UseAudioRecorderReturn {
 }
 
 export const useAudioRecorder = (maxDuration: number = 5000, onAutoStop?: (audioUri: string | null) => void): UseAudioRecorderReturn => {
+  useAudioSession('record'); // Configure audio session for recording
+
   const [state, setState] = useState<AudioRecorderState>({
     isRecording: false,
     isListening: false,
