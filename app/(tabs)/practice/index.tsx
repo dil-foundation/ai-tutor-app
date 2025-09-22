@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import { 
   ActivityIndicator,
   Alert,
@@ -14,7 +14,7 @@ import {
   TouchableOpacity, 
   View 
 } from 'react-native';
-import { useUserProgress } from '../../../hooks/useUserProgress';
+import { ProgressHelpers, ProgressData } from '../../../utils/progressTracker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -79,7 +79,8 @@ const practiceStages = [
 
 export default function PracticeLandingScreen() {
   const router = useRouter();
-  const { progress, loading: progressLoading, error: progressError } = useUserProgress();
+  const [progressData, setProgressData] = useState<ProgressData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
@@ -89,54 +90,81 @@ export default function PracticeLandingScreen() {
     practiceStages.map(() => new Animated.Value(1))
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const fetchProgress = async () => {
+        setLoading(true);
+        try {
+          const result = await ProgressHelpers.getComprehensiveProgress();
+          if (result.success && result.data) {
+            setProgressData(result.data);
+          } else {
+            console.error("Failed to fetch comprehensive progress:", result.error);
+          }
+        } catch (error) {
+          console.error("Error fetching progress in PracticeLandingScreen:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProgress();
+    }, [])
+  );
+
   useEffect(() => {
-    // Animate elements on mount
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    if (!loading) {
+      // Animate elements on mount
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [loading]);
 
   const getStageStatus = (stageIndex: number): 'unlocked' | 'locked' | 'completed' | 'loading' => {
-    if (progressLoading) {
+    if (loading) {
       return 'loading';
     }
-    if (!progress || progressError) {
+    if (!progressData) {
       return 'locked';
     }
-
-    const { unlocked_stages, assigned_start_stage } = progress;
-
-    if (unlocked_stages && unlocked_stages.includes(stageIndex)) {
+  
+    // Find the specific stage from the detailed progress data
+    const stageInfo = progressData.stages.find(s => s.stage_id === stageIndex);
+  
+    if (!stageInfo) {
+      // If stage info is not found (shouldn't happen for stages 0-6), assume locked
+      return 'locked';
+    }
+  
+    if (stageInfo.completed) {
+      return 'completed';
+    }
+  
+    if (stageInfo.unlocked) {
       return 'unlocked';
     }
-    
-    if (assigned_start_stage !== null && assigned_start_stage !== undefined) {
-      if (stageIndex < assigned_start_stage) {
-        return 'completed';
-      }
-    }
-
+  
     return 'locked';
   };
 
   const navigateToStage = (stagePath: string, stageIndex: number) => {
     const status = getStageStatus(stageIndex);
 
-    if (status === 'unlocked') {
+    if (status === 'unlocked' || status === 'completed') {
       // Add a small scale animation on press for the specific stage
       Animated.sequence([
         Animated.timing(stageScaleAnims[stageIndex], {
@@ -157,18 +185,13 @@ export default function PracticeLandingScreen() {
         "Stage Locked",
         "You need to complete previous stages to unlock this one."
       );
-    } else if (status === 'completed') {
-      Alert.alert(
-        "Stage Completed",
-        "You have already completed this stage."
-      );
     }
   };
 
   const beginnerStages = practiceStages.filter(stage => stage.category === "Beginner");
   const advancedStages = practiceStages.filter(stage => stage.category === "Advanced");
 
-  if (progressLoading) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#58D68D" />

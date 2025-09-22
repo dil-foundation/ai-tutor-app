@@ -49,7 +49,22 @@ interface StageCardProps {
 
 const StageCard: React.FC<StageCardProps> = ({ index, stage, expanded, onPress, children, currentStageId }) => {
   const isCurrent = stage.id === currentStageId;
-  const status = stage.completed ? 'completed' : (stage.unlocked || isCurrent) ? 'in_progress' : 'locked';
+
+  // --- BEGIN FIX: Prioritize 'completed' status ---
+  // The status of a stage is determined in a specific order:
+  // 1. If it's completed, it's always 'completed'.
+  // 2. If it's not completed but is unlocked, it's 'in_progress'.
+  // 3. Otherwise, it's 'locked'.
+  let status: 'completed' | 'in_progress' | 'locked';
+  if (stage.completed) {
+    status = 'completed';
+  } else if (stage.unlocked) {
+    status = 'in_progress';
+  } else {
+    status = 'locked';
+  }
+  // --- END FIX ---
+
   const clampedProgress = Math.round(stage.progress);
   const isActive = status === 'in_progress' && isCurrent;
 
