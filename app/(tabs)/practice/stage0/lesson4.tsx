@@ -17,7 +17,8 @@ import {
 import { Audio } from 'expo-av';
 import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fetchAudioFromText } from '../../../../config/api';
+import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
+import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -92,6 +93,8 @@ const Lesson4Screen: React.FC = () => {
     const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
     const [showFinishAnimation, setShowFinishAnimation] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState<{[key: string]: string}>({});
+    const [isCompleting, setIsCompleting] = useState(false);
+    const { user, session } = useAuth();
 
     // Animation values
     const [fadeAnim] = useState(new Animated.Value(0));
@@ -422,15 +425,49 @@ const Lesson4Screen: React.FC = () => {
         }
     };
 
-    const handleNextOrFinish = () => {
+    const handleNextOrFinish = async () => {
         if (currentPageIndex < totalPages - 1) {
             setCurrentPageIndex(currentPageIndex + 1);
         } else {
-            console.log('Lesson 4 Finished!');
-            setShowFinishAnimation(true);
-            setTimeout(() => {
-                router.replace('/(tabs)/practice/stage0');
-            }, 3000);
+            if (isCompleting) return;
+
+            console.log('Lesson 4 Finished! Recording progress...');
+            setIsCompleting(true);
+            
+            try {
+                if (!user || !session) {
+                    throw new Error("User not authenticated");
+                }
+                
+                const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        stage_id: 0,
+                        exercise_id: 4,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || "Failed to record progress");
+                }
+                
+                console.log("Progress recorded successfully for Lesson 4!");
+
+            } catch (error) {
+                console.error("Error recording lesson completion:", error);
+            } finally {
+                setShowFinishAnimation(true);
+                setTimeout(() => {
+                    router.replace('/(tabs)/practice/stage0');
+                    setIsCompleting(false);
+                }, 3000);
+            }
         }
     };
 
@@ -538,9 +575,10 @@ const Lesson4Screen: React.FC = () => {
                         style={styles.buttonWrapper}
                         onPress={handleNextOrFinish}
                         activeOpacity={0.8}
+                        disabled={isCompleting}
                     >
                         <LinearGradient
-                            colors={['#58D68D', '#45B7A8', '#58D68D']}
+                            colors={isCompleting ? ['#B0B0B0', '#909090'] : ['#58D68D', '#45B7A8', '#58D68D']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.buttonGradient}
@@ -553,7 +591,9 @@ const Lesson4Screen: React.FC = () => {
                                 </View>
                                 <View style={styles.buttonTextContainer}>
                                     <Text style={styles.buttonText}>
-                                        {currentPageIndex === totalPages - 1 ? 'Complete Lesson' : 'Continue'}
+                                        {currentPageIndex === totalPages - 1 
+                                            ? (isCompleting ? 'Saving...' : 'Complete Lesson') 
+                                            : 'Continue'}
                                     </Text>
                                     <Text style={styles.buttonSubtext}>
                                         {currentPageIndex === totalPages - 1 ? 'Great job! You did it!' : 'Next section →'}

@@ -17,7 +17,8 @@ import {
 import { Audio } from 'expo-av';
 import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fetchAudioFromText } from '../../../../config/api';
+import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
+import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -55,6 +56,8 @@ const Lesson5Screen: React.FC = () => {
     const [playingWord, setPlayingWord] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
     const [showFinishAnimation, setShowFinishAnimation] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
+    const { user, session } = useAuth();
     
     // Animation values
     const [fadeAnim] = useState(new Animated.Value(0));
@@ -238,13 +241,47 @@ const Lesson5Screen: React.FC = () => {
         if (router.canGoBack()) router.back();
     };
 
-    const handleFinish = () => {
-        console.log('Lesson 5 Finished!');
-        setShowFinishAnimation(true);
-        // Wait for animation to complete before navigating
-        setTimeout(() => {
-            router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
-        }, 3000); // 3 seconds to allow animation to play
+    const handleFinish = async () => {
+        if (isCompleting) return;
+
+        console.log('Lesson 5 Finished! Recording progress...');
+        setIsCompleting(true);
+
+        try {
+            if (!user || !session) {
+                throw new Error("User not authenticated");
+            }
+            
+            const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    stage_id: 0,
+                    exercise_id: 5,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Failed to record progress");
+            }
+            
+            console.log("Progress recorded successfully for Lesson 5!");
+
+        } catch (error) {
+            console.error("Error recording lesson completion:", error);
+        } finally {
+            setShowFinishAnimation(true);
+            // Wait for animation to complete before navigating
+            setTimeout(() => {
+                router.replace('/(tabs)/practice/stage0'); // Navigate back to Stage 0 lesson list
+                setIsCompleting(false);
+            }, 3000); // 3 seconds to allow animation to play
+        }
     };
 
     return (
@@ -319,9 +356,10 @@ const Lesson5Screen: React.FC = () => {
                         style={styles.buttonWrapper}
                         onPress={handleFinish}
                         activeOpacity={0.8}
+                        disabled={isCompleting}
                     >
                         <LinearGradient
-                            colors={['#58D68D', '#45B7A8', '#58D68D']}
+                            colors={isCompleting ? ['#B0B0B0', '#909090'] : ['#58D68D', '#45B7A8', '#58D68D']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.buttonGradient}
@@ -331,7 +369,7 @@ const Lesson5Screen: React.FC = () => {
                                     <Text style={styles.buttonIcon}>🎉</Text>
                                 </View>
                                 <View style={styles.buttonTextContainer}>
-                                    <Text style={styles.buttonText}>Complete Lesson</Text>
+                                    <Text style={styles.buttonText}>{isCompleting ? 'Saving...' : 'Complete Lesson'}</Text>
                                     <Text style={styles.buttonSubtext}>Excellent! You've mastered app navigation!</Text>
                                 </View>
                             </View>

@@ -17,7 +17,8 @@ import {
 
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fetchAudioFromText } from '../../../../config/api';
+import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
+import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -176,6 +177,8 @@ const Lesson2Screen = () => {
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const { user, session } = useAuth();
 
   // Animation values
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -364,15 +367,49 @@ const Lesson2Screen = () => {
     }
   };
 
-  const handleNextOrFinish = () => {
+  const handleNextOrFinish = async () => {
     if (currentPageIndex < lessonPages.length - 1) {
       setCurrentPageIndex(currentPageIndex + 1);
     } else {
-      console.log('Lesson 2 Finished!');
-      setShowFinishAnimation(true);
-      setTimeout(() => {
-        router.replace('/(tabs)/practice/stage0');
-      }, 3000);
+      if (isCompleting) return;
+
+      console.log('Lesson 2 Finished! Recording progress...');
+      setIsCompleting(true);
+      
+      try {
+        if (!user || !session) {
+          throw new Error("User not authenticated");
+        }
+        
+        const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            stage_id: 0,
+            exercise_id: 2,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to record progress");
+        }
+        
+        console.log("Progress recorded successfully for Lesson 2!");
+
+      } catch (error) {
+        console.error("Error recording lesson completion:", error);
+      } finally {
+        setShowFinishAnimation(true);
+        setTimeout(() => {
+          router.replace('/(tabs)/practice/stage0');
+          setIsCompleting(false);
+        }, 3000);
+      }
     }
   };
 
@@ -472,9 +509,10 @@ const Lesson2Screen = () => {
             style={styles.buttonWrapper}
             onPress={handleNextOrFinish}
             activeOpacity={0.8}
+            disabled={isCompleting}
           >
             <LinearGradient
-              colors={['#58D68D', '#45B7A8', '#58D68D']}
+              colors={isCompleting ? ['#B0B0B0', '#909090'] : ['#58D68D', '#45B7A8', '#58D68D']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.buttonGradient}
@@ -487,7 +525,9 @@ const Lesson2Screen = () => {
                 </View>
                 <View style={styles.buttonTextContainer}>
                   <Text style={styles.buttonText}>
-                    {currentPageIndex === lessonPages.length - 1 ? 'Complete Lesson' : 'Continue'}
+                    {currentPageIndex === lessonPages.length - 1 
+                      ? (isCompleting ? 'Saving...' : 'Complete Lesson') 
+                      : 'Continue'}
                   </Text>
                   <Text style={styles.buttonSubtext}>
                     {currentPageIndex === lessonPages.length - 1 ? 'Great job! You did it!' : 'Next set of sounds →'}

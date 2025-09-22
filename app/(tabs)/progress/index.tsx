@@ -55,12 +55,6 @@ const COLORS = {
   shadow: 'rgba(0, 0, 0, 0.1)',
 };
 
-const getStageStatus = (stage: any) => {
-  if (stage.completed) return 'completed';
-  if (stage.unlocked || stage.progress > 0) return 'in_progress';
-  return 'locked';
-};
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'completed': return COLORS.success;
@@ -549,8 +543,9 @@ export default function ProgressScreen() {
             
             {safeData.stages.length > 0 ? (
               safeData.stages.map((stage, idx) => {
-                const status = getStageStatus(stage);
                 const isExpanded = expandedStage === idx;
+                const status = stage.completed ? 'completed' : stage.unlocked ? 'in_progress' : 'locked';
+                
                 return (
                   <View key={stage.stage_id} style={{ 
                     position: 'relative', 
@@ -568,6 +563,7 @@ export default function ProgressScreen() {
                     <StageCard
                       index={idx}
                       stage={{
+                        id: stage.stage_id,
                         stage: stage.name,
                         subtitle: stage.subtitle,
                         completed: stage.completed,
@@ -575,6 +571,7 @@ export default function ProgressScreen() {
                         exercises: stage.exercises,
                         unlocked: stage.unlocked,
                       }}
+                      currentStageId={safeData.current_stage.id}
                       expanded={isExpanded}
                       onPress={() => handleStagePress(idx)}
                     >

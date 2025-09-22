@@ -54,6 +54,7 @@ export interface ProgressData {
     progress: number;
     unlocked: boolean;
     exercises: Array<{
+      exercise_id: number;
       name: string;
       status: 'completed' | 'in_progress' | 'locked';
       progress: number;

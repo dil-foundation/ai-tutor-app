@@ -8,7 +8,7 @@ if (__DEV__) {
   //added.
   // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
-  BASE_API_URL = 'http://192.168.1.6:8000';
+  BASE_API_URL = 'http://192.168.1.3:8000';
 
   FRONTEND_URL = 'https://dil-dev.lms-staging.com';
 
@@ -74,6 +74,7 @@ export const API_ENDPOINTS = {
   // Progress tracking
   INITIALIZE_PROGRESS: `${BASE_API_URL}/api/progress/initialize-progress`,
   RECORD_TOPIC_ATTEMPT: `${BASE_API_URL}/api/progress/record-topic-attempt`,
+  COMPLETE_LESSON: `${BASE_API_URL}/api/progress/complete-lesson`,
   GET_USER_PROGRESS: (userId: string) => `${BASE_API_URL}/api/progress/user-progress/${userId}`,
   CHECK_UNLOCKS: (userId: string) => `${BASE_API_URL}/api/progress/check-unlocks/${userId}`,
   GET_CURRENT_TOPIC: `${BASE_API_URL}/api/progress/get-current-topic`,
