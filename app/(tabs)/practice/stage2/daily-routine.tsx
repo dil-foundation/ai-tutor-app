@@ -56,6 +56,12 @@ interface EvaluationResult {
   total_keywords?: number;
   fluency_score?: number;
   grammar_score?: number;
+  exercise_completion?: {
+    exercise_completed: boolean;
+    progress_percentage: number;
+    completed_topics: number;
+    total_topics: number;
+  };
 }
 
 const DailyRoutineScreen = () => {
@@ -461,23 +467,36 @@ const DailyRoutineScreen = () => {
       console.log('✅ [SCREEN] Evaluation result set in state');
 
       if (result.success && result.evaluation && result.evaluation.is_correct) {
-        console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
-        setShowCongratulationsAnimation(true);
-        
-        if (result.unlocked_content && result.unlocked_content.length > 0) {
-          console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
-          Alert.alert(
-            '🎉 New Content Unlocked!',
-            `You've unlocked: ${result.unlocked_content.join(', ')}`,
-            [{ text: 'OK' }]
-          );
+        if (result.exercise_completion?.exercise_completed) {
+            console.log('🎉 [SCREEN] Exercise fully completed! Backend confirmed.');
+            setShowCongratulationsAnimation(true);
+            setIsExerciseCompleted(true);
+            
+            setTimeout(() => {
+                setShowCongratulationsAnimation(false);
+                Alert.alert("Exercise Completed!", "Great job! You've mastered this exercise.", [
+                    { text: "OK", onPress: () => handleBackPress() }
+                ]);
+            }, 3000);
+        } else {
+            console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
+            setShowCongratulationsAnimation(true);
+            
+            if (result.unlocked_content && result.unlocked_content.length > 0) {
+              console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
+              Alert.alert(
+                '🎉 New Content Unlocked!',
+                `You've unlocked: ${result.unlocked_content.join(', ')}`,
+                [{ text: 'OK' }]
+              );
+            }
+            
+            setTimeout(() => {
+              console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
+              setShowCongratulationsAnimation(false);
+              moveToNextPhrase();
+            }, 3000);
         }
-        
-        setTimeout(() => {
-          console.log('🔄 [SCREEN] Moving to next phrase after congratulations animation');
-          setShowCongratulationsAnimation(false);
-          moveToNextPhrase();
-        }, 3000);
       } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
         console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
         setShowRetryAnimation(true);
@@ -687,6 +706,7 @@ const DailyRoutineScreen = () => {
           </Animated.View>
 
           {/* Action Button */}
+          {!isExerciseCompleted && (
           <Animated.View
             style={[
               styles.buttonContainer,
@@ -733,6 +753,7 @@ const DailyRoutineScreen = () => {
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
+          )}
         </View>
 
         {/* Overlays */}

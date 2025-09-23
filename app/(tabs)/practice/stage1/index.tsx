@@ -9,17 +9,26 @@ import {
   StyleSheet, 
   Text, 
   TouchableOpacity, 
-  View 
+  View,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../../../context/AuthContext';
+import { ProgressHelpers, ProgressData } from '../../../../utils/progressTracker';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 const { width, height } = Dimensions.get('window');
 
 const Stage1Screen = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [isLoading, setIsLoading] = useState(true);
+  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   
   // Create individual scale animations for each activity
   const [activityScaleAnims] = useState(() => 
@@ -56,26 +65,65 @@ const Stage1Screen = () => {
     },
   ];
 
+  useFocusEffect(
+    useCallback(() => {
+        const fetchProgress = async () => {
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
+            try {
+                const result = await ProgressHelpers.forceRefreshProgress();
+                if (result.success && result.data) {
+                    type Stage = ProgressData['stages'][0];
+                    const stage1 = result.data.stages.find((stage: Stage) => stage.stage_id === 1);
+                    if (stage1 && stage1.exercises) {
+                        type Exercise = Stage['exercises'][0];
+                        const completed: string[] = [];
+                        stage1.exercises.forEach((exercise: Exercise, index: number) => {
+                            if (exercise.status === 'completed') {
+                                // Map exercise status to the local `activities` array by index
+                                if (activities[index]) {
+                                    completed.push(activities[index].id);
+                                }
+                            }
+                        });
+                        setCompletedExercises(completed);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch Stage 1 progress:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProgress();
+    }, [user])
+  );
+
   useEffect(() => {
     // Animate elements on mount
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    if (!isLoading) {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]).start();
+    }
+  }, [isLoading]);
 
   const navigateToActivity = (activityScreen: any, activityIndex: number) => {
     // Add a small scale animation on press for the specific activity
@@ -94,6 +142,15 @@ const Stage1Screen = () => {
 
     router.push(activityScreen);
   };
+
+  if (isLoading) {
+    return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#58D68D" />
+            <Text style={styles.loadingText}>Loading Activities...</Text>
+        </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -177,7 +234,9 @@ const Stage1Screen = () => {
             </LinearGradient>
           </View>
 
-          {activities.map((activity, index) => (
+          {activities.map((activity, index) => {
+            const isCompleted = completedExercises.includes(activity.id);
+            return (
             <Animated.View
               key={activity.id}
               style={[
@@ -193,8 +252,14 @@ const Stage1Screen = () => {
             >
               <TouchableOpacity
                 style={styles.activityButton}
-                onPress={() => navigateToActivity(activity.screen, index)}
-                activeOpacity={0.8}
+                onPress={() => {
+                    if (isCompleted) {
+                        Alert.alert("Completed", "You have already mastered this exercise!");
+                    } else {
+                        navigateToActivity(activity.screen, index);
+                    }
+                }}
+                activeOpacity={isCompleted ? 1.0 : 0.8}
               >
                 <LinearGradient
                   colors={activity.gradient}
@@ -212,10 +277,16 @@ const Stage1Screen = () => {
                       <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                     </View>
                   </View>
+                  {isCompleted && (
+                    <View style={styles.completedOverlay}>
+                        <Ionicons name="checkmark-circle" size={64} color="rgba(255, 255, 255, 0.9)" />
+                        <Text style={styles.completedText}>Completed</Text>
+                    </View>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
-          ))}
+          )})}
         </Animated.View>
 
         {/* Progress Info Card */}
@@ -261,6 +332,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#6C757D',
   },
   scrollView: {
     flex: 1,
@@ -437,6 +519,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  completedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(46, 204, 113, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  completedText: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginTop: 8,
+      textShadowColor: 'rgba(0, 0, 0, 0.25)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
   },
   progressCard: {
     marginTop: 20,

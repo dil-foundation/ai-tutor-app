@@ -58,6 +58,12 @@ interface EvaluationResult {
   total_keywords?: number;
   academic_expressions_used?: number;
   total_academic_expressions?: number;
+  exercise_completion?: {
+    exercise_completed: boolean;
+    progress_percentage: number;
+    completed_topics: number;
+    total_topics: number;
+  };
 }
 
 const CriticalOpinionBuilderScreen = () => {
@@ -269,21 +275,34 @@ const CriticalOpinionBuilderScreen = () => {
       
       if (result.success) {
         setEvaluationResult(result);
-        // setShowEvaluatingAnimation(false); // Removed this line
         console.log('✅ [EVAL] Evaluation completed successfully');
-        // Keep evaluation animation visible until navigation
-        // The animation will be hidden when the component unmounts during navigation
-        console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
-        console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
-        
-        router.push({
-          pathname: '/(tabs)/practice/stage6/feedback_12',
-          params: {
-            evaluationResult: JSON.stringify(result),
-            currentTopicId: currentTopicId.toString(),
-            totalTopics: totalTopics.toString(),
-          }
-        });
+
+        if (result.exercise_completion?.exercise_completed) {
+          setIsExerciseCompleted(true);
+          // Directly show completion alert and navigate back
+          Alert.alert(
+            'Congratulations!',
+            'You have successfully completed all Critical Opinion Builder exercises.',
+            [{ text: 'OK', onPress: () => router.push('/(tabs)/practice/stage6') }]
+          );
+          // Hide the animation as we are navigating away
+          setShowEvaluatingAnimation(false);
+          setIsEvaluating(false);
+        } else {
+          // Keep evaluation animation visible until navigation
+          // The animation will be hidden when the component unmounts during navigation
+          console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+          console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
+          
+          router.push({
+            pathname: '/(tabs)/practice/stage6/feedback_12',
+            params: {
+              evaluationResult: JSON.stringify(result),
+              currentTopicId: currentTopicId.toString(),
+              totalTopics: totalTopics.toString(),
+            }
+          });
+        }
       } else {
         setShowEvaluatingAnimation(false);
         if (result.error === 'no_speech_detected') {
@@ -487,27 +506,29 @@ const CriticalOpinionBuilderScreen = () => {
           </Animated.View>
 
           {/* Action Button */}
-          <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: buttonScaleAnim }] }]}>
-            <TouchableOpacity
-              style={[styles.voiceButton, { shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8' }]}
-              onPress={() => {
-                if (audioRecorder.state.isRecording) {
-                  handleStopRecording();
-                } else {
-                  handleStartRecording();
-                }
-              }}
-              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
-              activeOpacity={0.8}
-            >
-              <LinearGradient colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]} style={styles.voiceButtonGradient}>
-                <Ionicons name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} size={24} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.voiceButtonText}>
-                  {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Voice Opinion'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+          {!isExerciseCompleted && (
+            <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: buttonScaleAnim }] }]}>
+              <TouchableOpacity
+                style={[styles.voiceButton, { shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8' }]}
+                onPress={() => {
+                  if (audioRecorder.state.isRecording) {
+                    handleStopRecording();
+                  } else {
+                    handleStartRecording();
+                  }
+                }}
+                disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+                activeOpacity={0.8}
+              >
+                <LinearGradient colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]} style={styles.voiceButtonGradient}>
+                  <Ionicons name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} size={24} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={styles.voiceButtonText}>
+                    {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Voice Opinion'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
         </View>
 
         {/* Evaluating Animation Overlay */}

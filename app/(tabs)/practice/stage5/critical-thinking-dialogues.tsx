@@ -63,6 +63,12 @@ interface EvaluationResult {
   fluency_score?: number;
   grammar_score?: number;
   argument_type?: string;
+  exercise_completion?: {
+    exercise_completed: boolean;
+    progress_percentage: number;
+    completed_topics: number;
+    total_topics: number;
+  };
 }
 
 const CriticalThinkingDialoguesScreen = () => {
@@ -379,50 +385,63 @@ const CriticalThinkingDialoguesScreen = () => {
       
       if (result.success) {
         setEvaluationResult(result);
-        // setShowEvaluatingAnimation(false); // Removed this line
         console.log('✅ [EVAL] Evaluation completed successfully');
-        // Keep evaluation animation visible until navigation
-        // The animation will be hidden when the component unmounts during navigation
-        console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
-        console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
-        
-        // Navigate to feedback screen
-        const feedbackData = {
-          success: result.success,
-          topic: result.topic,
-          expected_keywords: result.expected_keywords,
-          user_text: result.user_text,
-          evaluation: {
-            overall_score: result.evaluation?.overall_score,
-            score: result.evaluation?.score,
-            argument_structure_score: result.evaluation?.argument_structure_score,
-            critical_thinking_score: result.evaluation?.critical_thinking_score,
-            vocabulary_range_score: result.evaluation?.vocabulary_range_score,
-            fluency_grammar_score: result.evaluation?.fluency_grammar_score,
-            discourse_markers_score: result.evaluation?.discourse_markers_score,
-            completed: result.evaluation?.completed,
-            is_correct: result.evaluation?.is_correct
-          },
-          suggested_improvement: result.suggested_improvement,
-          keyword_matches: result.keyword_matches,
-          total_keywords: result.total_keywords,
-          fluency_score: result.fluency_score,
-          grammar_score: result.grammar_score,
-          argument_type: result.argument_type
-        };
-        
-        console.log('🔄 [NAVIGATION] Preparing feedback data:', feedbackData);
-        console.log('🔄 [NAVIGATION] Score in feedback data:', feedbackData.evaluation.overall_score);
-        console.log('🔄 [NAVIGATION] Data size:', JSON.stringify(feedbackData).length, 'characters');
-        
-        router.push({
-          pathname: '/(tabs)/practice/stage5/feedback_7' as any,
-          params: {
-            evaluationResult: JSON.stringify(feedbackData),
-            currentTopicId: currentTopicId.toString(),
-            totalTopics: totalTopics.toString(),
-          }
-        });
+
+        if (result.exercise_completion?.exercise_completed) {
+          setIsExerciseCompleted(true);
+          // Directly show completion alert and navigate back
+          Alert.alert(
+            'Congratulations!',
+            'You have successfully completed all Critical Thinking exercises.',
+            [{ text: 'OK', onPress: () => router.push('/(tabs)/practice/stage5') }]
+          );
+          // Hide the animation as we are navigating away
+          setShowEvaluatingAnimation(false);
+          setIsEvaluating(false);
+        } else {
+          // Keep evaluation animation visible until navigation
+          // The animation will be hidden when the component unmounts during navigation
+          console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+          console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
+          
+          // Navigate to feedback screen
+          const feedbackData = {
+            success: result.success,
+            topic: result.topic,
+            expected_keywords: result.expected_keywords,
+            user_text: result.user_text,
+            evaluation: {
+              overall_score: result.evaluation?.overall_score,
+              score: result.evaluation?.score,
+              argument_structure_score: result.evaluation?.argument_structure_score,
+              critical_thinking_score: result.evaluation?.critical_thinking_score,
+              vocabulary_range_score: result.evaluation?.vocabulary_range_score,
+              fluency_grammar_score: result.evaluation?.fluency_grammar_score,
+              discourse_markers_score: result.evaluation?.discourse_markers_score,
+              completed: result.evaluation?.completed,
+              is_correct: result.evaluation?.is_correct
+            },
+            suggested_improvement: result.suggested_improvement,
+            keyword_matches: result.keyword_matches,
+            total_keywords: result.total_keywords,
+            fluency_score: result.fluency_score,
+            grammar_score: result.grammar_score,
+            argument_type: result.argument_type
+          };
+          
+          console.log('🔄 [NAVIGATION] Preparing feedback data:', feedbackData);
+          console.log('🔄 [NAVIGATION] Score in feedback data:', feedbackData.evaluation.overall_score);
+          console.log('🔄 [NAVIGATION] Data size:', JSON.stringify(feedbackData).length, 'characters');
+          
+          router.push({
+            pathname: '/(tabs)/practice/stage5/feedback_7' as any,
+            params: {
+              evaluationResult: JSON.stringify(feedbackData),
+              currentTopicId: currentTopicId.toString(),
+              totalTopics: totalTopics.toString(),
+            }
+          });
+        }
       } else {
         console.log('❌ [EVAL] Evaluation failed:', result.error);
         setShowEvaluatingAnimation(false);
@@ -747,52 +766,54 @@ const CriticalThinkingDialoguesScreen = () => {
           </Animated.View>
 
           {/* Action Button */}
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: buttonScaleAnim }
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
+          {!isExerciseCompleted && (
+            <Animated.View
               style={[
-                styles.speakButton,
+                styles.buttonContainer,
                 {
-                  shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
-                }
+                  opacity: fadeAnim,
+                  transform: [
+                    { translateY: slideAnim },
+                    { scale: buttonScaleAnim }
+                  ],
+                },
               ]}
-              onPress={() => {
-                animateButtonPress();
-                if (audioRecorder.state.isRecording) {
-                  handleStopRecording();
-                } else {
-                  handleStartRecording();
-                }
-              }}
-              disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
-              activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
-                style={styles.speakButtonGradient}
+              <TouchableOpacity
+                style={[
+                  styles.speakButton,
+                  {
+                    shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
+                  }
+                ]}
+                onPress={() => {
+                  animateButtonPress();
+                  if (audioRecorder.state.isRecording) {
+                    handleStopRecording();
+                  } else {
+                    handleStartRecording();
+                  }
+                }}
+                disabled={isEvaluating || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+                activeOpacity={0.8}
               >
-                <Ionicons 
-                  name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
-                  size={24} 
-                  color="#fff" 
-                  style={{ marginRight: 8 }} 
-                />
-                <Text style={styles.speakButtonText}>
-                  {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Present Argument'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+                <LinearGradient
+                  colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
+                  style={styles.speakButtonGradient}
+                >
+                  <Ionicons 
+                    name={isEvaluating ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
+                    size={24} 
+                    color="#fff" 
+                    style={{ marginRight: 8 }} 
+                  />
+                  <Text style={styles.speakButtonText}>
+                    {isEvaluating ? 'Processing...' : audioRecorder.state.isRecording ? 'Recording' : 'Present Argument'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
         </View>
 
         {/* Evaluating Animation Overlay */}

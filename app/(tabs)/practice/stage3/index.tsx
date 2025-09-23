@@ -1,26 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-    Animated,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Animated, 
+  Dimensions, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ProgressHelpers } from '../../../../utils/progressTracker';
+import { useAuth } from '../../../../context/AuthContext';
+
 
 const { width, height } = Dimensions.get('window');
 
 const Stage3Screen = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [scaleAnim] = useState(new Animated.Value(0.8));
   
-  // Create individual scale animations for each activity
+  const [isLoading, setIsLoading] = useState(true);
+  const [completedExercises, setCompletedExercises] = useState<Record<number, boolean>>({});
+  
   const [activityScaleAnims] = useState(() => 
     [1, 2, 3].map(() => new Animated.Value(1))
   );
@@ -28,6 +37,7 @@ const Stage3Screen = () => {
   const activities = [
     {
       id: 'storytelling',
+      exerciseId: 1,
       title: 'Storytelling Practice',
       description: 'Practice describing your daily activities and personal experiences with confidence',
       icon: 'book-outline' as const,
@@ -37,6 +47,7 @@ const Stage3Screen = () => {
     },
     {
       id: 'groupDialogue',
+      exerciseId: 2,
       title: 'Group Dialogue with AI Persons',
       description: 'Engage in group conversations with AI personas to build social skills',
       icon: 'people-outline' as const,
@@ -46,6 +57,7 @@ const Stage3Screen = () => {
     },
     {
       id: 'problemSolving',
+      exerciseId: 3,
       title: 'Problem-Solving Simulations',
       description: 'Participate in real-world scenarios to enhance decision-making skills',
       icon: 'bulb-outline' as const,
@@ -55,8 +67,41 @@ const Stage3Screen = () => {
     },
   ];
 
+  const fetchProgress = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      console.log('🔄 [STAGE 3] Fetching latest progress...');
+      const result = await ProgressHelpers.forceRefreshProgress();
+      if (result.success && result.data) {
+        const stage3 = result.data.stages.find((stage: any) => stage.stage_id === 3);
+        if (stage3) {
+          const completed: Record<number, boolean> = {};
+          stage3.exercises.forEach((exercise: any) => {
+            if (exercise.completed) {
+              completed[exercise.exercise_id] = true;
+            }
+          });
+          setCompletedExercises(completed);
+          console.log('✅ [STAGE 3] Progress updated:', completed);
+        }
+      } else {
+        console.error("❌ [STAGE 3] Failed to fetch progress:", result.message);
+      }
+    } catch (error) {
+      console.error("❌ [STAGE 3] Error fetching progress:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProgress();
+    }, [fetchProgress])
+  );
+
   useEffect(() => {
-    // Animate elements on mount
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -76,8 +121,18 @@ const Stage3Screen = () => {
     ]).start();
   }, []);
 
-  const navigateToActivity = (activityScreen: any, activityIndex: number) => {
-    // Add a small scale animation on press for the specific activity
+  const navigateToActivity = (activity: (typeof activities)[0], activityIndex: number) => {
+    const isCompleted = completedExercises[activity.exerciseId];
+    
+    if (isCompleted) {
+      Alert.alert(
+        "Exercise Completed",
+        "You have already mastered this exercise. Keep up the great work!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     Animated.sequence([
       Animated.timing(activityScaleAnims[activityIndex], {
         toValue: 0.95,
@@ -91,8 +146,17 @@ const Stage3Screen = () => {
       }),
     ]).start();
 
-    router.push(activityScreen);
+    router.push(activity.screen);
   };
+  
+    if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#45B7A8" />
+        <Text style={styles.loadingText}>Loading Stage 3...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -176,45 +240,55 @@ const Stage3Screen = () => {
             </LinearGradient>
           </View>
 
-          {activities.map((activity, index) => (
-            <Animated.View
-              key={activity.id}
-              style={[
-                styles.activityCard,
-                {
-                  opacity: fadeAnim,
-                  transform: [
-                    { translateY: slideAnim },
-                    { scale: activityScaleAnims[index] }
-                  ],
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.activityButton}
-                onPress={() => navigateToActivity(activity.screen, index)}
-                activeOpacity={0.8}
+          {activities.map((activity, index) => {
+            const isCompleted = completedExercises[activity.exerciseId];
+            return (
+              <Animated.View
+                key={activity.id}
+                style={[
+                  styles.activityCard,
+                  {
+                    opacity: fadeAnim,
+                    transform: [
+                      { translateY: slideAnim },
+                      { scale: activityScaleAnims[index] }
+                    ],
+                  },
+                ]}
               >
-                <LinearGradient
-                  colors={activity.gradient}
-                  style={styles.activityGradient}
+                <TouchableOpacity
+                  style={styles.activityButton}
+                  onPress={() => navigateToActivity(activity, index)}
+                  activeOpacity={isCompleted ? 1 : 0.8}
+                  disabled={isCompleted}
                 >
-                  <View style={styles.activityContent}>
-                    <View style={[styles.activityIconContainer, { backgroundColor: activity.iconBg }]}>
-                      <Ionicons name={activity.icon} size={28} color="#FFFFFF" />
+                  <LinearGradient
+                    colors={isCompleted ? ['#B0BEC5', '#90A4AE'] : activity.gradient}
+                    style={styles.activityGradient}
+                  >
+                    <View style={styles.activityContent}>
+                      <View style={[styles.activityIconContainer, { backgroundColor: activity.iconBg }]}>
+                        <Ionicons name={activity.icon} size={28} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.activityTextContainer}>
+                        <Text style={styles.activityTitle}>{activity.title}</Text>
+                        <Text style={styles.activityDescription}>{activity.description}</Text>
+                      </View>
+                      <View style={styles.arrowContainer}>
+                        <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                      </View>
                     </View>
-                    <View style={styles.activityTextContainer}>
-                      <Text style={styles.activityTitle}>{activity.title}</Text>
-                      <Text style={styles.activityDescription}>{activity.description}</Text>
-                    </View>
-                    <View style={styles.arrowContainer}>
-                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                    </View>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          ))}
+                    {isCompleted && (
+                      <View style={styles.completedOverlay}>
+                        <Ionicons name="checkmark-circle" size={48} color="white" />
+                        <Text style={styles.completedText}>Completed</Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
         </Animated.View>
 
         {/* Progress Info Card */}
@@ -260,6 +334,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 18,
+    color: '#3A8B9F',
   },
   scrollView: {
     flex: 1,
@@ -447,6 +532,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
+  },
+  completedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 8,
   },
   progressCard: {
     marginTop: 20,
