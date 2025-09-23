@@ -181,6 +181,7 @@ export default function ProgressScreen() {
         unlocked_content: [],
         total_completed_stages: 0,
         total_completed_exercises: 0,
+        total_exercises_in_curriculum: 0,
         total_learning_units: 30,
         total_completed_units: 0
       });
@@ -366,6 +367,7 @@ export default function ProgressScreen() {
     unlocked_content: [],
     total_completed_stages: 0,
     total_completed_exercises: 0,
+    total_exercises_in_curriculum: 0,
     total_learning_units: 30,
     total_completed_units: 0
   };
@@ -508,7 +510,7 @@ export default function ProgressScreen() {
                   </View>
                   <View style={styles.integratedStatsContainer}>
                     <View style={styles.integratedStatItem}>
-                      <Text style={styles.integratedStatValue}>{safeData.total_exercises_completed}</Text>
+                      <Text style={styles.integratedStatValue}>{safeData.total_completed_exercises ?? 0}</Text>
                       <Text style={styles.integratedStatLabel}>Completed Exercises</Text>
                     </View>
                     <View style={styles.integratedStatItem}>
@@ -679,12 +681,12 @@ export default function ProgressScreen() {
                         style={[
                           styles.barFill, 
                           styles.purpleBar,
-                          { width: `${Math.min(100, (safeData.total_completed_stages / 6) * 100)}%` }
+                          { width: `${safeData.stages.length > 0 ? Math.min(100, (safeData.total_completed_stages / safeData.stages.length) * 100) : 0}%` }
                         ]} 
                       />
                     </View>
                     <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_completed_stages / 6) * 100)}%
+                      {safeData.stages.length > 0 ? Math.round((safeData.total_completed_stages / safeData.stages.length) * 100) : 0}%
                     </Text>
                   </View>
                 </View>
@@ -697,7 +699,7 @@ export default function ProgressScreen() {
                     </View>
                     <View style={styles.barTextContainer}>
                       
-                      <Text style={styles.barValue}>{safeData.total_exercises_completed}</Text>
+                      <Text style={styles.barValue}>{safeData.total_completed_exercises}</Text>
                       <Text style={styles.barLabel}>Exercises Completed</Text>
                     </View>
                   </View>
@@ -707,12 +709,20 @@ export default function ProgressScreen() {
                         style={[
                           styles.barFill, 
                           styles.greenBar,
-                          { width: `${Math.min(100, (safeData.total_exercises_completed / 18) * 100)}%` }
+                          { width: `${safeData.total_exercises_in_curriculum > 0 ? Math.min(100, (safeData.total_completed_exercises / safeData.total_exercises_in_curriculum) * 100) : 0}%` }
                         ]} 
                       />
                     </View>
                     <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_exercises_completed / 18) * 100)}%
+                      {(() => {
+                        const completed = safeData.total_completed_exercises;
+                        const total = safeData.total_exercises_in_curriculum;
+                        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                        if (isNaN(percentage)) {
+                          return `0%`;
+                        }
+                        return `${percentage}%`;
+                      })()}
                     </Text>
                   </View>
                 </View>
@@ -735,12 +745,12 @@ export default function ProgressScreen() {
                         style={[
                           styles.barFill, 
                           styles.orangeBar,
-                          { width: `${Math.min(100, (safeData.total_completed_units / 337) * 100)}%` }
+                          { width: `${safeData.total_learning_units > 0 ? Math.min(100, (safeData.total_completed_units / safeData.total_learning_units) * 100) : 0}%` }
                         ]} 
                       />
                     </View>
                     <Text style={styles.barPercentage}>
-                      {Math.round((safeData.total_completed_units / 337) * 100)}%
+                      {safeData.total_learning_units > 0 ? Math.round((safeData.total_completed_units / safeData.total_learning_units) * 100) : 0}%
                     </Text>
                   </View>
                 </View>
@@ -1418,7 +1428,7 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     minWidth: 28,            // Ensures space even for 1-digit numbers
     textAlign: 'right',
-    marginLeft: -12,      // Right-align numbers
+    marginRight: 4,
   },
   barContainer: {
     flexDirection: 'row',
