@@ -1,0 +1,63 @@
+# BrowserStack Configuration for DIL Tutor App E2E Tests
+# This file configures BrowserStack services and capabilities
+
+# BrowserStack App Automate Configuration
+app_automate:
+  enabled: true
+  project_name: "DIL Tutor App E2E Tests"
+  build_name: "DIL-Tutor-Build-1.0.0"
+  session_name: "Android E2E Tests"
+  
+  # App Configuration
+  app:
+    android: "bs://781195bd435b9df13ba92bd587737e59f833151d"
+    ios: "bs://36c4e4901e054354c318293fdb0115042cb77265"
+  
+  # Device Configuration
+  devices:
+    android:
+      - device_name: "Samsung Galaxy S23"
+        os_version: "13.0"
+      - device_name: "Google Pixel 7"
+        os_version: "13.0"
+    ios:
+      - device_name: "iPhone 15"
+        os_version: "17.0"
+      - device_name: "iPhone 14"
+        os_version: "16.0"
+  
+  # Test Configuration
+  test_settings:
+    debug: true
+    network_logs: true
+    console_logs: "info"
+    video: true
+    local: false
+    timezone: "UTC"
+    auto_grant_permissions: true
+    no_reset: false
+    full_reset: true
+
+# BrowserStack Automate Configuration (for web tests)
+automate:
+  enabled: true
+  project_name: "DIL Tutor App Web Tests"
+  build_name: "DIL-Tutor-Web-Build-1.0.0"
+  
+  # Browser Configuration
+  browsers:
+    - browser_name: "Chrome"
+      browser_version: "latest"
+      os: "Windows"
+      os_version: "10"
+    - browser_name: "Firefox"
+      browser_version: "latest"
+      os: "Windows"
+      os_version: "10"
+
+# Global Settings
+global:
+  timeout: 300
+  retries: 2
+  parallel: false
+  max_instances: 1

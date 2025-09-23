@@ -5,6 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "wdio run wdio.conf.js",
+    "test:simple": "wdio run wdio.simple.conf.js",
+    "test:minimal": "wdio run wdio.minimal.conf.js",
+    "test:web": "wdio run wdio.web-test.conf.js",
+    "test:automate": "wdio run wdio.browserstack-automate.conf.js",
+    "test:session": "wdio run wdio.session-test.conf.js",
+    "test:simple-session": "wdio run wdio.simple-session.conf.js",
+    "test:device": "wdio run wdio.device-test.conf.js",
+    "test:local": "wdio run wdio.local-test.conf.js",
+    "test:direct": "wdio run wdio.direct-appium.conf.js",
     "test:android": "wdio run wdio.android.conf.js",
     "test:ios": "wdio run wdio.ios.conf.js",
     "test:browserstack": "wdio run wdio.browserstack.conf.js",
@@ -17,7 +26,8 @@
     "lint": "eslint . --ext .js,.ts",
     "lint:fix": "eslint . --ext .js,.ts --fix",
     "clean": "rimraf logs screenshots videos",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "check-appium": "node scripts/check-appium.js"
   },
   "dependencies": {
     "@wdio/allure-reporter": "^8.32.0",

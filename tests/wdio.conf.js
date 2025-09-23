@@ -65,7 +65,7 @@ const androidConfig = {
     'appium:platformVersion': '13.0',
     'appium:deviceName': 'Android Emulator',
     'appium:automationName': 'UiAutomator2',
-    'appium:app': process.env.ANDROID_APP_PATH || './apps/dil-tutor-app-android.apk',
+    'appium:app': process.env.ANDROID_APP_PATH || './apps/application-88a4b9a2-4e27-4c5a-bb69-a22275d44b90-new android build.apk',
     'appium:appWaitActivity': 'com.dil.lms.MainActivity',
     'appium:newCommandTimeout': 300,
     'appium:autoGrantPermissions': true,
@@ -81,8 +81,13 @@ const androidConfig = {
       args: {
         address: 'localhost',
         port: 4723,
-        log: './logs/appium.log'
-      }
+        log: './logs/appium.log',
+        loglevel: 'info',
+        'session-override': true,
+        'relaxed-security': true
+      },
+      logPath: './logs/',
+      command: 'appium'
     }]
   ]
 };
@@ -98,7 +103,7 @@ const iosConfig = {
     'appium:platformVersion': '17.0',
     'appium:deviceName': 'iPhone 15',
     'appium:automationName': 'XCUITest',
-    'appium:app': process.env.IOS_APP_PATH || './apps/dil-tutor-app-ios.app',
+    'appium:app': process.env.IOS_APP_PATH || './apps/application-3c9d64c2-1c28-4e00-8df4-aed8597e1b8c.ipa',
     'appium:bundleId': 'com.dil.lms',
     'appium:newCommandTimeout': 300,
     'appium:autoAcceptAlerts': true,
@@ -113,8 +118,13 @@ const iosConfig = {
       args: {
         address: 'localhost',
         port: 4723,
-        log: './logs/appium.log'
-      }
+        log: './logs/appium.log',
+        loglevel: 'info',
+        'session-override': true,
+        'relaxed-security': true
+      },
+      logPath: './logs/',
+      command: 'appium'
     }]
   ]
 };
@@ -132,7 +142,7 @@ const browserStackAndroidConfig = {
       projectName: 'DIL Tutor App E2E Tests',
       buildName: process.env.BROWSERSTACK_BUILD_NAME || `DIL-Tutor-${new Date().toISOString().split('T')[0]}`,
       sessionName: 'Android E2E Tests',
-      app: process.env.BROWSERSTACK_ANDROID_APP_ID,
+      app: process.env.BROWSERSTACK_ANDROID_APP_ID || 'bs://781195bd435b9df13ba92bd587737e59f833151d',
       deviceName: 'Samsung Galaxy S23',
       osVersion: '13.0',
       debug: true,
@@ -211,7 +221,7 @@ const parallelConfig = {
         projectName: 'DIL Tutor App E2E Tests',
         buildName: process.env.BROWSERSTACK_BUILD_NAME || `DIL-Tutor-${new Date().toISOString().split('T')[0]}`,
         sessionName: 'Android Galaxy S23',
-        app: process.env.BROWSERSTACK_ANDROID_APP_ID,
+        app: process.env.BROWSERSTACK_ANDROID_APP_ID || 'bs://781195bd435b9df13ba92bd587737e59f833151d',
         deviceName: 'Samsung Galaxy S23',
         osVersion: '13.0',
         debug: true,
@@ -236,7 +246,7 @@ const parallelConfig = {
         projectName: 'DIL Tutor App E2E Tests',
         buildName: process.env.BROWSERSTACK_BUILD_NAME || `DIL-Tutor-${new Date().toISOString().split('T')[0]}`,
         sessionName: 'Android Pixel 7',
-        app: process.env.BROWSERSTACK_ANDROID_APP_ID,
+        app: process.env.BROWSERSTACK_ANDROID_APP_ID || 'bs://781195bd435b9df13ba92bd587737e59f833151d',
         deviceName: 'Google Pixel 7',
         osVersion: '13.0',
         debug: true,
@@ -326,7 +336,7 @@ const smokeConfig = {
       projectName: 'DIL Tutor App Smoke Tests',
       buildName: process.env.BROWSERSTACK_BUILD_NAME || `DIL-Tutor-Smoke-${new Date().toISOString().split('T')[0]}`,
       sessionName: 'Smoke Tests',
-      app: process.env.BROWSERSTACK_ANDROID_APP_ID,
+      app: process.env.BROWSERSTACK_ANDROID_APP_ID || 'bs://781195bd435b9df13ba92bd587737e59f833151d',
       deviceName: 'Samsung Galaxy S23',
       osVersion: '13.0',
       debug: true,
@@ -362,7 +372,7 @@ const debugConfig = {
     'appium:platformVersion': '13.0',
     'appium:deviceName': 'Android Emulator',
     'appium:automationName': 'UiAutomator2',
-    'appium:app': process.env.ANDROID_APP_PATH || './apps/dil-tutor-app-android.apk',
+    'appium:app': process.env.ANDROID_APP_PATH || './apps/application-88a4b9a2-4e27-4c5a-bb69-a22275d44b90-new android build.apk',
     'appium:appWaitActivity': 'com.dil.lms.MainActivity',
     'appium:newCommandTimeout': 300,
     'appium:autoGrantPermissions': true,
@@ -378,8 +388,13 @@ const debugConfig = {
       args: {
         address: 'localhost',
         port: 4723,
-        log: './logs/appium.log'
-      }
+        log: './logs/appium.log',
+        loglevel: 'info',
+        'session-override': true,
+        'relaxed-security': true
+      },
+      logPath: './logs/',
+      command: 'appium'
     }]
   ],
   logLevel: 'debug',
