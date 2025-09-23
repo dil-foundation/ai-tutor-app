@@ -369,6 +369,13 @@ const RoleplayChatScreen = () => {
       console.log("📊 [CHAT] Evaluation result:", result);
 
       if (response.ok && result.success) {
+        if (result.exercise_completion?.exercise_completed) {
+          Alert.alert(
+            'Congratulations!',
+            'You have successfully completed all scenarios in this exercise.',
+            [{ text: 'OK', onPress: () => router.push('/(tabs)/practice/stage2') }]
+          );
+        }
         handleEvaluationResults(result);
       } else {
         console.log("❌ [CHAT] Evaluation failed:", result.error);

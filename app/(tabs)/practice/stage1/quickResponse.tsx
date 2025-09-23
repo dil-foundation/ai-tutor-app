@@ -48,6 +48,12 @@ interface EvaluationResult {
   message?: string;
   progress_recorded?: boolean;
   unlocked_content?: string[];
+  exercise_completion?: {
+    exercise_completed: boolean;
+    progress_percentage: number;
+    completed_topics: number;
+    total_topics: number;
+  };
 }
 
 const QuickResponseScreen = () => {
@@ -445,7 +451,8 @@ const QuickResponseScreen = () => {
         message: result.message,
         hasEvaluation: !!result.evaluation,
         progressRecorded: result.progress_recorded,
-        unlockedContent: result.unlocked_content
+        unlockedContent: result.unlocked_content,
+        exercise_completion: result.exercise_completion
       });
 
       setShowEvaluatingAnimation(false);
@@ -453,23 +460,36 @@ const QuickResponseScreen = () => {
       console.log('✅ [SCREEN] Evaluation result set in state');
 
       if (result.success && result.evaluation && result.evaluation.is_correct) {
-        console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
-        setShowCongratulationsAnimation(true);
-        
-        if (result.unlocked_content && result.unlocked_content.length > 0) {
-          console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
-          Alert.alert(
-            '🎉 New Content Unlocked!',
-            `You've unlocked: ${result.unlocked_content.join(', ')}`,
-            [{ text: 'OK' }]
-          );
+        if (result.exercise_completion?.exercise_completed) {
+            console.log('🎉 [SCREEN] Exercise fully completed! Backend confirmed.');
+            setShowCongratulationsAnimation(true);
+            setIsExerciseCompleted(true);
+            
+            setTimeout(() => {
+                setShowCongratulationsAnimation(false);
+                Alert.alert("Exercise Completed!", "Great job! You've mastered this exercise.", [
+                    { text: "OK", onPress: () => handleBackPress() }
+                ]);
+            }, 3000);
+        } else {
+            console.log('🎉 [SCREEN] Correct answer! Showing congratulations animation...');
+            setShowCongratulationsAnimation(true);
+            
+            if (result.unlocked_content && result.unlocked_content.length > 0) {
+              console.log('🎉 [SCREEN] Showing unlocked content notification:', result.unlocked_content);
+              Alert.alert(
+                '🎉 New Content Unlocked!',
+                `You've unlocked: ${result.unlocked_content.join(', ')}`,
+                [{ text: 'OK' }]
+              );
+            }
+            
+            setTimeout(() => {
+              console.log('🔄 [SCREEN] Moving to next prompt after congratulations animation');
+              setShowCongratulationsAnimation(false);
+              moveToNextPrompt();
+            }, 3000);
         }
-        
-        setTimeout(() => {
-          console.log('🔄 [SCREEN] Moving to next prompt after congratulations animation');
-          setShowCongratulationsAnimation(false);
-          moveToNextPrompt();
-        }, 3000);
       } else if (result.success && result.evaluation && !result.evaluation.is_correct) {
         console.log('❌ [SCREEN] Incorrect answer! Showing retry animation...');
         setShowRetryAnimation(true);
@@ -663,52 +683,54 @@ const QuickResponseScreen = () => {
           </Animated.View>
 
           {/* Action Button */}
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: buttonScaleAnim }
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
+          {!isExerciseCompleted && (
+            <Animated.View
               style={[
-                styles.speakButton,
+                styles.buttonContainer,
                 {
-                  shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
-                }
+                  opacity: fadeAnim,
+                  transform: [
+                    { translateY: slideAnim },
+                    { scale: buttonScaleAnim }
+                  ],
+                },
               ]}
-              onPress={() => {
-                animateButtonPress();
-                if (audioRecorder.state.isRecording) {
-                  handleStopRecording();
-                } else {
-                  handleStartRecording();
-                }
-              }}
-              disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
-              activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
-                style={styles.speakButtonGradient}
+              <TouchableOpacity
+                style={[
+                  styles.speakButton,
+                  {
+                    shadowColor: audioRecorder.state.isRecording ? '#FF6B6B' : '#45B7A8',
+                  }
+                ]}
+                onPress={() => {
+                  animateButtonPress();
+                  if (audioRecorder.state.isRecording) {
+                    handleStopRecording();
+                  } else {
+                    handleStartRecording();
+                  }
+                }}
+                disabled={isProcessing || audioPlayer.state.isPlaying || isLoading || isExerciseCompleted}
+                activeOpacity={0.8}
               >
-                <Ionicons 
-                  name={isProcessing ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
-                  size={24} 
-                  color="#fff" 
-                  style={{ marginRight: 8 }} 
-                />
-                <Text style={styles.speakButtonText}>
-                  {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? 'Listening' : 'Speak Now'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+                <LinearGradient
+                  colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
+                  style={styles.speakButtonGradient}
+                >
+                  <Ionicons 
+                    name={isProcessing ? 'hourglass-outline' : audioRecorder.state.isRecording ? 'stop-outline' : 'mic-outline'} 
+                    size={24} 
+                    color="#fff" 
+                    style={{ marginRight: 8 }} 
+                  />
+                  <Text style={styles.speakButtonText}>
+                    {isProcessing ? 'Processing...' : audioRecorder.state.isRecording ? 'Listening' : 'Speak Now'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
         </View>
 
         {/* Overlays */}

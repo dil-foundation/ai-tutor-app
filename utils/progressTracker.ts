@@ -78,6 +78,7 @@ export interface ProgressData {
   unlocked_content: any[];
   total_completed_stages: number;
   total_completed_exercises: number;
+  total_exercises_in_curriculum: number;
   total_learning_units: number;
   total_completed_units: number;
 }

@@ -71,6 +71,12 @@ interface EvaluationResult {
   response_type?: string;
   scenario_title?: string;
   scenario_context?: string;
+  exercise_completion?: {
+    exercise_completed: boolean;
+    progress_percentage: number;
+    completed_topics: number;
+    total_topics: number;
+  };
 }
 
 const GroupDialogueScreen = () => {
@@ -424,22 +430,35 @@ const GroupDialogueScreen = () => {
       if (result.success) {
         setEvaluationResult(result);
         console.log('✅ [EVAL] Evaluation completed successfully');
-        
-        // Keep evaluation animation visible until navigation
-        // The animation will be hidden when the component unmounts during navigation
-        console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
-        console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
-        
-        // Navigate to feedback screen
-        router.push({
-          pathname: '/(tabs)/practice/stage3/feedback_2',
-          params: {
-            evaluationResult: JSON.stringify(result),
-            currentScenarioId: currentScenarioId.toString(),
-            totalScenarios: totalScenarios.toString(),
-            exerciseType: 'group-dialogue'
-          }
-        });
+
+        if (result.exercise_completion?.exercise_completed) {
+          setIsExerciseCompleted(true);
+          // Directly show completion alert and navigate back
+          Alert.alert(
+            'Congratulations!',
+            'You have successfully completed all Group Dialogue exercises.',
+            [{ text: 'OK', onPress: () => router.push('/(tabs)/practice/stage3') }]
+          );
+          // Hide the animation as we are navigating away
+          setShowEvaluatingAnimation(false);
+          setIsEvaluating(false);
+        } else {
+          // Keep evaluation animation visible until navigation
+          // The animation will be hidden when the component unmounts during navigation
+          console.log('🔄 [EVAL] Keeping evaluation animation visible while navigating to feedback page...');
+          console.log('🔄 [EVAL] Navigation will automatically hide the animation overlay');
+          
+          // Navigate to feedback screen
+          router.push({
+            pathname: '/(tabs)/practice/stage3/feedback_2',
+            params: {
+              evaluationResult: JSON.stringify(result),
+              currentScenarioId: currentScenarioId.toString(),
+              totalScenarios: totalScenarios.toString(),
+              exerciseType: 'group-dialogue'
+            }
+          });
+        }
       } else {
         console.log('❌ [EVAL] Evaluation failed:', result.error);
         setShowEvaluatingAnimation(false);
@@ -787,6 +806,7 @@ const GroupDialogueScreen = () => {
           </Animated.View>
 
           {/* Action Button */}
+          {!isExerciseCompleted && (
           <Animated.View
             style={[
               styles.buttonContainer,
@@ -834,6 +854,7 @@ const GroupDialogueScreen = () => {
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
+          )}
         </View>
 
         {/* Evaluating Animation Overlay */}

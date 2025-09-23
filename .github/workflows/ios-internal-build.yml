@@ -1,0 +1,82 @@
+name: iOS Internal Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: 'Release channel for the build'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - production
+          - preview
+
+jobs:
+  build-and-download:
+    name: Build and Create iOS IPA
+    runs-on: macos-latest
+    
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "❌ You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets."
+            echo "Learn more: https://docs.expo.dev/eas-update/github-actions"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install EAS CLI manually
+        run: |
+          echo "Installing EAS CLI..."
+          npm install -g eas-cli@latest
+          eas --version
+        env:
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+
+      - name: Install dependencies
+        run: |
+          echo "Installing project dependencies..."
+          npm install --no-optional
+        env:
+          npm_config_cache: /tmp/npm-cache
+          npm_config_prefer_offline: false
+
+      - name: Build iOS app and get artifact
+        run: |
+          echo "🚀 Building iOS app with profile: ${{ github.event.inputs.release_channel }}"
+          eas build --platform ios --profile ${{ github.event.inputs.release_channel }} --non-interactive --wait --output=ios-build.ipa
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_UXCAM_API_KEY: ${{ secrets.EXPO_PUBLIC_UXCAM_API_KEY }}
+          EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+          EXPO_PUBLIC_FRONTEND_URL: ${{ secrets.EXPO_PUBLIC_FRONTEND_URL }}
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-ipa
+          path: ios-build.ipa
+          retention-days: 7
+
+      - name: Notify completion
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Build completed successfully!"
+            echo "📦 The .ipa file is available for download in the 'Artifacts' section of this workflow run."
+          else
+            echo "❌ Build failed"
+            echo "Please check the logs above for details"
+          fi
