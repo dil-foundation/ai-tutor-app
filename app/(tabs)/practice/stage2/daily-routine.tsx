@@ -98,7 +98,7 @@ const DailyRoutineScreen = () => {
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
-  const audioRecorder = useAudioRecorder(5000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(8000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
@@ -133,10 +133,10 @@ const DailyRoutineScreen = () => {
 
   // Load current phrase when topic changes
   useEffect(() => {
-    if (isTopicLoaded && currentTopicId > 0) {
+    if (isTopicLoaded && currentTopicId > 0 && !isExerciseCompleted) {
       loadPhrase();
     }
-  }, [isTopicLoaded, currentTopicId]);
+  }, [isTopicLoaded, currentTopicId, isExerciseCompleted]);
 
   // Animation effects
   useEffect(() => {
@@ -197,11 +197,11 @@ const DailyRoutineScreen = () => {
         console.log("✅ [PROGRESS] Progress tracking initialized successfully");
         setIsProgressInitialized(true);
         
-        console.log('🔄 [SCREEN] Loading current topic, progress, and total phrases...');
+        console.log('🔄 [SCREEN] Loading total phrases, then current topic and progress...');
+        await loadTotalPhrases();
         await Promise.all([
           loadCurrentTopic(),
           loadUserProgress(),
-          loadTotalPhrases()
         ]);
       } else {
         console.log("⚠️ [PROGRESS] Progress initialization failed:", result.error);
@@ -255,10 +255,18 @@ const DailyRoutineScreen = () => {
       console.log("📊 [PROGRESS] Current topic result:", result);
 
       if (result.success && result.data) {
-        const topicId = result.data.current_topic_id || 1;
-        setCurrentTopicId(topicId);
-        setIsTopicLoaded(true);
-        console.log("✅ [PROGRESS] Current topic loaded:", topicId);
+        if (result.data.is_completed) {
+          console.log("🎉 [PROGRESS] Exercise is already completed on load.");
+          setIsExerciseCompleted(true);
+          setCurrentTopicId(totalPhrases); // Show the last topic number
+          setIsTopicLoaded(true);
+          setIsLoading(false); // Manually stop the loading indicator
+        } else {
+          const topicId = result.data.current_topic_id || 1;
+          setCurrentTopicId(topicId);
+          setIsTopicLoaded(true);
+          console.log("✅ [PROGRESS] Current topic loaded:", topicId);
+        }
       } else {
         console.log("⚠️ [PROGRESS] No current topic found, using default (1)");
         setCurrentTopicId(1);
@@ -526,7 +534,9 @@ const DailyRoutineScreen = () => {
     } else {
       console.log("🎉 [PROGRESS] All phrases completed!");
       setIsExerciseCompleted(true);
-      setError('Congratulations! You have completed all Daily Routine exercises!');
+      Alert.alert("Exercise Completed!", "Great job! You've mastered this exercise.", [
+        { text: "OK", onPress: () => handleBackPress() }
+      ]);
     }
   };
 
