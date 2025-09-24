@@ -250,6 +250,7 @@ const ListenAndReplyScreen = () => {
       console.log("📊 [PROGRESS] Current topic result:", result);
 
       if (result.success && result.data) {
+        console.log("✅ [PROGRESS] Full current topic details from backend:", JSON.stringify(result.data, null, 2));
         const topicId = result.data.current_topic_id || 1;
         setCurrentTopicId(topicId);
         setIsTopicLoaded(true);
@@ -725,7 +726,7 @@ const ListenAndReplyScreen = () => {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D6D", "#45B7A8"]}
+                  colors={audioRecorder.state.isRecording ? ["#FF6B6B", "#FF5252"] : ["#58D68D", "#45B7A8"]}
                   style={styles.speakButtonGradient}
                 >
                   <Ionicons 

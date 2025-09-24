@@ -74,9 +74,14 @@ const Stage2Screen = () => {
       if (result.success && result.data) {
         const stage2 = result.data.stages.find((stage: any) => stage.stage_id === 2);
         if (stage2 && stage2.exercises) {
-          const completed = stage2.exercises
-            .filter((ex: any) => ex.completed)
-            .map((ex: any) => ex.exercise_id);
+          const completed: number[] = [];
+          stage2.exercises.forEach((exercise: any, index: number) => {
+            if (exercise.status === 'completed') {
+              if (activities[index]) {
+                completed.push(activities[index].exerciseId);
+              }
+            }
+          });
           setCompletedExercises(completed);
           console.log('✅ [Stage 2] Completed exercises:', completed);
         }
@@ -230,8 +235,7 @@ const Stage2Screen = () => {
                 <TouchableOpacity
                   style={styles.activityButton}
                   onPress={() => navigateToActivity(activity)}
-                  activeOpacity={0.8}
-                  disabled={isCompleted}
+                  activeOpacity={isCompleted ? 1.0 : 0.8}
                 >
                   <LinearGradient
                     colors={activity.gradient}
@@ -251,7 +255,7 @@ const Stage2Screen = () => {
                     </View>
                     {isCompleted && (
                       <View style={styles.completedOverlay}>
-                        <Ionicons name="checkmark-circle" size={48} color="white" />
+                        <Ionicons name="checkmark-circle" size={64} color="white" />
                         <Text style={styles.completedText}>Completed</Text>
                       </View>
                     )}
@@ -491,21 +495,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   completedOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(46, 204, 113, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
   },
   completedText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 20,
     marginTop: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   progressCard: {
     marginTop: 20,

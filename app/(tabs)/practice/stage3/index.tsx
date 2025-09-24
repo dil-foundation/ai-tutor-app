@@ -28,7 +28,7 @@ const Stage3Screen = () => {
   const [scaleAnim] = useState(new Animated.Value(0.8));
   
   const [isLoading, setIsLoading] = useState(true);
-  const [completedExercises, setCompletedExercises] = useState<Record<number, boolean>>({});
+  const [completedExercises, setCompletedExercises] = useState<number[]>([]);
   
   const [activityScaleAnims] = useState(() => 
     [1, 2, 3].map(() => new Animated.Value(1))
@@ -68,20 +68,20 @@ const Stage3Screen = () => {
   ];
 
   const fetchProgress = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+        setIsLoading(false);
+        return;
+    }
     setIsLoading(true);
     try {
       console.log('🔄 [STAGE 3] Fetching latest progress...');
       const result = await ProgressHelpers.forceRefreshProgress();
       if (result.success && result.data) {
         const stage3 = result.data.stages.find((stage: any) => stage.stage_id === 3);
-        if (stage3) {
-          const completed: Record<number, boolean> = {};
-          stage3.exercises.forEach((exercise: any) => {
-            if (exercise.completed) {
-              completed[exercise.exercise_id] = true;
-            }
-          });
+        if (stage3 && stage3.exercises) {
+          const completed = stage3.exercises
+            .filter((ex: any) => ex.status === 'completed')
+            .map((ex: any) => ex.exercise_id);
           setCompletedExercises(completed);
           console.log('✅ [STAGE 3] Progress updated:', completed);
         }
@@ -122,7 +122,7 @@ const Stage3Screen = () => {
   }, []);
 
   const navigateToActivity = (activity: (typeof activities)[0], activityIndex: number) => {
-    const isCompleted = completedExercises[activity.exerciseId];
+    const isCompleted = completedExercises.includes(activity.exerciseId);
     
     if (isCompleted) {
       Alert.alert(
@@ -241,7 +241,7 @@ const Stage3Screen = () => {
           </View>
 
           {activities.map((activity, index) => {
-            const isCompleted = completedExercises[activity.exerciseId];
+            const isCompleted = completedExercises.includes(activity.exerciseId);
             return (
               <Animated.View
                 key={activity.id}
@@ -259,11 +259,10 @@ const Stage3Screen = () => {
                 <TouchableOpacity
                   style={styles.activityButton}
                   onPress={() => navigateToActivity(activity, index)}
-                  activeOpacity={isCompleted ? 1 : 0.8}
-                  disabled={isCompleted}
+                  activeOpacity={isCompleted ? 1.0 : 0.8}
                 >
                   <LinearGradient
-                    colors={isCompleted ? ['#B0BEC5', '#90A4AE'] : activity.gradient}
+                    colors={activity.gradient}
                     style={styles.activityGradient}
                   >
                     <View style={styles.activityContent}>
@@ -280,7 +279,7 @@ const Stage3Screen = () => {
                     </View>
                     {isCompleted && (
                       <View style={styles.completedOverlay}>
-                        <Ionicons name="checkmark-circle" size={48} color="white" />
+                        <Ionicons name="checkmark-circle" size={64} color="white" />
                         <Text style={styles.completedText}>Completed</Text>
                       </View>
                     )}
@@ -535,16 +534,19 @@ const styles = StyleSheet.create({
   },
   completedOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(46, 204, 113, 0.8)',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   completedText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   progressCard: {
     marginTop: 20,

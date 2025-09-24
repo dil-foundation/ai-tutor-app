@@ -154,8 +154,22 @@ export default function PracticeLandingScreen() {
       return 'completed';
     }
   
+    // Stage 0 is always unlocked if not completed
+    if (stageIndex === 0) {
+      return 'unlocked';
+    }
+
+    // A stage is unlocked if it's explicitly marked as unlocked
     if (stageInfo.unlocked) {
       return 'unlocked';
+    }
+  
+    // Or if the previous stage is completed
+    if (stageIndex > 0) {
+      const prevStageInfo = progressData.stages.find(s => s.stage_id === stageIndex - 1);
+      if (prevStageInfo && prevStageInfo.completed) {
+        return 'unlocked';
+      }
     }
   
     return 'locked';
