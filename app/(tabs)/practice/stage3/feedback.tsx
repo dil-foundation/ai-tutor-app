@@ -47,19 +47,19 @@ const FeedbackScreen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Great storytelling! You\'ve mastered this prompt.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! You can move to the next prompt.';
     return 'Good effort! Review the feedback and try again.';
   };
 
