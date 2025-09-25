@@ -79,9 +79,14 @@ const Stage3Screen = () => {
       if (result.success && result.data) {
         const stage3 = result.data.stages.find((stage: any) => stage.stage_id === 3);
         if (stage3 && stage3.exercises) {
-          const completed = stage3.exercises
-            .filter((ex: any) => ex.status === 'completed')
-            .map((ex: any) => ex.exercise_id);
+          const completed: number[] = [];
+          stage3.exercises.forEach((exercise: any, index: number) => {
+            if (exercise.status === 'completed') {
+              if (activities[index]) {
+                completed.push(activities[index].exerciseId);
+              }
+            }
+          });
           setCompletedExercises(completed);
           console.log('✅ [STAGE 3] Progress updated:', completed);
         }
