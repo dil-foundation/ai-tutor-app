@@ -508,7 +508,7 @@ const ProblemSolvingScreen = () => {
 
   // Handle feedback return
   const handleFeedbackReturn = async () => {
-    if (evaluationResult?.success) {
+    if (evaluationResult?.evaluation?.score >= 35) {
       await moveToNextScenario();
     }
     setEvaluationResult(null);
@@ -606,7 +606,7 @@ const ProblemSolvingScreen = () => {
       if (params.evaluationResult) {
         const result = JSON.parse(params.evaluationResult as string);
         setEvaluationResult(result);
-        if (result.success) {
+        if (result.evaluation?.score >= 35) {
           await moveToNextScenario();
         }
       }
