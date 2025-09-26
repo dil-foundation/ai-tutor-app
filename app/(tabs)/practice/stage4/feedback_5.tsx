@@ -34,6 +34,7 @@ interface EvaluationResult {
   answer_relevance_score?: number;
   confidence_tone_score?: number;
   interview_vocabulary_score?: number;
+  completed?: boolean; // Added completed property
 }
 
 const FeedbackScreen = () => {
@@ -50,19 +51,19 @@ const FeedbackScreen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Outstanding interview performance! You\'ve mastered this question.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -87,7 +88,7 @@ const FeedbackScreen = () => {
   };
 
   // Check if the exercise is completed based on evaluation result
-  const isCompleted = evaluationResult?.evaluation?.completed === true;
+  const isCompleted = evaluationResult?.completed === true;
 
   if (!evaluationResult) {
     return (

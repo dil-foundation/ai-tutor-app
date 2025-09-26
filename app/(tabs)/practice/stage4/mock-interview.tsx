@@ -499,7 +499,7 @@ const MockInterviewScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next question
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextQuestion();
     }
   };

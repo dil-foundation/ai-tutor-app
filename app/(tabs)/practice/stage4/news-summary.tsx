@@ -193,8 +193,9 @@ const NewsSummaryScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentNewsItem) return; // Skip if we already have a news item
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentNewsItem && !forceReload) return; // Skip if we already have a news item unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -465,15 +466,6 @@ const NewsSummaryScreen = () => {
     }
   };
 
-  // Handle navigation back from feedback screen
-  const handleFeedbackReturn = () => {
-    // Reset evaluation result when returning from feedback
-    setEvaluationResult(null);
-    
-    // Note: We don't automatically move to next news item here
-    // The feedback screen handles navigation based on user actions
-  };
-
   // Animate button press - matching storytelling.tsx
   const animateButtonPress = () => {
     Animated.sequence([
@@ -509,8 +501,10 @@ const NewsSummaryScreen = () => {
       
       await loadTotalNewsItems();
       
-      // Check if we're coming back from feedback with next news item
-      if (params.nextNewsItem === 'true' && params.currentNewsId) {
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
+      } else if (params.nextNewsItem === 'true' && params.currentNewsId) {
         const nextNewsId = parseInt(params.currentNewsId as string);
         setCurrentNewsId(nextNewsId);
         await loadNewsItem(nextNewsId);
@@ -521,7 +515,7 @@ const NewsSummaryScreen = () => {
     };
     
     initialize();
-  }, [params.nextNewsItem, params.currentNewsId, isProgressInitialized, currentNewsItem]);
+  }, [params.returnFromFeedback, params.nextNewsItem, params.currentNewsId, isProgressInitialized]);
 
   // Add focus listener to reset evaluation states when component comes back into focus
   // This handles cases where user navigates back from feedback page or other screens
