@@ -15,12 +15,12 @@ if (__DEV__) {
   // BASE_API_URL = 'https://bda6-2401-4900-4df1-bc03-f029-886d-1f7c-9add.ngrok-free.app';
 } else {
   // Production URL
-  // BASE_API_URL = 'https://api-prod.dil.lms-staging.com';
+  BASE_API_URL = 'https://api-prod.dil.lms-staging.com';
 
-  // FRONTEND_URL = 'https://dil-prod.lms-staging.com';
-  BASE_API_URL = 'https://api.dil.lms-staging.com';
+  FRONTEND_URL = 'https://dil-prod.lms-staging.com';
+  // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
-  FRONTEND_URL = 'https://dil-dev.lms-staging.com';
+  // FRONTEND_URL = 'https://dil-dev.lms-staging.com';
 }
 
 export const WORDPRESS_API_URL = FRONTEND_URL;
