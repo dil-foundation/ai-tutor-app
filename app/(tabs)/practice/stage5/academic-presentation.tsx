@@ -117,6 +117,32 @@ const AcademicPresentationScreen = () => {
   
   const audioPlayer = useAudioPlayerFixed();
 
+  // Animation effects - matching storytelling.tsx
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScaleAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   // Initialize progress tracking
   const initializeProgressTracking = async () => {
     console.log('🔄 [PROGRESS] Initializing progress tracking...');
@@ -148,53 +174,48 @@ const AcademicPresentationScreen = () => {
     }
   };
 
-  // Load user progress
-  const loadUserProgress = async () => {
-    console.log('🔄 [PROGRESS] Loading user progress...');
-    if (!user?.id) {
-      console.log('⚠️ [PROGRESS] No user ID available, skipping progress load');
-      return;
-    }
+  // Load current topic and user progress
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentTopic && !forceReload) return; // Skip if we already have a topic unless forced
+
+    console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
+    setIsLoading(true);
 
     try {
-      const response = await authenticatedFetch(`${BASE_API_URL}/api/progress/user-progress/${user.id}/5/2`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ [PROGRESS] User progress loaded:', data);
-        
-        // Set current topic based on progress
-        if (data.current_topic_id) {
-          setCurrentTopicId(data.current_topic_id);
-        }
-        
-        // Check if exercise is completed
-        if (data.completed_topics && data.completed_topics.length >= totalTopics) {
+      // First, get the user's current progress to find the correct topic ID
+      const progressResponse = await authenticatedFetch(`${BASE_API_URL}/api/academic-presentation-current-topic/${user.id}`);
+      const progressResult = await progressResponse.json();
+      
+      let topicIdToLoad = 1;
+      if (progressResponse.ok && progressResult.current_topic_id) {
+        topicIdToLoad = progressResult.current_topic_id;
+        console.log('✅ [TOPIC] Current topic ID from progress:', topicIdToLoad);
+
+        if (progressResult.completed_topics && progressResult.completed_topics.length >= totalTopics) {
           setIsExerciseCompleted(true);
         }
       } else {
-        console.log('⚠️ [PROGRESS] Failed to load user progress');
+        console.log('⚠️ [TOPIC] Failed to load user progress, defaulting to topic 1');
       }
-    } catch (error) {
-      console.log('❌ [PROGRESS] Error loading user progress:', error);
-    }
-  };
 
-  // Load current topic
-  const loadCurrentTopic = async () => {
-    console.log('🔄 [TOPIC] Loading current topic...');
-    try {
-      const response = await authenticatedFetch(API_ENDPOINTS.ACADEMIC_PRESENTATION(currentTopicId));
-      if (response.ok) {
-        const topicData = await response.json();
-        console.log('✅ [TOPIC] Topic loaded:', topicData);
+      // Now load the actual topic data with the determined ID
+      const topicResponse = await authenticatedFetch(API_ENDPOINTS.ACADEMIC_PRESENTATION(topicIdToLoad));
+      if (topicResponse.ok) {
+        const topicData = await topicResponse.json();
+        console.log('✅ [TOPIC] Topic data loaded successfully:', topicData.topic);
         setCurrentTopic(topicData);
+        setCurrentTopicId(topicIdToLoad);
       } else {
-        console.log('❌ [TOPIC] Failed to load topic');
-        Alert.alert('Error', 'Failed to load presentation topic');
+        console.log('❌ [TOPIC] Failed to load topic data for ID:', topicIdToLoad);
+        Alert.alert('Error', 'Failed to load presentation topic.');
       }
+
     } catch (error) {
-      console.log('❌ [TOPIC] Error loading topic:', error);
-      Alert.alert('Error', 'Failed to load presentation topic');
+      console.error('❌ [TOPIC] Error loading current topic:', error);
+      Alert.alert('Error', 'Network error. Please check your connection.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -431,50 +452,30 @@ const AcademicPresentationScreen = () => {
       console.log('🔄 [INIT] Initializing Academic Presentation screen...');
       
       // Reset evaluation states on component mount to ensure clean state
-      console.log('🔄 [INIT] Component mounting, resetting evaluation states');
       setShowEvaluatingAnimation(false);
       setIsEvaluating(false);
       setEvaluationResult(null);
       setTimeSpent(0);
       
-      // Initialize progress tracking
-      await initializeProgressTracking();
+      if (!isProgressInitialized) {
+        await initializeProgressTracking();
+        setIsProgressInitialized(true);
+      }
       
-      // Load total topics count
       await loadTotalTopics();
+
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
+      } else if (!currentTopic) {
+        await loadCurrentTopic();
+      }
       
-      // Load user progress
-      await loadUserProgress();
-      
-      // Load current topic
-      await loadCurrentTopic();
-      
-      // Start animations
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardScaleAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      
-      setIsLoading(false);
-      setIsProgressInitialized(true);
       console.log('✅ [INIT] Academic Presentation screen initialized');
     };
 
     initialize();
-  }, []);
+  }, [params.returnFromFeedback, isProgressInitialized]);
 
   // Add focus listener to reset evaluation states when component comes back into focus
   // This handles cases where user navigates back from feedback page or other screens
