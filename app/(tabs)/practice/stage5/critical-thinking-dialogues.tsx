@@ -100,7 +100,7 @@ const CriticalThinkingDialoguesScreen = () => {
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks
-  const audioRecorder = useAudioRecorder(20000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(60000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
@@ -194,8 +194,9 @@ const CriticalThinkingDialoguesScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentTopic) return; // Skip if we already have a topic
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentTopic && !forceReload) return; // Skip if we already have a topic unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -204,8 +205,8 @@ const CriticalThinkingDialoguesScreen = () => {
 
       const result = await response.json();
       
-      if (result.success && result.data) {
-        const topicId = result.data.current_topic_id;
+      if (result.success && result.current_topic_id) {
+        const topicId = result.current_topic_id;
         console.log('✅ [TOPIC] Current topic loaded:', topicId);
         setCurrentTopicId(topicId);
         await loadTopic(topicId);
@@ -484,17 +485,6 @@ const CriticalThinkingDialoguesScreen = () => {
     }
   };
 
-  // Handle navigation back from feedback screen
-  const handleFeedbackReturn = () => {
-    // Reset evaluation result when returning from feedback
-    setEvaluationResult(null);
-    
-    // Check if we should move to next topic
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
-      moveToNextTopic();
-    }
-  };
-
   // Animate button press - matching storytelling.tsx
   const animateButtonPress = () => {
     Animated.sequence([
@@ -530,11 +520,10 @@ const CriticalThinkingDialoguesScreen = () => {
       
       await loadTotalTopics();
       
-      // Check if we're coming back from feedback with next topic
-      if (params.nextTopic === 'true' && params.currentTopicId) {
-        const nextTopicId = parseInt(params.currentTopicId as string);
-        setCurrentTopicId(nextTopicId);
-        await loadTopic(nextTopicId);
+      // Check if we're coming back from feedback to force a reload
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
       } else if (!currentTopic) {
         // Only load current topic if we don't have a topic loaded
         await loadCurrentTopic();
@@ -542,7 +531,7 @@ const CriticalThinkingDialoguesScreen = () => {
     };
     
     initialize();
-  }, [params.nextTopic, params.currentTopicId]);
+  }, [params.returnFromFeedback, isProgressInitialized]);
 
   // Reset evaluation states when component comes back into focus
   useFocusEffect(

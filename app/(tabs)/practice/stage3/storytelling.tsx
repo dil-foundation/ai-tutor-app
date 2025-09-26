@@ -94,7 +94,7 @@ const StorytellingScreen = () => {
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks
-  const audioRecorder = useAudioRecorder(20000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
@@ -482,7 +482,7 @@ const StorytellingScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next prompt
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextPrompt();
     }
   };

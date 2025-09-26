@@ -200,8 +200,9 @@ const AbstractTopicScreen = () => {
   };
 
   // Load current topic - matching storytelling.tsx pattern
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentTopic) return; // Skip if we already have a topic
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentTopic && !forceReload) return; // Skip if we already have a topic unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -489,7 +490,7 @@ const AbstractTopicScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next topic
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextTopic();
     }
   };
@@ -541,7 +542,7 @@ const AbstractTopicScreen = () => {
     };
     
     initialize();
-  }, [params.nextTopic, params.currentTopicId]);
+  }, [params.nextTopic, params.currentTopicId, isProgressInitialized]);
 
   // Add focus listener to reset evaluation states when component comes back into focus
   // This handles cases where user navigates back from feedback page or other screens

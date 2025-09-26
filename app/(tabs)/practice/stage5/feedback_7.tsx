@@ -115,19 +115,19 @@ const Feedback7Screen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Outstanding critical thinking! You\'ve mastered this philosophical debate.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -139,14 +139,14 @@ const Feedback7Screen = () => {
   };
 
   const handleNextTopic = () => {
-    console.log('🔄 [FEEDBACK] Next topic clicked, navigating to next topic');
+    console.log('🔄 [FEEDBACK] Next topic clicked, navigating back to reload topic');
     // Reset the parsing flag for the next evaluation
     hasParsedEvaluation.current = false;
+    // Navigate back to the screen and tell it to reload
     router.push({
       pathname: '/(tabs)/practice/stage5/critical-thinking-dialogues',
       params: {
-        nextTopic: 'true',
-        currentTopicId: (currentTopicId + 1).toString(),
+        returnFromFeedback: 'true',
       }
     });
   };

@@ -31,6 +31,7 @@ interface EvaluationResult {
   total_keywords?: number;
   fluency_score?: number;
   grammar_score?: number;
+  completed?: boolean;
 }
 
 const Feedback6Screen = () => {
@@ -82,19 +83,19 @@ const Feedback6Screen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Great news summary! You\'ve mastered this skill.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -106,20 +107,20 @@ const Feedback6Screen = () => {
   };
 
   const handleNextNews = () => {
-    console.log('🔄 [FEEDBACK] Next news clicked, navigating to next news item');
+    console.log('🔄 [FEEDBACK] Next news clicked, navigating back to reload topic');
     // Reset the parsing flag for the next evaluation
     hasParsedEvaluation.current = false;
+    // Navigate back to the news summary screen and tell it to reload
     router.push({
       pathname: '/(tabs)/practice/stage4/news-summary',
       params: {
-        nextNewsItem: 'true',
-        currentNewsId: (currentNewsId + 1).toString(),
+        returnFromFeedback: 'true',
       }
     });
   };
 
   // Check if the exercise is completed based on evaluation result
-  const isCompleted = evaluationResult?.evaluation?.completed === true;
+  const isCompleted = evaluationResult?.completed === true;
 
   if (!evaluationResult) {
     return (

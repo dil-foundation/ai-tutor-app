@@ -347,6 +347,11 @@ const RoleplayChatScreen = () => {
 
   const evaluateConversation = async () => {
     console.log("🔄 [CHAT] Starting conversation evaluation");
+    
+    // Stop any playing audio immediately to prevent overlap
+    console.log('▶️ [EVAL] Ensuring audio is stopped before evaluation...');
+    audioPlayer.stopAudio();
+    
     setShowEvaluatingAnimation(true);
     
     try {
