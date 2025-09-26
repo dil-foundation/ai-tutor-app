@@ -47,19 +47,19 @@ const Feedback9Screen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Outstanding interview response! You\'ve mastered this question.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -68,19 +68,13 @@ const Feedback9Screen = () => {
   };
 
   const handleNext = () => {
-    if (currentPromptId < totalPrompts) {
-      // Navigate back to in-depth interview screen with next prompt info
-      router.push({
-        pathname: '/(tabs)/practice/stage5/in-depth-interview',
-        params: {
-          nextPrompt: 'true',
-          currentPromptId: (currentPromptId + 1).toString(),
-        }
-      });
-    } else {
-      // Exercise completed, go back to stage 5 index
-      router.push('/(tabs)/practice/stage5');
-    }
+    // Navigate back to in-depth interview screen and tell it to reload
+    router.push({
+      pathname: '/(tabs)/practice/stage5/in-depth-interview',
+      params: {
+        returnFromFeedback: 'true',
+      }
+    });
   };
 
   // Check if the exercise is completed based on evaluation result
