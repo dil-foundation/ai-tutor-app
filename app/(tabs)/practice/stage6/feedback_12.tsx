@@ -49,19 +49,19 @@ const FeedbackScreen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Outstanding critical analysis! You\'ve mastered this topic.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -71,12 +71,11 @@ const FeedbackScreen = () => {
 
   const handleNext = () => {
     if (currentTopicId < totalTopics) {
-      // Navigate back to critical opinion builder screen with next topic info
+      // Navigate back to critical opinion builder screen to load the next topic
       router.push({
         pathname: '/(tabs)/practice/stage6/critical-opinion-builder',
         params: {
-          nextTopic: 'true',
-          currentTopicId: (currentTopicId + 1).toString(),
+          returnFromFeedback: 'true',
         }
       });
     } else {
@@ -85,8 +84,8 @@ const FeedbackScreen = () => {
     }
   };
 
-  // Check if the exercise is completed based on evaluation result
-  const isCompleted = evaluationResult?.evaluation?.completed === true;
+  // Check if the topic attempt was successful based on score
+  const isSuccessfulAttempt = (evaluationResult?.evaluation?.score || 0) >= 35;
 
   if (!evaluationResult) {
     return (
@@ -163,15 +162,15 @@ const FeedbackScreen = () => {
                 </Text>
                 
                 {/* Completion Status */}
-                <View style={[styles.completionStatus, { backgroundColor: isCompleted ? '#D4EDDA' : '#FFF3CD' }]}>
+                <View style={[styles.completionStatus, { backgroundColor: isSuccessfulAttempt ? '#D4EDDA' : '#FFF3CD' }]}>
                   <Ionicons 
-                    name={isCompleted ? 'checkmark-circle' : 'alert-circle'} 
+                    name={isSuccessfulAttempt ? 'checkmark-circle' : 'alert-circle'} 
                     size={20} 
-                    color={isCompleted ? '#155724' : '#856404'} 
+                    color={isSuccessfulAttempt ? '#155724' : '#856404'} 
                     style={{ marginRight: 8 }} 
                   />
-                  <Text style={[styles.completionStatusText, { color: isCompleted ? '#155724' : '#856404' }]}>
-                    {isCompleted ? 'Exercise Completed! 🎉' : 'Keep Practicing 💪'}
+                  <Text style={[styles.completionStatusText, { color: isSuccessfulAttempt ? '#155724' : '#856404' }]}>
+                    {isSuccessfulAttempt ? 'Exercise Completed! 🎉' : 'Keep Practicing 💪'}
                   </Text>
                 </View>
               </View>
@@ -320,7 +319,7 @@ const FeedbackScreen = () => {
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             {/* Show Try Again button when not completed */}
-            {!isCompleted && (
+            {!isSuccessfulAttempt && (
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={handleRetry}
@@ -336,7 +335,7 @@ const FeedbackScreen = () => {
             )}
             
             {/* Show Next Topic button when completed */}
-            {isCompleted && (
+            {isSuccessfulAttempt && (
               <TouchableOpacity
                 style={styles.nextButton}
                 onPress={handleNext}

@@ -182,8 +182,9 @@ const AIGuidedSpontaneousSpeechScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentTopic) return; // Skip if we already have a topic
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentTopic && !forceReload) return; // Skip if we already have a topic unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -451,7 +452,7 @@ const AIGuidedSpontaneousSpeechScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next topic
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextTopic();
     }
   };
@@ -492,7 +493,10 @@ const AIGuidedSpontaneousSpeechScreen = () => {
       await loadTotalTopics();
       
       // Check if we're coming back from feedback with next topic
-      if (params.nextTopic === 'true' && params.currentTopicId) {
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
+      } else if (params.nextTopic === 'true' && params.currentTopicId) {
         const nextTopicId = parseInt(params.currentTopicId as string);
         setCurrentTopicId(nextTopicId);
         await loadTopic(nextTopicId);
@@ -503,7 +507,7 @@ const AIGuidedSpontaneousSpeechScreen = () => {
     };
     
     initialize();
-  }, [params.nextTopic, params.currentTopicId]);
+  }, [params.returnFromFeedback, isProgressInitialized]);
 
   // Reset evaluation states when component comes back into focus
   useFocusEffect(

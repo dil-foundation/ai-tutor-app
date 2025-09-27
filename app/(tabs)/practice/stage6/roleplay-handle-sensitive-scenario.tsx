@@ -93,7 +93,7 @@ const RoleplaySensitiveScenarioScreen = () => {
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks
-  const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(40000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
@@ -184,8 +184,9 @@ const RoleplaySensitiveScenarioScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentScenario) return; // Skip if we already have a scenario
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentScenario && !forceReload) return; // Skip if we already have a scenario unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -453,7 +454,7 @@ const RoleplaySensitiveScenarioScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next scenario
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextScenario();
     }
   };
@@ -494,7 +495,10 @@ const RoleplaySensitiveScenarioScreen = () => {
       await loadTotalScenarios();
       
       // Check if we're coming back from feedback with next scenario
-      if (params.nextScenario === 'true' && params.currentScenarioId) {
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing scenario reload');
+        await loadCurrentTopic(true);
+      } else if (params.nextScenario === 'true' && params.currentScenarioId) {
         const nextScenarioId = parseInt(params.currentScenarioId as string);
         setCurrentScenarioId(nextScenarioId);
         await loadScenario(nextScenarioId);
@@ -505,7 +509,7 @@ const RoleplaySensitiveScenarioScreen = () => {
     };
     
     initialize();
-  }, [params.nextScenario, params.currentScenarioId]);
+  }, [params.returnFromFeedback, isProgressInitialized]);
 
   // Reset evaluation states when component comes back into focus
   useFocusEffect(

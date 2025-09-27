@@ -47,19 +47,19 @@ const FeedbackScreen = () => {
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#58D68D';
-    if (score >= 60) return '#F39C12';
+    if (score >= 35) return '#F39C12';
     return '#E74C3C';
   };
 
   const getScoreMessage = (score: number) => {
     if (score >= 80) return 'Excellent! 🎉';
-    if (score >= 60) return 'Good Job! 👍';
+    if (score >= 35) return 'Good Job! 👍';
     return 'Keep Practicing 💪';
   };
 
   const getScoreDescription = (score: number) => {
     if (score >= 80) return 'Great spontaneous speech! You\'ve mastered this topic.';
-    if (score >= 60) return 'Well done! Keep practicing to improve further.';
+    if (score >= 35) return 'Well done! Keep practicing to improve further.';
     return 'Good effort! Review the feedback and try again.';
   };
 
@@ -68,19 +68,13 @@ const FeedbackScreen = () => {
   };
 
   const handleNext = () => {
-    if (currentTopicId < totalTopics) {
-      // Navigate back to spontaneous speech screen with next topic info
-      router.push({
-        pathname: '/(tabs)/practice/stage6/ai-guided-spontaneous-speech',
-        params: {
-          nextTopic: 'true',
-          currentTopicId: (currentTopicId + 1).toString(),
-        }
-      });
-    } else {
-      // Exercise completed, go back to stage 6 index
-      router.push('/(tabs)/practice/stage6');
-    }
+    // Navigate back to spontaneous speech screen and tell it to reload
+    router.push({
+      pathname: '/(tabs)/practice/stage6/ai-guided-spontaneous-speech',
+      params: {
+        returnFromFeedback: 'true',
+      }
+    });
   };
 
   // Check if the exercise is completed based on evaluation result
