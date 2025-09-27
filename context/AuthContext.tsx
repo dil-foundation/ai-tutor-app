@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { FRONTEND_URL, API_ENDPOINTS } from '../config/api';
+import { progressTracker } from '../utils/progressTracker';
 
 interface SignUpData {
   email: string;
@@ -80,6 +81,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Update user role when user changes
   useEffect(() => {
     if (user) {
+      console.log('🔄 [AUTH] User changed, updating progress tracker and role...');
+      
+      // Update the progress tracker with the new user
+      progressTracker.updateCurrentUser().catch(error => {
+        console.error('❌ [AUTH] Error updating progress tracker:', error);
+      });
+      
       // Set loading state for role checking
       setRoleLoading(true);
       setUserRole(null); // Reset role while checking
@@ -89,19 +97,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (user && user.id === user.id) {
           setUserRole(role);
           setRoleLoading(false);
-          console.log('User role set to:', role);
+          console.log('✅ [AUTH] User role set to:', role);
         }
       }).catch(error => {
-        console.error('Error checking user role:', error);
+        console.error('❌ [AUTH] Error checking user role:', error);
         // Fallback to user metadata if available
         const fallbackRole = user?.user_metadata?.role || null;
         if (user && user.id === user.id) {
           setUserRole(fallbackRole);
           setRoleLoading(false);
-          console.log('User role fallback to:', fallbackRole);
+          console.log('✅ [AUTH] User role fallback to:', fallbackRole);
         }
       });
     } else {
+      console.log('🔄 [AUTH] No user, resetting state...');
       setUserRole(null);
       setRoleLoading(false);
     }
@@ -129,19 +138,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔄 [AUTH] Starting sign in process...');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.log('❌ [AUTH] Sign in failed:', error.message);
         return { error };
       }
+      
+      console.log('✅ [AUTH] User signed in successfully');
       
       // Don't check role here - it will be checked automatically by useEffect
       // when the user state changes
       return { error: null };
     } catch (error) {
+      console.error('❌ [AUTH] Error during sign in:', error);
       return { error };
     }
   };
@@ -171,10 +186,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
+      console.log('🔄 [AUTH] Starting sign out process...');
+      
+      // Reset the progress tracker before signing out
+      progressTracker.handleSignOut();
+      console.log('✅ [AUTH] Progress tracker reset');
+      
       await supabase.auth.signOut();
       setUserRole(null);
+      console.log('✅ [AUTH] User signed out successfully');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('❌ [AUTH] Error signing out:', error);
     }
   };
 

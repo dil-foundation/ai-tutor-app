@@ -728,8 +728,14 @@ class ProgressTracker {
   async updateCurrentUser() {
     console.log('🔄 [FRONTEND] updateCurrentUser called');
     try {
+      // Force re-initialization by resetting the state first
+      this.isInitialized = false;
+      this.currentUser = null;
+      this.clearCache();
+      
+      // Now initialize with the new user
       await this.initializeUser();
-      this.clearCache(); // Clear cache when user changes
+      console.log('✅ [FRONTEND] Progress tracker updated for new user');
     } catch (error) {
       console.error('❌ [FRONTEND] Error updating current user:', error);
       // Reset initialization state on error
@@ -739,11 +745,26 @@ class ProgressTracker {
   }
 
   /**
+   * Resets the tracker's state on user sign-out.
+   */
+  public handleSignOut() {
+    console.log('🔵 [FRONTEND] Handling sign-out in ProgressTracker.');
+    this.currentUser = null;
+    this.isInitialized = false;
+    this.clearCache();
+  }
+
+  /**
    * Get current user ID
    */
   getCurrentUserId(): string | null {
     const userId = this.currentUser?.id || null;
     console.log('🔄 [FRONTEND] getCurrentUserId called, returning:', userId);
+    
+    if (!userId) {
+      console.warn('⚠️ [FRONTEND] No user ID available - user may not be authenticated');
+    }
+    
     return userId;
   }
 
