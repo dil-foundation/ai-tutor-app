@@ -94,7 +94,7 @@ const CriticalOpinionBuilderScreen = () => {
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks
-  const audioRecorder = useAudioRecorder(30000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(50000, async (audioUri) => {
     if (audioUri) {
       await processRecording(audioUri);
     }
@@ -129,9 +129,12 @@ const CriticalOpinionBuilderScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentTopic) return;
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentTopic && !forceReload) return;
+
     try {
+      setIsLoading(true);
       const response = await authenticatedFetch(API_ENDPOINTS.GET_CURRENT_TOPIC, {
         method: 'POST',
         body: JSON.stringify({
@@ -149,8 +152,10 @@ const CriticalOpinionBuilderScreen = () => {
         await loadTopic(1);
       }
     } catch (error) {
-      console.error('❌ [TOPIC] Error:', error);
+      console.error('❌ [TOPIC] Error loading current topic:', error);
       await loadTopic(1);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -337,17 +342,16 @@ const CriticalOpinionBuilderScreen = () => {
       
       await loadTotalTopics();
       
-      if (params.nextTopic === 'true' && params.currentTopicId) {
-        const nextTopicId = parseInt(params.currentTopicId as string);
-        setCurrentTopicId(nextTopicId);
-        await loadTopic(nextTopicId);
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
       } else if (!currentTopic) {
-        await loadCurrentTopic();
+        await loadCurrentTopic(false);
       }
     };
     
     initialize();
-  }, [params.nextTopic, params.currentTopicId]);
+  }, [params.returnFromFeedback]);
 
   // Reset evaluation states when component comes back into focus
   useFocusEffect(

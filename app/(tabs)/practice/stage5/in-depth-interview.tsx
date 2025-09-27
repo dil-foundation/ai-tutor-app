@@ -182,8 +182,9 @@ const InDepthInterviewScreen = () => {
   };
 
   // Load current topic
-  const loadCurrentTopic = async () => {
-    if (!user?.id || currentPrompt) return; // Skip if we already have a prompt
+  const loadCurrentTopic = async (forceReload = false) => {
+    if (!user?.id) return;
+    if (currentPrompt && !forceReload) return; // Skip if we already have a prompt unless forced
     
     try {
       console.log('🔄 [TOPIC] Loading current topic for user:', user.id);
@@ -451,7 +452,7 @@ const InDepthInterviewScreen = () => {
     setEvaluationResult(null);
     
     // Check if we should move to next prompt
-    if (evaluationResult && evaluationResult.evaluation?.score >= 80) {
+    if (evaluationResult && evaluationResult.evaluation?.score >= 35) {
       moveToNextPrompt();
     }
   };
@@ -492,7 +493,10 @@ const InDepthInterviewScreen = () => {
       await loadTotalPrompts();
       
       // Check if we're coming back from feedback with next prompt
-      if (params.nextPrompt === 'true' && params.currentPromptId) {
+      if (params.returnFromFeedback) {
+        console.log('🔄 [INIT] Returning from feedback, forcing topic reload');
+        await loadCurrentTopic(true);
+      } else if (params.nextPrompt === 'true' && params.currentPromptId) {
         const nextPromptId = parseInt(params.currentPromptId as string);
         setCurrentPromptId(nextPromptId);
         await loadPrompt(nextPromptId);
@@ -503,7 +507,7 @@ const InDepthInterviewScreen = () => {
     };
     
     initialize();
-  }, [params.nextPrompt, params.currentPromptId]);
+  }, [params.returnFromFeedback, isProgressInitialized]);
 
   // Reset evaluation states when component comes back into focus
   useFocusEffect(
