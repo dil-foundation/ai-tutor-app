@@ -4,6 +4,23 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "UXCAM_ENABLED": "false",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho",
+        "EXPO_PUBLIC_API_BASE_URL": "https://dtqiibdxbx6tm.cloudfront.net",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://dtqiibdxbx6tm.cloudfront.net"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {
@@ -17,8 +34,8 @@
         "UXCAM_ENABLED": "true",
         "EXPO_PUBLIC_SUPABASE_URL": "https://otobfhnqafoyqinjenle.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90b2JmaG5xYWZveXFpbmplbmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMjQwMDYsImV4cCI6MjA3MzcwMDAwNn0.tDZjL1M6JJLEgaycQ_1VsNO07O625FlddwsD3FAD_MM",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api-prod.dil.lms-staging.com",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://dil-prod.lms-staging.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://learn.dil.org",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://learn.dil.org"
       }
     },
     "production": {
@@ -34,8 +51,8 @@
         "UXCAM_ENABLED": "true",
         "EXPO_PUBLIC_SUPABASE_URL": "https://otobfhnqafoyqinjenle.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90b2JmaG5xYWZveXFpbmplbmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMjQwMDYsImV4cCI6MjA3MzcwMDAwNn0.tDZjL1M6JJLEgaycQ_1VsNO07O625FlddwsD3FAD_MM",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api-prod.dil.lms-staging.com",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://dil-prod.lms-staging.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://learn.dil.org",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://learn.dil.org"
       }
     }
   },
