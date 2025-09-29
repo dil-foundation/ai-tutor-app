@@ -6,18 +6,18 @@ let FRONTEND_URL: string;
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  BASE_API_URL = 'https://api.dil.lms-staging.com';
+  BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
-  // BASE_API_URL = 'http://192.168.1.3:8000';
+  // BASE_API_URL = 'http://192.168.1.9:8000';
 
-  FRONTEND_URL = 'https://dil-dev.lms-staging.com';
+  FRONTEND_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
   // BASE_API_URL = 'https://bda6-2401-4900-4df1-bc03-f029-886d-1f7c-9add.ngrok-free.app';
 } else {
   // Production URL
-  BASE_API_URL = 'https://api-prod.dil.lms-staging.com';
+  BASE_API_URL = 'https://learn.dil.org';
 
-  FRONTEND_URL = 'https://dil-prod.lms-staging.com';
+  FRONTEND_URL = 'https://learn.dil.org';
   // BASE_API_URL = 'https://api.dil.lms-staging.com';
 
   // FRONTEND_URL = 'https://dil-dev.lms-staging.com';
