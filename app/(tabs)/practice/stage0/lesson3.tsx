@@ -14,12 +14,31 @@ import {
     View,
     Animated,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
+
+// Supabase image base for lesson 3
+const SUPABASE_STAGE0_LESSON3_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-3';
+const getLesson3ImageUrl = (category: string, item: any): string => {
+  // Determine folder
+  let folder = '';
+  if (category === 'Numbers') folder = 'numbers';
+  else if (category === 'Days of the Week') folder = 'week';
+  else if (category === 'Colors') folder = 'colors';
+  else if (category === 'Classroom Items') folder = 'class-room-items';
+
+  // Determine filename
+  let filename = '';
+  if (category === 'Numbers') filename = `${item.number}.png`;
+  else filename = `${(item.english || '').toString().trim().replace(/\s+/g, '_')}.png`;
+
+  return `${SUPABASE_STAGE0_LESSON3_BASE}/${folder}/${filename}`;
+};
 
 const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => {
   try {
@@ -123,6 +142,7 @@ const Lesson3Screen: React.FC = () => {
     const [scaleAnim] = useState(new Animated.Value(0.9));
     const [pulseAnim] = useState(new Animated.Value(1));
     const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+    const [imageStatus, setImageStatus] = useState<Record<string, 'loaded' | 'error' | undefined>>({});
 
     useEffect(() => {
         // Initialize card animations
@@ -182,6 +202,8 @@ const Lesson3Screen: React.FC = () => {
     const renderVocabularyCard = (item: any, index: number, isNumber: boolean = false) => {
         const currentCategory = vocabularyPages[currentPageIndex]?.[0];
         const cardAnim = cardAnimations[index] || new Animated.Value(0);
+        const imageKey = isNumber ? String(item.number) : String(item.english);
+        const imageUrl = currentCategory ? getLesson3ImageUrl(currentCategory.category, item) : '';
 
         return (
             <Animated.View
@@ -205,6 +227,26 @@ const Lesson3Screen: React.FC = () => {
             >
                 <View style={styles.cardContainer}>
                     <View style={styles.cardContent}>
+                        {/* Banner image like lesson1/lesson2 */}
+                        {imageStatus[imageKey] !== 'error' ? (
+                            <View style={styles.bannerWrapper}>
+                                {imageStatus[imageKey] !== 'loaded' && (
+                                    <View style={styles.bannerSkeleton}>
+                                        <ActivityIndicator size="small" color="#58D68D" />
+                                    </View>
+                                )}
+                                <Image
+                                    source={{ uri: imageUrl }}
+                                    onLoad={() => setImageStatus(prev => ({ ...prev, [imageKey]: 'loaded' }))}
+                                    onError={() => setImageStatus(prev => ({ ...prev, [imageKey]: 'error' }))}
+                                    style={styles.bannerImage}
+                                />
+                            </View>
+                        ) : (
+                            <View style={styles.bannerFallback}>
+                                <Text style={styles.bannerFallbackText}>{isNumber ? item.number : item.english}</Text>
+                            </View>
+                        )}
                         <View style={styles.cardHeader}>
                             <View style={styles.cardTextContainer}>
                                 {isNumber ? (
@@ -725,6 +767,39 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flexDirection: 'column',
+    },
+    bannerWrapper: {
+        width: '100%',
+        height: 180,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#F2F4F5',
+        marginBottom: 16,
+    },
+    bannerImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    bannerSkeleton: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
+    },
+    bannerFallback: {
+        width: '100%',
+        height: 180,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(88, 214, 141, 0.12)',
+        marginBottom: 16,
+    },
+    bannerFallbackText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#58D68D',
     },
     cardHeader: {
         flexDirection: 'row',
