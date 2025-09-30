@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
@@ -17,6 +17,7 @@ import {
 import { Audio } from 'expo-av';
 import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'react-native';
 import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
 
@@ -88,6 +89,8 @@ const chunkArray = (arr: any[], chunkSize: number) => {
 };
 
 const Lesson4Screen: React.FC = () => {
+    const params = useLocalSearchParams();
+    const alreadyCompleted = params?.alreadyCompleted === '1';
     const [currentPageIndex, setCurrentPageIndex] = useState(0);
     const [playingItem, setPlayingItem] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -102,6 +105,43 @@ const Lesson4Screen: React.FC = () => {
     const [scaleAnim] = useState(new Animated.Value(0.9));
     const [pulseAnim] = useState(new Animated.Value(1));
     const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+    const [imageStatus, setImageStatus] = useState<Record<string, 'loaded' | 'error' | undefined>>({});
+
+    // Supabase URL builder (lesson 4)
+    const SUPABASE_STAGE0_LESSON4_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-4';
+
+    // Convert English phrase to filename used by storage
+    const slugifyToFilename = (text: string): string => {
+        const raw = (text || '').toString().trim();
+        // Remove punctuation we know is not present in filenames (., ?, !)
+        const withoutPunct = raw.replace(/[\.?!,]/g, '');
+        // Preserve apostrophes (') as %27, and encode spaces as %20
+        return withoutPunct
+            .replace(/'/g, '%27')
+            .replace(/\s+/g, '%20');
+    };
+
+    // Per-page overrides for filename oddities or case differences
+    const LESSON4_FILENAME_OVERRIDES: Record<string, string> = {
+        // greetings
+        'greetings:My name is Ali': 'My%20name%20is%20ali',
+        // useful-words
+        "useful-words:I'm doing well.": 'I%27m%20doing%20well',
+        'useful-words:My name is Aaliyah.': 'My%20name%20is%20alyah',
+        'useful-words:How are you?': 'How%20are%20you',
+        "useful-words:What's your name?": 'What%27s%20your%20name',
+    };
+
+    const getLesson4ImageUrl = (pageIndex: number, english: string) => {
+        let folder = '';
+        if (pageIndex === 0) folder = 'common-sight-words';
+        else if (pageIndex === 1) folder = 'greetings';
+        else if (pageIndex === 2) folder = 'useful-words';
+        else if (pageIndex === 3) folder = 'ui-words';
+        const key = `${folder}:${(english || '').toString().trim()}`;
+        const file = LESSON4_FILENAME_OVERRIDES[key] || slugifyToFilename(english);
+        return `${SUPABASE_STAGE0_LESSON4_BASE}/${folder}/${file}.png`;
+    };
 
     useEffect(() => {
         // Initialize card animations based on current page
@@ -164,6 +204,8 @@ const Lesson4Screen: React.FC = () => {
 
     const renderWordCard = (item: any, index: number) => {
         const cardAnim = cardAnimations[index] || new Animated.Value(0);
+        const imageKey = `${currentPageIndex}_${item.english}`;
+        const showImage = currentPageIndex !== 4; // no image on exercises page
         
         return (
             <Animated.View
@@ -192,6 +234,27 @@ const Lesson4Screen: React.FC = () => {
                     style={styles.cardGradient}
                 >
                     <View style={styles.cardContent}>
+                        {showImage && (
+                            imageStatus[imageKey] !== 'error' ? (
+                                <View style={styles.bannerWrapper}>
+                                    {imageStatus[imageKey] !== 'loaded' && (
+                                        <View style={styles.bannerSkeleton}>
+                                            <ActivityIndicator size="small" color="#58D68D" />
+                                        </View>
+                                    )}
+                                    <Image
+                                        source={{ uri: getLesson4ImageUrl(currentPageIndex, item.english) }}
+                                        onLoad={() => setImageStatus(prev => ({ ...prev, [imageKey]: 'loaded' }))}
+                                        onError={() => setImageStatus(prev => ({ ...prev, [imageKey]: 'error' }))}
+                                        style={styles.bannerImage}
+                                    />
+                                </View>
+                            ) : (
+                                <View style={styles.bannerFallback}>
+                                    <Text style={styles.bannerFallbackText}>{item.english}</Text>
+                                </View>
+                            )
+                        )}
                         {/* Header with Icon and Word */}
                         <View style={styles.cardHeader}>
                             <LinearGradient
@@ -438,23 +501,24 @@ const Lesson4Screen: React.FC = () => {
                 if (!user || !session) {
                     throw new Error("User not authenticated");
                 }
-                
-                const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`,
-                    },
-                    body: JSON.stringify({
-                        user_id: user.id,
-                        stage_id: 0,
-                        exercise_id: 4,
-                    }),
-                });
+                if (!alreadyCompleted) {
+                    const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`,
+                        },
+                        body: JSON.stringify({
+                            user_id: user.id,
+                            stage_id: 0,
+                            exercise_id: 4,
+                        }),
+                    });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || "Failed to record progress");
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || "Failed to record progress");
+                    }
                 }
                 
                 console.log("Progress recorded successfully for Lesson 4!");
@@ -783,6 +847,39 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flexDirection: 'column',
+    },
+    bannerWrapper: {
+        width: '100%',
+        height: 180,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#F2F4F5',
+        marginBottom: 16,
+    },
+    bannerImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    bannerSkeleton: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
+    },
+    bannerFallback: {
+        width: '100%',
+        height: 180,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(88, 214, 141, 0.12)',
+        marginBottom: 16,
+    },
+    bannerFallbackText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#58D68D',
     },
     cardHeader: {
         flexDirection: 'row',

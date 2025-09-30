@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React, { useState, useEffect } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
     View,
     Animated,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -21,6 +22,26 @@ import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
+
+// Image mapping (Supabase) for minimal pairs
+const SUPABASE_STAGE0_LESSON2_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-2';
+const minimalPairKeyToFilename: Record<string, string> = {
+  'b-v': 'B_Vs_V.png',
+  'ch-sh': 'CH_Vs_SH.png',
+  'd-t': 'D_Vs_T.png',
+  'j-z': 'J_Vs_Z.png',
+  'silent': 'K_Vs_B_Vs_L.png',
+  // Best-guess mappings (provide exact URLs if different)
+  't-th': 'T_Vs_Th.png',
+  'p-f': 'P_Vs_F.png',
+  's-z': 'S_Vs_Z.png',
+  'k-g': 'K_Vs_G.png',
+  'l-r': 'L_Vs_R.png',
+};
+const getMinimalPairImageUrl = (key: string) => {
+  const filename = minimalPairKeyToFilename[key] || minimalPairKeyToFilename['b-v'];
+  return `${SUPABASE_STAGE0_LESSON2_BASE}/${filename}`;
+};
 
 const minimalPairsData = [
   {
@@ -173,6 +194,8 @@ const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => 
 };
 
 const Lesson2Screen = () => {
+  const params = useLocalSearchParams();
+  const alreadyCompleted = params?.alreadyCompleted === '1';
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -186,6 +209,7 @@ const Lesson2Screen = () => {
   const [scaleAnim] = useState(new Animated.Value(0.9));
   const [pulseAnim] = useState(new Animated.Value(1));
   const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+  const [imageStatus, setImageStatus] = useState<Record<string, 'loaded' | 'error' | undefined>>({});
 
   useEffect(() => {
     // Initialize card animations
@@ -266,6 +290,26 @@ const Lesson2Screen = () => {
             style={styles.cardGradient}
           >
             <View style={styles.cardContent}>
+              {/* Banner image like lesson1 */}
+              {imageStatus[pair.key] !== 'error' ? (
+                <View style={styles.bannerWrapper}>
+                  {imageStatus[pair.key] !== 'loaded' && (
+                    <View style={styles.bannerSkeleton}>
+                      <ActivityIndicator size="small" color="#58D68D" />
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: getMinimalPairImageUrl(pair.key) }}
+                    onLoad={() => setImageStatus(prev => ({ ...prev, [pair.key]: 'loaded' }))}
+                    onError={() => setImageStatus(prev => ({ ...prev, [pair.key]: 'error' }))}
+                    style={styles.bannerImage}
+                  />
+                </View>
+              ) : (
+                <View style={styles.bannerFallback}>
+                  <Text style={styles.bannerFallbackText}>{pair.title}</Text>
+                </View>
+              )}
               {/* Header with Icon and Title */}
               <View style={styles.cardHeader}>
                 <LinearGradient
@@ -380,23 +424,24 @@ const Lesson2Screen = () => {
         if (!user || !session) {
           throw new Error("User not authenticated");
         }
-        
-        const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            stage_id: 0,
-            exercise_id: 2,
-          }),
-        });
+        if (!alreadyCompleted) {
+          const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              stage_id: 0,
+              exercise_id: 2,
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Failed to record progress");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to record progress");
+          }
         }
         
         console.log("Progress recorded successfully for Lesson 2!");
@@ -681,6 +726,41 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flexDirection: 'column',
+  },
+  bannerWrapper: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F2F4F5',
+    marginBottom: 16,
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  bannerSkeleton: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
+  bannerFallback: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(88, 214, 141, 0.12)',
+    marginBottom: 16,
+    paddingHorizontal: 12,
+  },
+  bannerFallbackText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#58D68D',
+    textAlign: 'center',
   },
   cardHeader: {
     flexDirection: 'row',

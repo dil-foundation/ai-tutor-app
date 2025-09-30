@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
@@ -12,6 +12,7 @@ import {
     View,
     Animated,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 
 import { Audio } from 'expo-av';
@@ -21,6 +22,14 @@ import { fetchAudioFromText, API_ENDPOINTS } from '../../../../config/api';
 import { useAuth } from '../../../../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
+
+// Returns the cloud image URL for a given alphabet letter (Supabase storage A–Z)
+const SUPABASE_STAGE0_LESSON1_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-1';
+const getLetterImageUrl = (letter: string) => {
+  const upper = (letter || '').toString().trim().charAt(0).toUpperCase();
+  const safe = upper >= 'A' && upper <= 'Z' ? upper : 'A';
+  return `${SUPABASE_STAGE0_LESSON1_BASE}/${safe}.png`;
+};
 
 const playAudioFromText = async (text: string, onPlaybackFinish: () => void) => {
   try {
@@ -81,6 +90,8 @@ const chunkArray = (arr: any[], chunkSize: number) => {
 const alphabetPages = chunkArray(alphabetData, 7);
 
 const Lesson1Screen: React.FC = () => {
+  const params = useLocalSearchParams();
+  const alreadyCompleted = params?.alreadyCompleted === '1';
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingLetter, setPlayingLetter] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -94,6 +105,7 @@ const Lesson1Screen: React.FC = () => {
   const [scaleAnim] = useState(new Animated.Value(0.9));
   const [pulseAnim] = useState(new Animated.Value(1));
   const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+  const [imageStatus, setImageStatus] = useState<Record<string, 'loaded' | 'error' | undefined>>({});
 
   useEffect(() => {
     // Initialize card animations
@@ -173,56 +185,79 @@ const Lesson1Screen: React.FC = () => {
             colors={['#E0F2F1', '#C8E6C9', '#DCEDC8']}
             style={styles.cardGradient}
           >
-            <View style={styles.cardContent}>
-              <View style={styles.cardTextContainer}>
-                <View style={styles.letterContainer}>
-                  <LinearGradient
-                    colors={['#58D68D', '#45B7A8']}
-                    style={styles.letterGradient}
-                  >
-                    <Text style={styles.alphabetLetter}>{letter}</Text>
-                  </LinearGradient>
-                  <Text style={styles.pronText}>({pron})</Text>
+              <View style={styles.cardContent}>
+              {/* Top banner image like index cards */}
+              {imageStatus[letter] !== 'error' ? (
+                <View style={styles.bannerWrapper}>
+                  {imageStatus[letter] !== 'loaded' && (
+                    <View style={styles.bannerSkeleton}>
+                      <ActivityIndicator size="small" color="#58D68D" />
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: getLetterImageUrl(letter) }}
+                    onLoad={() => setImageStatus(prev => ({ ...prev, [letter]: 'loaded' }))}
+                    onError={() => setImageStatus(prev => ({ ...prev, [letter]: 'error' }))}
+                    style={styles.bannerImage}
+                  />
                 </View>
-                <Text style={styles.englishWord}>{word}</Text>
-                <Text style={styles.arabicWord}>{urdu}</Text>
-              </View>
-              
-              <Animated.View
-                style={[
-                  styles.playButtonContainer,
-                  {
-                    transform: [{ scale: playingLetter === letter ? 1.1 : pulseAnim }],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.playButtonCircle}
-                  disabled={playingLetter !== null || isAudioLoading !== null}
-                  onPress={async () => {
-                    setIsAudioLoading(letter);
-                    setPlayingLetter(letter);
-                    await playAudioFromText(`${letter} for ${word}`, () => {
-                        setPlayingLetter(null);
-                        setIsAudioLoading(null);
-                    });
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={playingLetter === letter ? ['#45B7A8', '#58D68D'] : ['#58D68D', '#45B7A8']}
-                    style={styles.playButtonGradient}
-                  >
-                    {isAudioLoading === letter ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : playingLetter === letter ? (
-                      <Ionicons name="pause" size={20} color="#FFFFFF" />
-                    ) : (
-                      <Ionicons name="play" size={20} color="#FFFFFF" />
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
+              ) : (
+                <View style={styles.bannerFallback}>
+                  <Text style={styles.bannerFallbackText}>{letter}</Text>
+                </View>
+              )}
+                <View style={styles.cardTextContainer}>
+                  <View style={styles.infoRow}>
+                    <View style={styles.leftMeta}>
+                      <LinearGradient
+                        colors={['#58D68D', '#45B7A8']}
+                        style={styles.letterGradient}
+                      >
+                        <Text style={styles.alphabetLetter}>{letter}</Text>
+                      </LinearGradient>
+                      <Text style={styles.pronText}>({pron})</Text>
+                    </View>
+                    <View style={styles.wordBlock}>
+                      <Text style={styles.englishWord}>{word}</Text>
+                      <Text style={styles.arabicWord}>{urdu}</Text>
+                    </View>
+                    <Animated.View
+                      style={[
+                        styles.playButtonContainer,
+                        {
+                          transform: [{ scale: playingLetter === letter ? 1.1 : pulseAnim }],
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.playButtonCircle}
+                        disabled={playingLetter !== null || isAudioLoading !== null}
+                        onPress={async () => {
+                          setIsAudioLoading(letter);
+                          setPlayingLetter(letter);
+                          await playAudioFromText(`${letter} for ${word}`, () => {
+                              setPlayingLetter(null);
+                              setIsAudioLoading(null);
+                          });
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={playingLetter === letter ? ['#45B7A8', '#58D68D'] : ['#58D68D', '#45B7A8']}
+                          style={styles.playButtonGradient}
+                        >
+                          {isAudioLoading === letter ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                          ) : playingLetter === letter ? (
+                            <Ionicons name="pause" size={20} color="#FFFFFF" />
+                          ) : (
+                            <Ionicons name="play" size={20} color="#FFFFFF" />
+                          )}
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </View>
+                </View>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -252,23 +287,24 @@ const Lesson1Screen: React.FC = () => {
         if (!user || !session) {
           throw new Error("User not authenticated");
         }
-        
-        const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            stage_id: 0,
-            exercise_id: 1,
-          }),
-        });
+        if (!alreadyCompleted) {
+          const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              stage_id: 0,
+              exercise_id: 1,
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Failed to record progress");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to record progress");
+          }
         }
         
         console.log("Progress recorded successfully!");
@@ -555,12 +591,61 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   cardContent: {
+    flexDirection: 'column',
+  },
+  bannerWrapper: {
+    width: '100%',
+    height: 180,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    overflow: 'hidden',
+    backgroundColor: '#F2F4F5',
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  bannerSkeleton: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
+  bannerFallback: {
+    width: '100%',
+    height: 180,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(88, 214, 141, 0.12)',
+  },
+  bannerFallbackText: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: '#58D68D',
+    textShadowColor: 'rgba(0,0,0,0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  cardTextContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  cardTextContainer: {
+  leftMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  wordBlock: {
     flex: 1,
+    justifyContent: 'center',
   },
   letterContainer: {
     flexDirection: 'row',
@@ -603,6 +688,12 @@ const styles = StyleSheet.create({
   },
   playButtonContainer: {
     marginLeft: 16,
+  },
+  actionsRow: {
+    width: '100%',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
   playButtonCircle: {
     width: 50,
