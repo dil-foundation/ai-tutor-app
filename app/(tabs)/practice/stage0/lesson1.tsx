@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
     Dimensions,
@@ -90,6 +90,8 @@ const chunkArray = (arr: any[], chunkSize: number) => {
 const alphabetPages = chunkArray(alphabetData, 7);
 
 const Lesson1Screen: React.FC = () => {
+  const params = useLocalSearchParams();
+  const alreadyCompleted = params?.alreadyCompleted === '1';
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [playingLetter, setPlayingLetter] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<string | null>(null);
@@ -285,23 +287,24 @@ const Lesson1Screen: React.FC = () => {
         if (!user || !session) {
           throw new Error("User not authenticated");
         }
-        
-        const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            stage_id: 0,
-            exercise_id: 1,
-          }),
-        });
+        if (!alreadyCompleted) {
+          const response = await fetch(API_ENDPOINTS.COMPLETE_LESSON, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              stage_id: 0,
+              exercise_id: 1,
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Failed to record progress");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to record progress");
+          }
         }
         
         console.log("Progress recorded successfully!");

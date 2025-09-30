@@ -115,7 +115,7 @@ const BeginnerLessonsScreen: React.FC = () => {
         console.log('Go back pressed');
     };
 
-    const handleStartLesson = (lessonTitle: string, lessonId: string, index: number) => {
+    const handleStartLesson = (lessonTitle: string, lessonId: string, index: number, alreadyCompleted: boolean) => {
         // Add a small scale animation on press for the specific card
         Animated.sequence([
             Animated.timing(scaleAnims[index], {
@@ -131,7 +131,10 @@ const BeginnerLessonsScreen: React.FC = () => {
         ]).start();
 
         console.log(`Starting lesson: ${lessonTitle} (ID: ${lessonId})`);
-        router.push(`/(tabs)/practice/stage0/lesson${lessonId}` as any);
+        router.push({
+            pathname: `/(tabs)/practice/stage0/lesson${lessonId}` as any,
+            params: { alreadyCompleted: alreadyCompleted ? '1' : '0' }
+        });
         // Example: navigate to a dynamic route like '/learnUnits/1'
         // You would need a file at app/learnUnits/[id].tsx for this to work.
 
@@ -291,9 +294,8 @@ const BeginnerLessonsScreen: React.FC = () => {
                     >
                         <TouchableOpacity
                             style={styles.lessonButton}
-                            onPress={() => !isCompleted && handleStartLesson(lesson.title, lesson.id, index)}
-                            activeOpacity={isCompleted ? 1.0 : 0.8}
-                            disabled={isCompleted}
+                            onPress={() => handleStartLesson(lesson.title, lesson.id, index, isCompleted)}
+                            activeOpacity={0.8}
                         >
                             <LinearGradient
                                 colors={lesson.gradient}
