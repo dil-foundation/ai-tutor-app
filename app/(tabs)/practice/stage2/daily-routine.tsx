@@ -98,7 +98,7 @@ const DailyRoutineScreen = () => {
 
   // Custom hooks
   const audioPlayer = useAudioPlayerFixed();
-  const audioRecorder = useAudioRecorder(8000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(10000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');

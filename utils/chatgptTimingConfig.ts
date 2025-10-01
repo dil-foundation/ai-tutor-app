@@ -20,7 +20,7 @@ export const CHATGPT_TIMING_CONFIG = {
   
   // Silence duration after user stops speaking (allows for natural pauses)
   // This accounts for natural speech patterns, thinking pauses, and sentence endings
-  POST_SPEECH_SILENCE_DURATION: Platform.OS === 'ios' ? 3000 : 2000, // 4s iOS, 3s Android
+  POST_SPEECH_SILENCE_DURATION: Platform.OS === 'ios' ? 4000 : 3000, // 4s iOS, 3s Android
   
   // Minimum speech duration to be considered valid
   // Ensures we don't process very short audio clips

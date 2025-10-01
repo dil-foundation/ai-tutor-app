@@ -109,7 +109,7 @@ const GroupDialogueScreen = () => {
   const [isNavigatingAway, setIsNavigatingAway] = useState(false);
   
   // Audio hooks
-  const audioRecorder = useAudioRecorder(20000, async (audioUri) => {
+  const audioRecorder = useAudioRecorder(40000, async (audioUri) => {
     console.log('🔄 [AUTO-STOP] Auto-stop callback triggered!');
     if (audioUri) {
       console.log('✅ [AUTO-STOP] Valid audio URI received, starting automatic evaluation...');
