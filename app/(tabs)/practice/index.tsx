@@ -313,7 +313,9 @@ export default function PracticeLandingScreen() {
                       <View style={styles.arrowContainer}>
                         {isLocked ? (
                            <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.7)" />
-                        ) : isCompleted ? null : (
+                        ) : isCompleted ? (
+                          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                        ) : (
                           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                         )}
                       </View>
@@ -392,7 +394,9 @@ export default function PracticeLandingScreen() {
                       <View style={styles.arrowContainer}>
                         {isLocked ? (
                           <Ionicons name="lock-closed" size={20} color="rgba(255, 255, 255, 0.7)" />
-                        ) : isCompleted ? null : (
+                        ) : isCompleted ? (
+                          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                        ) : (
                           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                         )}
                       </View>
