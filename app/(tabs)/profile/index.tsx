@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserFullNameSync } from '../../../utils/userUtils';
+import { useAccountDeletion } from '../../../hooks/useAccountDeletion';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,6 +64,15 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [userData, setUserData] = useState(defaultUserData);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  
+  // Account deletion hook
+  const { 
+    isDeleting, 
+    isLoading: isDeletionLoading, 
+    deletionStatus, 
+    fetchDeletionStatus, 
+    requestAccountDeletion 
+  } = useAccountDeletion();
   
   // Enhanced animation values matching Progress page
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -219,6 +229,17 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      const success = await requestAccountDeletion();
+      if (success) {
+        console.log('✅ [PROFILE] Account deletion initiated successfully');
+      }
+    } catch (error) {
+      console.error('❌ [PROFILE] Account deletion error:', error);
+    }
+  };
+
 
 
   const renderInfoRow = (icon: string, label: string, value: string, color: string) => (
@@ -361,6 +382,41 @@ export default function ProfileScreen() {
           </Animated.View>
 
 
+
+          {/* Delete Account Button */}
+          <Animated.View
+            style={[
+              styles.logoutContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.deleteButton, (isDeleting || isDeletionLoading) && styles.logoutButtonDisabled]}
+              onPress={handleDeleteAccount}
+              activeOpacity={0.8}
+              disabled={isDeleting || isDeletionLoading}
+            >
+              <LinearGradient
+                colors={['#DC2626', '#B91C1C']}
+                style={styles.logoutGradient}
+              >
+                {isDeleting || isDeletionLoading ? (
+                  <>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text style={styles.logoutButtonText}>Deleting Account...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="trash" size={20} color="#FFFFFF" />
+                    <Text style={styles.logoutButtonText}>Delete Account</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Sign Out Button */}
           <Animated.View
@@ -727,6 +783,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 15,
+  },
+  deleteButton: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
+    marginBottom: 16,
   },
   logoutButtonDisabled: {
     opacity: 0.7,

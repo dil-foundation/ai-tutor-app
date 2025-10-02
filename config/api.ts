@@ -191,4 +191,9 @@ export const API_ENDPOINTS = {
   
   // Health check
   HEALTH_CHECK: `${BASE_API_URL}/api/healthcheck`,
+  
+  // Account deletion endpoints
+  DELETE_ACCOUNT: `${BASE_API_URL}/api/account/delete-account`,
+  DELETION_STATUS: `${BASE_API_URL}/api/account/deletion-status`,
+  CANCEL_DELETION: `${BASE_API_URL}/api/account/cancel-deletion`,
 } as const;
