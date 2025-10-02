@@ -4,7 +4,7 @@
     "slug": "dil-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ios-appicon.png",
     "scheme": "diltutorappreact",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/ios-appicon.png",
         "backgroundColor": "#111629"
       },
       "edgeToEdgeEnabled": true,
@@ -46,7 +46,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/ios-appicon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#111629"
