@@ -25,7 +25,10 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk"
+        "buildType": "apk",
+        "env": {
+          "EXPO_USE_KOTLIN_SYNTHETIC": "false"
+        }
       },
       "ios": {
         "simulator": false
@@ -55,7 +58,7 @@
       }
     }
   },
-  "submit": {
+  "submit": { 
     "production": {
       "ios": {
         "appleId": "puttareddy@infiniai.tech",

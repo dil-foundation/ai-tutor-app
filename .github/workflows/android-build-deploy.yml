@@ -86,7 +86,9 @@ jobs:
             echo "🚀 Building Android AAB with profile: $BUILD_PROFILE"
           fi
           
-          eas build --platform android --profile $BUILD_PROFILE --non-interactive --wait
+          # Clear cache and build with verbose logging
+          echo "🧹 Clearing EAS build cache..."
+          eas build --platform android --profile $BUILD_PROFILE --non-interactive --wait --clear-cache
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
