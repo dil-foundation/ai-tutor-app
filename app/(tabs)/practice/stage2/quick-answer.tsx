@@ -312,29 +312,57 @@ const QuickAnswerScreen = () => {
   };
 
   const playQuestionAudio = async () => {
-    if (!currentQuestion || audioPlayer.state.isPlaying || isAudioLoading) return;
+    if (!currentQuestion || audioPlayer.state.isPlaying || isAudioLoading) {
+      console.log("⚠️ [AUDIO] Cannot play audio - conditions not met:", {
+        hasQuestion: !!currentQuestion,
+        isPlaying: audioPlayer.state.isPlaying,
+        isLoading: isAudioLoading
+      });
+      return;
+    }
 
     console.log("🔄 [AUDIO] Playing question audio for ID:", currentTopicId);
+    console.log("📱 [AUDIO] Platform:", Platform.OS);
     setIsAudioLoading(true);
+    
     try {
       const response = await authenticatedFetch(API_ENDPOINTS.QUICK_ANSWER(currentTopicId), {
         method: 'POST'
       });
 
       const result = await response.json();
-      console.log("📊 [AUDIO] Audio response received");
+      console.log("📊 [AUDIO] Audio response received:", {
+        ok: response.ok,
+        hasAudioBase64: !!result.audio_base64,
+        audioLength: result.audio_base64 ? result.audio_base64.length : 0,
+        platform: Platform.OS
+      });
 
-      if (response.ok && result.audio_base_64) {
-        const audioUri = `data:audio/mpeg;base64,${result.audio_base_64}`;
+      if (response.ok && result.audio_base64) {
+        const audioUri = `data:audio/mpeg;base64,${result.audio_base64}`;
+        console.log("🔄 [AUDIO] Loading audio with URI length:", audioUri.length);
+        
         await audioPlayer.loadAudio(audioUri);
+        console.log("✅ [AUDIO] Audio loaded successfully, now playing...");
+        
         await audioPlayer.playAudio();
         console.log("✅ [AUDIO] Audio played successfully");
       } else {
-        console.log("❌ [AUDIO] Failed to get audio:", result.detail);
+        console.log("❌ [AUDIO] Failed to get audio:", {
+          responseOk: response.ok,
+          hasAudioBase64: !!result.audio_base64,
+          detail: result.detail,
+          platform: Platform.OS
+        });
         setError('Failed to play audio. Please try again.');
       }
     } catch (error) {
       console.error("❌ [AUDIO] Error playing audio:", error);
+      console.error("❌ [AUDIO] Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        platform: Platform.OS,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setError('Network error. Please check your connection.');
     } finally {
       setIsAudioLoading(false);
@@ -1076,6 +1104,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  iosAudioHint: {
+    color: '#58D68D',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    fontStyle: 'italic',
+    opacity: 0.8,
   },
   errorContainer: {
     alignItems: 'center',

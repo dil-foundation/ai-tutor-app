@@ -69,13 +69,33 @@ export const useAudioPlayerFixed = (): UseAudioPlayerReturn => {
         soundRef.current = null;
       }
 
-      // Set audio mode for playback - REMOVED as it's now handled by useAudioSession
+      // Configure audio mode specifically for iOS playback (critical for iOS audio to work)
+      console.log('🔄 useAudioPlayerFixed: Configuring audio mode for optimal playback...');
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true, // Critical for iOS audio playback
+          shouldDuckAndroid: true,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        });
+        console.log('✅ useAudioPlayerFixed: Audio mode configured successfully');
+      } catch (audioModeError) {
+        console.log('⚠️ useAudioPlayerFixed: Failed to set audio mode:', audioModeError);
+        // Continue anyway - audio might still work
+      }
       
-      // Load the audio file
+      // Load the audio file with enhanced configuration
       console.log('🔄 useAudioPlayerFixed: Creating sound from URI...');
       const { sound } = await Audio.Sound.createAsync(
         { uri },
-        { shouldPlay: false },
+        { 
+          shouldPlay: false,
+          volume: 1.0, // Ensure maximum volume for iOS
+          isMuted: false,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
         (status: any) => {
           if (status.isLoaded) {
             console.log('📊 useAudioPlayerFixed: Status update:', {
@@ -84,6 +104,7 @@ export const useAudioPlayerFixed = (): UseAudioPlayerReturn => {
               durationMillis: status.durationMillis,
               positionMillis: status.positionMillis,
               didJustFinish: status.didJustFinish,
+              volume: status.volume,
             });
             
             setState(prev => ({
@@ -130,6 +151,16 @@ export const useAudioPlayerFixed = (): UseAudioPlayerReturn => {
       if (!soundRef.current) {
         console.error('❌ useAudioPlayerFixed: No audio loaded');
         throw new Error('No audio loaded');
+      }
+
+      // Ensure volume is set to maximum before playing (critical for iOS)
+      console.log('🔄 useAudioPlayerFixed: Setting volume to maximum for optimal playback...');
+      try {
+        await soundRef.current.setVolumeAsync(1.0);
+        console.log('✅ useAudioPlayerFixed: Volume set to maximum');
+      } catch (volumeError) {
+        console.log('⚠️ useAudioPlayerFixed: Failed to set volume:', volumeError);
+        // Continue anyway
       }
 
       console.log('🔄 useAudioPlayerFixed: Playing audio...');
