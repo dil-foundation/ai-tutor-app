@@ -123,24 +123,24 @@ export const useAccountDeletion = () => {
         }),
       });
 
-      // --- START: Enhanced Error Handling ---
-      if (!response.ok) {
-        const responseText = await response.text();
-        console.error('❌ [DELETION] Server returned an error response. Status:', response.status);
-        console.error('❌ [DELETION] Raw server response:', responseText);
-        
-        try {
-          // Check if the error is JSON, which FastAPI might send
-          const errorJson = JSON.parse(responseText);
-          throw new Error(errorJson.detail || 'An unknown error occurred on the server.');
-        } catch (e) {
-          // If not JSON, it's likely an HTML error page from the web server/gateway
-          throw new Error(`Deletion Failed. The server returned an unexpected response. Please check the console logs for details.`);
-        }
-      }
-      // --- END: Enhanced Error Handling ---
+      // --- START: More Robust Error Handling ---
+      const responseText = await response.text();
+      let result: AccountDeletionResponse;
 
-      const result: AccountDeletionResponse = await response.json();
+      try {
+        // We first try to parse the response as JSON.
+        result = JSON.parse(responseText);
+      } catch (e) {
+        // If parsing fails, it's not JSON. This is our error.
+        console.error('❌ [DELETION] Failed to parse JSON response. Status:', response.status);
+        console.error('❌ [DELETION] Raw Server Response:', responseText); // This will log the HTML
+        throw new Error('Deletion Failed: The server sent an unexpected response. Please check the console logs for details.');
+      }
+      // --- END: More Robust Error Handling ---
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Failed to delete account');
+      }
 
       console.log('✅ [DELETION] Account deletion successful:', result);
 
