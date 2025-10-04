@@ -79,7 +79,7 @@ jobs:
         run: |
           # Determine the build profile based on build type
           if [ "${{ github.event.inputs.build_type }}" = "apk" ]; then
-            BUILD_PROFILE="preview"
+            BUILD_PROFILE="${{ github.event.inputs.release_channel }}"
             echo "🚀 Building Android APK with profile: $BUILD_PROFILE"
           else
             BUILD_PROFILE="${{ github.event.inputs.release_channel }}"
