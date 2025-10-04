@@ -21,6 +21,7 @@ interface AuthContextType {
   userRole: string | null;
   isStudent: boolean;
   roleLoading: boolean;
+  isVerifying: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any } | { error: null }>;
   signUp: (signUpData: SignUpData) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
@@ -49,6 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [initialized, setInitialized] = useState<boolean>(false); // Add initialized state
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Check if user is a student
   const isStudent = userRole === 'student';
@@ -137,27 +139,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    setIsVerifying(true);
     try {
-      console.log('🔄 [AUTH] Starting sign in process...');
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) {
-        console.log('❌ [AUTH] Sign in failed:', error.message);
-        return { error };
+      if (signInError) {
+        throw signInError;
       }
       
-      console.log('✅ [AUTH] User signed in successfully');
+      if (!signInData.session) {
+        throw new Error("Sign in successful but no session returned.");
+      }
+
+      console.log('✅ [AUTH] Supabase sign in successful, verifying with backend...');
+
+      const response = await fetch(API_ENDPOINTS.GET_ME, {
+        headers: {
+          'Authorization': `Bearer ${signInData.session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Backend verification failed.');
+      }
       
-      // Don't check role here - it will be checked automatically by useEffect
-      // when the user state changes
+      console.log('✅ [AUTH] Backend verification successful. User is active.');
+      setIsVerifying(false);
       return { error: null };
+
     } catch (error) {
-      console.error('❌ [AUTH] Error during sign in:', error);
-      return { error };
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(`❌ [AUTH] Error during sign in: ${errorMessage}`);
+      
+      // Manually clear session and user state to prevent race conditions
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      
+      setIsVerifying(false);
+      return { error: new Error(errorMessage) };
     }
   };
 
@@ -217,6 +241,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userRole,
     isStudent,
     roleLoading,
+    isVerifying,
     signIn,
     signUp,
     signOut,

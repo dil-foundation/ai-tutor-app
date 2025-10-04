@@ -103,13 +103,13 @@ if (typeof global !== 'undefined' && (global as any).HermesInternal) {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { user, loading } = useAuth();
+  const { user, loading, isVerifying } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      return; // Wait until the auth state is loaded
+    if (loading || isVerifying) {
+      return; // Wait until auth state is loaded AND verification is complete
     }
 
     const inAuthGroup = segments[0] === 'auth';
@@ -124,10 +124,10 @@ function RootLayoutNav() {
       // redirect them to the login screen.
       router.replace('/auth/login');
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, isVerifying]);
 
-  // Prevent rendering until the auth state is loaded
-  if (loading) {
+  // Prevent rendering until the auth state is loaded or verification is complete
+  if (loading || isVerifying) {
     return <LoadingScreen />;
   }
 

@@ -6,9 +6,9 @@ let FRONTEND_URL: string;
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
+  // BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
-  // BASE_API_URL = 'http://192.168.1.9:8000';
+  BASE_API_URL = 'http://192.168.1.9:8000';
 
   FRONTEND_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
@@ -196,4 +196,7 @@ export const API_ENDPOINTS = {
   DELETE_ACCOUNT: `${BASE_API_URL}/api/account/delete-account`,
   DELETION_STATUS: `${BASE_API_URL}/api/account/deletion-status`,
   CANCEL_DELETION: `${BASE_API_URL}/api/account/cancel-deletion`,
+
+  // User
+  GET_ME: `${BASE_API_URL}/user/me`,
 } as const;
