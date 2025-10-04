@@ -6,9 +6,9 @@ let FRONTEND_URL: string;
 if (__DEV__) {
   // Development URL - update to your local IP and 
   //added.
-  // BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
+  BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
-  BASE_API_URL = 'http://192.168.1.9:8000';
+  // BASE_API_URL = 'http://192.168.1.9:8000';
 
   FRONTEND_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
