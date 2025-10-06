@@ -12,6 +12,7 @@ import UXCamSessionManager from '../components/UXCamSessionManager';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { UXCamProvider } from '../context/UXCamContext';
 import { LanguageModeProvider } from './context/LanguageModeContext';
+import BASE_API_URL from '../config/api';
 
 // UXCam is now handled by UXCamService and UXCamContext
 // No need for duplicate initialization here
@@ -160,6 +161,26 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+    const checkBackendStatus = async () => {
+      try {
+        console.log(`🚀 [HEALTH_CHECK] Pinging backend at ${BASE_API_URL}/api/healthcheck...`);
+        const response = await fetch(`${BASE_API_URL}/api/healthcheck`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ [HEALTH_CHECK] Backend is connected and responding:', data);
+        } else {
+          console.error(`❌ [HEALTH_CHECK] Backend connection failed. Status: ${response.status}`);
+        }
+      } catch (error) {
+        console.error('❌ [HEALTH_CHECK] Backend connection failed with error:', error);
+      }
+    };
+
+    checkBackendStatus();
+  }, []); // Empty dependency array to run only once
+
 
   if (!loaded) {
     return <LoadingScreen />;

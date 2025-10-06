@@ -12,6 +12,10 @@ if (__DEV__) {
 
   FRONTEND_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
+  // BASE_API_URL = 'https://learn.dil.org';
+
+  // FRONTEND_URL = 'https://learn.dil.org';
+
   // BASE_API_URL = 'https://bda6-2401-4900-4df1-bc03-f029-886d-1f7c-9add.ngrok-free.app';
 } else {
   // Production URL
