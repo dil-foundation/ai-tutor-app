@@ -8,7 +8,7 @@ if (__DEV__) {
   //added.
   BASE_API_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
-  // BASE_API_URL = 'http://192.168.1.9:8000';
+  // BASE_API_URL = 'http://10.39.203.11:8000';
 
   FRONTEND_URL = 'https://dtqiibdxbx6tm.cloudfront.net';
 
@@ -88,8 +88,8 @@ export const API_ENDPOINTS = {
   SIGNUP: `${BASE_API_URL}/api/auth/signup`,
 
   // User management
-  GET_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
-  UPDATE_USER_PROFILE: (userId: string) => `${BASE_API_URL}/user/profile/${userId}`,
+  GET_USER_PROFILE: (userId: string) => `${BASE_API_URL}/api/user/profile/${userId}`,
+  UPDATE_USER_PROFILE: (userId: string) => `${BASE_API_URL}/api/user/profile/${userId}`,
   
   // Exercise endpoints
   IN_DEPTH_INTERVIEW: (promptId: number) => `${BASE_API_URL}/api/in-depth-interview/${promptId}`,
@@ -202,5 +202,5 @@ export const API_ENDPOINTS = {
   CANCEL_DELETION: `${BASE_API_URL}/api/account/cancel-deletion`,
 
   // User
-  GET_ME: `${BASE_API_URL}/user/me`,
+  GET_ME: `${BASE_API_URL}/api/user/me`,
 } as const;
