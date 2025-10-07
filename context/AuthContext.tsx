@@ -150,24 +150,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw signInError;
       }
       
-      if (!signInData.session) {
-        throw new Error("Sign in successful but no session returned.");
+      if (!signInData.session || !signInData.user) {
+        throw new Error("Sign in successful but no session or user returned.");
       }
 
-      console.log('✅ [AUTH] Supabase sign in successful, verifying with backend...');
+      console.log('✅ [AUTH] Supabase sign in successful, verifying with profiles table...');
 
-      const response = await fetch(API_ENDPOINTS.GET_ME, {
-        headers: {
-          'Authorization': `Bearer ${signInData.session.access_token}`,
-        },
-      });
+      // Check if user is marked as deleted in the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_deleted')
+        .eq('id', signInData.user.id)
+        .single();
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Backend verification failed.');
+      if (profileError) {
+        console.error('❌ [AUTH] Error fetching user profile:', profileError);
+        throw new Error('Could not verify your account. Please try again.');
       }
       
-      console.log('✅ [AUTH] Backend verification successful. User is active.');
+      if (profile?.is_deleted) {
+        console.log('✅ [AUTH] User is marked as deleted. Denying access.');
+        throw new Error('Your account has been deactivated. Please contact support.');
+      }
+      
+      console.log('✅ [AUTH] Verification successful. User is active.');
       setIsVerifying(false);
       return { error: null };
 
