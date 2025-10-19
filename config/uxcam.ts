@@ -1,26 +1,26 @@
 // UXCam Configuration
 export const UXCamConfig = {
   // Load API key from environment variables
-  API_KEY: process.env.EXPO_UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+  API_KEY: process.env.EXPO_UXCAM_API_KEY || '7g5tf7r8bew9hs2-us',
   
   // Environment configuration
   ENVIRONMENTS: {
     development: {
-      API_KEY: process.env.EXPO_UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: process.env.EXPO_UXCAM_API_KEY || '7g5tf7r8bew9hs2-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: false,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: true,
     },
     staging: {
-      API_KEY: process.env.EXPO_UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: process.env.EXPO_UXCAM_API_KEY || '7g5tf7r8bew9hs2-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
       enableNetworkLogging: false,
     },
     production: {
-      API_KEY: process.env.EXPO_UXCAM_API_KEY || 'xnayvk2m8m2h8xw-us',
+      API_KEY: process.env.EXPO_UXCAM_API_KEY || '7g5tf7r8bew9hs2-us',
       enableAutomaticScreenNameTagging: true,
       enableCrashHandling: true,
       enableMultiSessionRecordings: true,
