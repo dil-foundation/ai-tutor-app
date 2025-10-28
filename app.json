@@ -10,7 +10,7 @@
     "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dil.lms",
+      "bundleIdentifier": "com.dilai.lms",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "This app uses the microphone to allow you to practice your speaking skills.",
@@ -24,7 +24,7 @@
         "backgroundColor": "#111629"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.dil.lms",
+      "package": "com.dilai.lms",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
