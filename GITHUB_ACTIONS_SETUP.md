@@ -21,7 +21,7 @@ Before using the workflows, you must configure the following secrets in your Git
 | Secret Name | Description | Example Value |
 |-------------|-------------|---------------|
 | `EXPO_TOKEN` | Expo authentication token | `exp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `UXCAM_API_KEY` | UXCam API key for analytics | `xnayvk2m8m2h8xw-us` |
+| `UXCAM_API_KEY` | UXCam API key for analytics | `7g5tf7r8bew9hs2-us` |
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://your-project.supabase.co` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 | `EXPO_PUBLIC_API_URL` | Backend API URL | `https://api.dil.lms-staging.com` |

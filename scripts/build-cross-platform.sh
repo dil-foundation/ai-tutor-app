@@ -7,7 +7,7 @@ echo "🚀 Starting cross-platform UXCam-enabled build process..."
 if [ ! -f ".env.preview" ]; then
     echo "❌ Error: .env.preview file not found!"
     echo "Please create .env.preview with your UXCam configuration:"
-    echo "UXCAM_API_KEY=xnayvk2m8m2h8xw-us"
+    echo "UXCAM_API_KEY=7g5tf7r8bew9hs2-us"
     echo "UXCAM_ENABLED=true"
     echo "EXPO_PUBLIC_SUPABASE_URL=your-supabase-url"
     echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-key"

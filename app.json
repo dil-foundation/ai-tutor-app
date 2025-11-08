@@ -44,6 +44,12 @@
     "plugins": [
       "expo-router",
       [
+        "react-native-ux-cam",
+        {
+          "appKey": "7g5tf7r8bew9hs2-us"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/ios-appicon.png",

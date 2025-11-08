@@ -48,7 +48,7 @@ This guide explains how to configure all required GitHub secrets for the DIL Tut
 
 **GitHub Secret:**
 - Name: `UXCAM_API_KEY`
-- Value: `xnayvk2m8m2h8xw-us`
+- Value: `7g5tf7r8bew9hs2-us`
 
 #### EXPO_PUBLIC_SUPABASE_URL
 **Purpose:** Supabase project URL for database access
@@ -172,7 +172,7 @@ curl -I https://api.dil.lms-staging.com/health
 #### Test UXCam Integration
 ```bash
 # Check UXCam API key
-curl -H "Authorization: Bearer xnayvk2m8m2h8xw-us" \
+curl -H "Authorization: Bearer 7g5tf7r8bew9hs2-us" \
      https://api.uxcam.com/v1/apps
 ```
 

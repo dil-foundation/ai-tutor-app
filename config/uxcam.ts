@@ -1,6 +1,6 @@
 // UXCam Configuration
 export const UXCamConfig = {
-  // Load API key from environment variables
+  // Load API key from environment variables (fallback to hardcoded for builds)
   API_KEY: process.env.EXPO_UXCAM_API_KEY || '7g5tf7r8bew9hs2-us',
   
   // Environment configuration
