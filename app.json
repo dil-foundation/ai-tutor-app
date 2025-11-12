@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "dil-tutor-app-react",
+    "name": "DIL -AI TUTOR",
     "slug": "dil-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
+      "displayName": "DIL -AI TUTOR",
       "supportsTablet": true,
       "bundleIdentifier": "com.dilai.lms",
       "infoPlist": {
