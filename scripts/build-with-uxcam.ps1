@@ -5,7 +5,7 @@ Write-Host "🚀 Starting UXCam-enabled build process..." -ForegroundColor Green
 if (-not (Test-Path ".env.preview")) {
     Write-Host "❌ Error: .env.preview file not found!" -ForegroundColor Red
     Write-Host "Please create .env.preview with your UXCam configuration:" -ForegroundColor Yellow
-    Write-Host "UXCAM_API_KEY=7g5tf7r8bew9hs2-us" -ForegroundColor Cyan
+    Write-Host "UXCAM_API_KEY=smos6vxe844g3zn-us" -ForegroundColor Cyan
     Write-Host "UXCAM_ENABLED=true" -ForegroundColor Cyan
     Write-Host "EXPO_PUBLIC_SUPABASE_URL=your-supabase-url" -ForegroundColor Cyan
     Write-Host "EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-key" -ForegroundColor Cyan

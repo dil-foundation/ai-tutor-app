@@ -31,7 +31,7 @@ The UXCam integration has been successfully implemented for both Android and iOS
     [
       "react-native-ux-cam",
       {
-        "appKey": "7g5tf7r8bew9hs2-us"
+        "appKey": "smos6vxe844g3zn-us"
       }
     ],
     // ... other plugins
@@ -135,7 +135,7 @@ eas build -p ios --profile preview
 Before building, ensure you have:
 
 1. ✅ **Environment File**: `.env.preview` with UXCam configuration
-2. ✅ **API Key**: Valid UXCam API key (`7g5tf7r8bew9hs2-us`)
+2. ✅ **API Key**: Valid UXCam API key (`smos6vxe844g3zn-us`)
 3. ✅ **EAS CLI**: Latest version installed
 4. ✅ **Dependencies**: All packages installed (`npm install`)
 

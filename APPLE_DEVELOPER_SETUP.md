@@ -59,7 +59,7 @@ Add these secrets to your GitHub repository:
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
 | `EXPO_TOKEN` | Expo authentication token | `exp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `UXCAM_API_KEY` | UXCam analytics API key | `7g5tf7r8bew9hs2-us` |
+| `UXCAM_API_KEY` | UXCam analytics API key | `smos6vxe844g3zn-us` |
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://your-project.supabase.co` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 | `EXPO_PUBLIC_API_URL` | Backend API URL | `https://api.dil.lms-staging.com` |

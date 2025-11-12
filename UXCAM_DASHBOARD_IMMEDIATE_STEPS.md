@@ -58,7 +58,7 @@ Android Package Name:
 
 Your API key should already be there:
 ```
-API Key: 7g5tf7r8bew9hs2-us
+API Key: smos6vxe844g3zn-us
 Status: Active ✅
 ```
 
@@ -196,7 +196,7 @@ If you can access any advanced settings, look for **"Test Mode"**:
 
 ### What's Happening
 - ✅ Your new account is properly set up
-- ✅ API key is valid (`7g5tf7r8bew9hs2-us`)
+- ✅ API key is valid (`smos6vxe844g3zn-us`)
 - ⏳ Dashboard is waiting for first session
 - ⏳ Many settings are hidden until first data arrives
 

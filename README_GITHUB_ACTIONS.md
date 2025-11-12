@@ -22,7 +22,7 @@ This repository contains professional GitHub Actions workflows for automated bui
 ```bash
 # Required secrets (see GITHUB_SECRETS_SETUP.md for details)
 EXPO_TOKEN=exp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-UXCAM_API_KEY=7g5tf7r8bew9hs2-us
+UXCAM_API_KEY=smos6vxe844g3zn-us
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 EXPO_PUBLIC_API_URL=https://api.dil.lms-staging.com

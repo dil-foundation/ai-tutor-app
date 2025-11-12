@@ -97,7 +97,7 @@ Your most recent preview build: https://expo.dev/accounts/dil-tutor/projects/dil
 
 ## UXCam API Key
 
-Your API key: `7g5tf7r8bew9hs2-us`
+Your API key: `smos6vxe844g3zn-us`
 
 This key is set in:
 - `config/uxcam.ts`

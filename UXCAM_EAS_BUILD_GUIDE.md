@@ -12,7 +12,7 @@ Create a `.env.preview` file in your project root with the following content:
 
 ```bash
 # UXCam Configuration
-UXCAM_API_KEY=7g5tf7r8bew9hs2-us
+UXCAM_API_KEY=smos6vxe844g3zn-us
 UXCAM_ENABLED=true
 
 # Supabase Configuration (replace with your actual values)
@@ -34,7 +34,7 @@ The UXCam plugin has been added to your `app.json`:
 [
   "react-native-ux-cam",
   {
-    "appKey": "7g5tf7r8bew9hs2-us"
+    "appKey": "smos6vxe844g3zn-us"
   }
 ]
 ```

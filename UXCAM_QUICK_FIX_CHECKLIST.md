@@ -4,7 +4,7 @@
 
 - [x] Added UXCam plugin configuration to `app.json`
 - [x] Added missing `EXPO_UXCAM_API_KEY` to preview build profile in `eas.json`
-- [x] Configured plugin with your API key: `7g5tf7r8bew9hs2-us`
+- [x] Configured plugin with your API key: `smos6vxe844g3zn-us`
 
 ## 🌐 UXCam Dashboard Setup (DO THIS NOW!)
 
@@ -14,7 +14,7 @@
 
 ### 2. Verify Your API Key
 - Go to: **Settings** > **App Configuration** > **API Keys**
-- Check that `7g5tf7r8bew9hs2-us` is **Active** ✅
+- Check that `smos6vxe844g3zn-us` is **Active** ✅
 - If it's disabled, enable it
 
 ### 3. Configure Bundle IDs (CRITICAL!)

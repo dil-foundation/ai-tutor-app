@@ -38,7 +38,7 @@ Android Package: com.dilai.lms
 
 #### API Key Configuration
 ```
-API Key: 7g5tf7r8bew9hs2-us
+API Key: smos6vxe844g3zn-us
 (This should already be generated)
 ```
 

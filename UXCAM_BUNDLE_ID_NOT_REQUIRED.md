@@ -104,7 +104,7 @@ Bundle IDs appear in dashboard automatically
 ### Before First Session (Current State)
 - [x] Bundle IDs in app.json: ✅ `com.dilai.lms` (both iOS & Android)
 - [x] UXCam plugin configured: ✅ Added to app.json
-- [x] API key configured: ✅ `7g5tf7r8bew9hs2-us`
+- [x] API key configured: ✅ `smos6vxe844g3zn-us`
 - [ ] Session capture enabled: ⏳ Do this in dashboard
 - [ ] First session sent: ⏳ Waiting for build & test
 
@@ -191,7 +191,7 @@ If somehow UXCam detects different bundle IDs:
 If you have multiple UXCam apps using the same bundle ID:
 - UXCam will detect which app based on API key
 - Each app has its own API key
-- Your key: `7g5tf7r8bew9hs2-us` is unique to this app
+- Your key: `smos6vxe844g3zn-us` is unique to this app
 
 ## 🎬 Summary
 

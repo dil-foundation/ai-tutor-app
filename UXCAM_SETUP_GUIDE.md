@@ -23,7 +23,7 @@ Your UXCam integration was **missing critical configuration**, which is why it s
    - Go to **Settings** > **App Configuration**
 
 3. **Verify/Get Your API Key**
-   - Your current key: `7g5tf7r8bew9hs2-us`
+   - Your current key: `smos6vxe844g3zn-us`
    - If this is a new key, make sure the app is properly set up in the dashboard
    - Check that the key is **Active** (not disabled)
 
@@ -286,7 +286,7 @@ Your API key is visible in your configuration files. Consider:
 1. **For Open Source Projects**: Use environment variables
    ```bash
    # Create .env file
-   EXPO_UXCAM_API_KEY=7g5tf7r8bew9hs2-us
+   EXPO_UXCAM_API_KEY=smos6vxe844g3zn-us
    ```
 
 2. **Add to .gitignore**:
@@ -298,7 +298,7 @@ Your API key is visible in your configuration files. Consider:
 3. **Use EAS Secrets** (more secure):
    ```bash
    # Store secret in EAS
-   eas secret:create --name EXPO_UXCAM_API_KEY --value 7g5tf7r8bew9hs2-us --scope project
+   eas secret:create --name EXPO_UXCAM_API_KEY --value smos6vxe844g3zn-us --scope project
    
    # Then remove from eas.json and use the secret
    ```

@@ -60,7 +60,7 @@ public class MainApplication extends Application {
   @Override
   public void onCreate() {
     super.onCreate();
-    UXCam.startWithKey("7g5tf7r8bew9hs2-us");
+    UXCam.startWithKey("smos6vxe844g3zn-us");
   }
 }
 ```
@@ -72,7 +72,7 @@ After prebuild completes, edit `ios/[YourApp]/AppDelegate.m`:
 #import <UXCam/UXCam.h>
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  [UXCam startWithKey:@"7g5tf7r8bew9hs2-us"];
+  [UXCam startWithKey:@"smos6vxe844g3zn-us"];
   return YES;
 }
 ```

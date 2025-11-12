@@ -15,7 +15,7 @@
       },
       "env": {
         "UXCAM_ENABLED": "true",
-        "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us",
+        "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us",
         "EXPO_PUBLIC_SUPABASE_URL": "https://yfaiauooxwvekdimfeuu.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1OTEyMDksImV4cCI6MjA2NzE2NzIwOX0.rAc49wpyOERCcNpxpI12TPn6NSSoySToNq33bhakEho",
         "EXPO_PUBLIC_API_BASE_URL": "https://dtqiibdxbx6tm.cloudfront.net",
@@ -33,7 +33,7 @@
       },
       "env": {
         "UXCAM_ENABLED": "true",
-        "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us",
+        "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us",
         "EXPO_PUBLIC_SUPABASE_URL": "https://otobfhnqafoyqinjenle.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90b2JmaG5xYWZveXFpbmplbmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMjQwMDYsImV4cCI6MjA3MzcwMDAwNn0.tDZjL1M6JJLEgaycQ_1VsNO07O625FlddwsD3FAD_MM",
         "EXPO_PUBLIC_API_BASE_URL": "https://learn.dil.org",
@@ -50,7 +50,7 @@
       },
       "env": {
         "UXCAM_ENABLED": "true",
-        "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us",
+        "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us",
         "EXPO_PUBLIC_SUPABASE_URL": "https://otobfhnqafoyqinjenle.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90b2JmaG5xYWZveXFpbmplbmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMjQwMDYsImV4cCI6MjA3MzcwMDAwNn0.tDZjL1M6JJLEgaycQ_1VsNO07O625FlddwsD3FAD_MM",
         "EXPO_PUBLIC_API_BASE_URL": "https://learn.dil.org",
@@ -67,7 +67,7 @@
       },
       "env": {
         "UXCAM_ENABLED": "true",
-        "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us",
+        "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us",
         "EXPO_PUBLIC_SUPABASE_URL": "https://otobfhnqafoyqinjenle.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90b2JmaG5xYWZveXFpbmplbmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMjQwMDYsImV4cCI6MjA3MzcwMDAwNn0.tDZjL1M6JJLEgaycQ_1VsNO07O625FlddwsD3FAD_MM",
         "EXPO_PUBLIC_API_BASE_URL": "https://learn.dil.org",

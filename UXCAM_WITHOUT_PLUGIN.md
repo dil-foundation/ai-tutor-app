@@ -11,7 +11,7 @@ Removed this from `app.json`:
 [
   "react-native-ux-cam",
   {
-    "appKey": "7g5tf7r8bew9hs2-us"
+    "appKey": "smos6vxe844g3zn-us"
   }
 ]
 ```
@@ -43,7 +43,7 @@ Your `UXCamService.ts` already:
 ### When App Runs
 1. Your app starts
 2. `UXCamService.initialize()` is called
-3. UXCam starts with your API key: `7g5tf7r8bew9hs2-us`
+3. UXCam starts with your API key: `smos6vxe844g3zn-us`
 4. Everything works normally!
 
 ## 🚀 Building Your APK
@@ -87,7 +87,7 @@ Your UXCam is configured in three places:
 ```json
 "preview": {
   "env": {
-    "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us"
+    "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us"
   }
 }
 ```

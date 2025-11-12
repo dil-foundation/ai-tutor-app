@@ -29,7 +29,7 @@ UXCam **appeared** to be integrated (you had the code) but was **NOT actually wo
     [
       "react-native-ux-cam",    // ← THIS WAS MISSING!
       {
-        "appKey": "7g5tf7r8bew9hs2-us"
+        "appKey": "smos6vxe844g3zn-us"
       }
     ],
     "expo-splash-screen",
@@ -66,7 +66,7 @@ UXCam **appeared** to be integrated (you had the code) but was **NOT actually wo
   "preview": {
     "env": {
       "UXCAM_ENABLED": "true",
-      "EXPO_UXCAM_API_KEY": "7g5tf7r8bew9hs2-us",  // ← ADDED!
+      "EXPO_UXCAM_API_KEY": "smos6vxe844g3zn-us",  // ← ADDED!
       "EXPO_PUBLIC_SUPABASE_URL": "...",
       ...
     }
@@ -140,7 +140,7 @@ Even with proper code configuration, UXCam won't work if not set up correctly in
 
 ### Dashboard Changes (YOU NEED TO DO)
 - [ ] Login to https://app.uxcam.com/
-- [ ] Verify API key `7g5tf7r8bew9hs2-us` is Active
+- [ ] Verify API key `smos6vxe844g3zn-us` is Active
 - [ ] Verify Bundle IDs match: `com.dilai.lms`
 - [ ] Enable iOS Schematic Recordings
 - [ ] Enable Session Recording in Privacy settings
