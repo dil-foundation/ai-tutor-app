@@ -42,7 +42,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
-import { closeEnglishOnlySocket, connectEnglishOnlySocket, isEnglishOnlySocketConnected, sendEnglishOnlyMessage } from '../../utils/websocket';
+import { closeEnglishOnlySocket, connectEnglishOnlySocket, isEnglishOnlySocketConnected, sendEnglishOnlyMessage, sendEnglishOnlyBinaryAudio } from '../../utils/websocket';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserDisplayName, getUserFirstNameSync } from '../../../utils/userUtils';
 import CHATGPT_TIMING_CONFIG, { getSilenceDuration, logTimingInfo } from '../../../utils/chatgptTimingConfig';
@@ -607,8 +607,11 @@ export default function EnglishOnlyScreen() {
   };
 
   const connectToWebSocket = () => {
+    // Increment connection attempts
+    connectionAttemptsRef.current++;
+    
     // Prevent multiple simultaneous connection attempts
-    if (connectionAttemptsRef.current >= maxConnectionAttempts) {
+    if (connectionAttemptsRef.current > maxConnectionAttempts) {
       console.log('❌ Max connection attempts reached, stopping retries');
       setState(prev => ({ 
         ...prev, 
@@ -621,15 +624,32 @@ export default function EnglishOnlyScreen() {
       return;
     }
 
-    connectionAttemptsRef.current++;
     console.log(`🔌 Starting enhanced WebSocket connection (attempt ${connectionAttemptsRef.current}/${maxConnectionAttempts})...`);
     
-    connectEnglishOnlySocket(
-      (data: any) => handleEnhancedWebSocketMessage(data),
-      (audioBuffer: ArrayBuffer) => handleEnhancedAudioData(audioBuffer),
-      () => handleEnhancedWebSocketClose()
-    );
+    // Ensure any existing connection is closed before creating a new one
+    if (isEnglishOnlySocketConnected()) {
+      console.log('🔌 Closing existing connection before reconnecting...');
+      closeEnglishOnlySocket();
+      // Wait a bit for the close to complete
+      setTimeout(() => {
+        connectEnglishOnlySocket(
+          (data: any) => handleEnhancedWebSocketMessage(data),
+          (audioBuffer: ArrayBuffer) => handleEnhancedAudioData(audioBuffer),
+          () => handleEnhancedWebSocketClose()
+        );
+        startConnectionMonitoring();
+      }, 500);
+    } else {
+      connectEnglishOnlySocket(
+        (data: any) => handleEnhancedWebSocketMessage(data),
+        (audioBuffer: ArrayBuffer) => handleEnhancedAudioData(audioBuffer),
+        () => handleEnhancedWebSocketClose()
+      );
+      startConnectionMonitoring();
+    }
+  };
 
+  const startConnectionMonitoring = () => {
     // Set connection timeout
     const connectionTimeout = setTimeout(() => {
       if (!isEnglishOnlySocketConnected()) {
@@ -644,7 +664,7 @@ export default function EnglishOnlyScreen() {
         }));
         
         setTimeout(() => {
-          if (isScreenFocusedRef.current && !state.isConnected) {
+          if (isScreenFocusedRef.current && !state.isConnected && connectionAttemptsRef.current < maxConnectionAttempts) {
             console.log('🔄 Retrying enhanced WebSocket connection...');
             connectToWebSocket();
           }
@@ -691,117 +711,136 @@ export default function EnglishOnlyScreen() {
     }
 
     console.log('Received enhanced English-Only WebSocket message:', data);
-    interactionsCountRef.current++;
     
-    // Log enhanced analysis data if available
-    if (data.analysis) {
-      console.log('🔍 [ENHANCED_ANALYSIS]', {
-        next_stage: data.analysis.next_stage,
-        current_topic: data.analysis.current_topic,
-        needs_correction: data.analysis.needs_correction,
-        correction_type: data.analysis.correction_type,
-        learning_activity: data.analysis.learning_activity,
-        session_progress: data.analysis.session_progress,
-        step: data.step
-      });
-    }
-
-    // Stop any existing recording when AI responds
-    if (recordingRef.current && state.isListening) {
-      console.log('🛑 Stopping recording because AI is responding');
-      stopRecording(false).catch(console.error);
-    }
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: data.conversation_text || data.response || 'Enhanced AI response',
-      isAI: true,
-      timestamp: new Date(),
-      stage: data.conversation_stage || data.step,
-      analysis: data.analysis || {},
-    };
-
-    // Track if this is a response to user speech (not greeting or pause)
-    const isResponseToUserSpeech = (data.step === 'correction' || data.step === 'conversation') && data.original_text;
-    const isPausePrompt = data.step === 'pause_detected';
-    const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
-    const isNoSpeechAfterProcessing = data.step === 'no_speech_detected_after_processing';
-    const isUserReminded = data.step === 'user_reminded';
-
-    // Immediately update the last message step ref to prevent race conditions
-    lastMessageStepRef.current = data.step;
-
-    // Update enhanced state with backend data
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, newMessage],
-      isListening: false,
-      isGreeting: false,
-      isPauseDetected: isPausePrompt,
-      isNoSpeechDetected: isNoSpeechDetected,
-      isNoSpeechAfterProcessing: isNoSpeechAfterProcessing,
-      isUserReminded: isUserReminded,
-      isProcessingAudio: false,
-      currentMessageText: data.conversation_text || data.response || 'Enhanced AI response',
+    // Handle streaming partial responses
+    if (data.partial === true && !data.final) {
+      console.log('📡 [STREAMING] Received partial response - updating UI immediately');
       
-      // Enhanced state updates
-      conversationStage: data.conversation_stage || prev.conversationStage,
-      currentTopic: data.current_topic || prev.currentTopic,
-      learningPath: data.learning_path || prev.learningPath,
-      skillLevel: data.skill_level || prev.skillLevel,
-      availableOptions: data.available_options || prev.availableOptions,
-      sessionId: data.session_id || prev.sessionId,
-      
-      // Update learning progress
-      learningProgress: {
-        ...prev.learningProgress,
-        interactionsCount: interactionsCountRef.current,
-      },
-      
-      // Update lastUserInput if this is a response to user speech
-      lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
-    }));
-
-    // Handle enhanced no speech detected response from backend
-    if (isNoSpeechDetected) {
-      if (isProcessingAudioRef.current || state.isProcessingAudio) {
-        console.log('🔇 Ignoring no_speech response - currently processing audio');
-        return;
-      }
-      
-      console.log('🔇 Backend detected no speech - playing enhanced no speech detected audio');
-      hasUserSpokenRef.current = false;
-      
-      setTimeout(() => {
-        if (isScreenFocusedRef.current) {
-          playEnhancedNoSpeechDetectedAudio();
-        }
-      }, 500);
-    }
-
-    // Handle enhanced no speech detected after processing response from backend
-    if (isNoSpeechAfterProcessing) {
-      console.log('🔇 Backend detected no speech after processing - clearing processing state and preparing for restart');
-      isProcessingAudioRef.current = false;
-      hasUserSpokenRef.current = false;
-      console.log('🔄 [ENHANCED_NO_SPEECH_AFTER_PROCESSING] Cleared processing state while preserving flag states');
-    }
-
-    // Handle final AI response (correction or conversation) - clear processing state
-    if (isResponseToUserSpeech) {
-      console.log(`✅ Received enhanced final AI response (${data.step}), clearing processing state`);
-      console.log(`🔍 [${data.step}] Clearing isProcessingAudio, proceeding with enhanced response`);
-      isProcessingAudioRef.current = false;
+      // Update UI with partial response for immediate feedback
       setState(prev => ({
         ...prev,
-        isProcessingAudio: false,
+        currentMessageText: data.conversation_text || data.response || data.transcribed_text || 'Processing...',
+        isProcessingAudio: data.status === 'processing',
       }));
+      
+      // Don't add to messages yet - wait for final response
+      return;
     }
+    
+    // Handle final complete response
+    if (data.final === true || (!data.partial && data.response)) {
+      interactionsCountRef.current++;
+      
+      // Log enhanced analysis data if available
+      if (data.analysis) {
+        console.log('🔍 [ENHANCED_ANALYSIS]', {
+          next_stage: data.analysis.next_stage,
+          current_topic: data.analysis.current_topic,
+          needs_correction: data.analysis.needs_correction,
+          correction_type: data.analysis.correction_type,
+          learning_activity: data.analysis.learning_activity,
+          session_progress: data.analysis.session_progress,
+          step: data.step
+        });
+      }
 
-    // Auto-scroll UI
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+      // Stop any existing recording when AI responds
+      if (recordingRef.current && state.isListening) {
+        console.log('🛑 Stopping recording because AI is responding');
+        stopRecording(false).catch(console.error);
+      }
+
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: data.conversation_text || data.response || 'Enhanced AI response',
+        isAI: true,
+        timestamp: new Date(),
+        stage: data.conversation_stage || data.step,
+        analysis: data.analysis || {},
+      };
+
+      // Track if this is a response to user speech (not greeting or pause)
+      const isResponseToUserSpeech = (data.step === 'correction' || data.step === 'conversation') && data.original_text;
+      const isPausePrompt = data.step === 'pause_detected';
+      const isNoSpeechDetected = data.step === 'no_speech' || data.step === 'no_speech_detected';
+      const isNoSpeechAfterProcessing = data.step === 'no_speech_detected_after_processing';
+      const isUserReminded = data.step === 'user_reminded';
+
+      // Immediately update the last message step ref to prevent race conditions
+      lastMessageStepRef.current = data.step;
+
+      // Update enhanced state with backend data
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, newMessage],
+        isListening: false,
+        isGreeting: false,
+        isPauseDetected: isPausePrompt,
+        isNoSpeechDetected: isNoSpeechDetected,
+        isNoSpeechAfterProcessing: isNoSpeechAfterProcessing,
+        isUserReminded: isUserReminded,
+        isProcessingAudio: false,
+        currentMessageText: data.conversation_text || data.response || 'Enhanced AI response',
+        
+        // Enhanced state updates
+        conversationStage: data.conversation_stage || prev.conversationStage,
+        currentTopic: data.current_topic || prev.currentTopic,
+        learningPath: data.learning_path || prev.learningPath,
+        skillLevel: data.skill_level || prev.skillLevel,
+        availableOptions: data.available_options || prev.availableOptions,
+        sessionId: data.session_id || prev.sessionId,
+        
+        // Update learning progress
+        learningProgress: {
+          ...prev.learningProgress,
+          interactionsCount: interactionsCountRef.current,
+        },
+        
+        // Update lastUserInput if this is a response to user speech
+        lastUserInput: isResponseToUserSpeech ? data.original_text : prev.lastUserInput,
+      }));
+
+      // Handle enhanced no speech detected response from backend
+      if (isNoSpeechDetected) {
+        if (isProcessingAudioRef.current || state.isProcessingAudio) {
+          console.log('🔇 Ignoring no_speech response - currently processing audio');
+          return;
+        }
+        
+        console.log('🔇 Backend detected no speech - playing enhanced no speech detected audio');
+        hasUserSpokenRef.current = false;
+        
+        setTimeout(() => {
+          if (isScreenFocusedRef.current) {
+            playEnhancedNoSpeechDetectedAudio();
+          }
+        }, 500);
+      }
+
+      // Handle enhanced no speech detected after processing response from backend
+      if (isNoSpeechAfterProcessing) {
+        console.log('🔇 Backend detected no speech after processing - clearing processing state and preparing for restart');
+        isProcessingAudioRef.current = false;
+        hasUserSpokenRef.current = false;
+        console.log('🔄 [ENHANCED_NO_SPEECH_AFTER_PROCESSING] Cleared processing state while preserving flag states');
+      }
+
+      // Handle final AI response (correction or conversation) - clear processing state
+      if (isResponseToUserSpeech) {
+        console.log(`✅ Received enhanced final AI response (${data.step}), clearing processing state`);
+        console.log(`🔍 [${data.step}] Clearing isProcessingAudio, proceeding with enhanced response`);
+        isProcessingAudioRef.current = false;
+        setState(prev => ({
+          ...prev,
+          isProcessingAudio: false,
+        }));
+      }
+
+      // Auto-scroll UI
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   };
 
   const handleEnhancedAudioData = async (audioBuffer: ArrayBuffer) => {
@@ -891,22 +930,46 @@ export default function EnglishOnlyScreen() {
   };
 
   const handleEnhancedWebSocketClose = () => {
-    setState(prev => ({
-      ...prev,
-      isConnected: false,
-      currentStep: 'error',
-      isListening: false,
-      isAISpeaking: false,
-      isGreeting: false,
-      isPauseDetected: false,
-      isNoSpeechDetected: false,
-      isNoSpeechAfterProcessing: false,
-      isUserReminded: false,
-      currentMessageText: '',
-      hasError: true,
-      errorType: 'websocket_closed',
-      errorMessage: 'Connection to enhanced AI tutor was lost'
-    }));
+    console.log('🔌 WebSocket close handler called');
+    
+    // Only update state if screen is still focused (user might be reconnecting)
+    if (isScreenFocusedRef.current) {
+      setState(prev => ({
+        ...prev,
+        isConnected: false,
+        currentStep: 'waiting',
+        isListening: false,
+        isAISpeaking: false,
+        isGreeting: false,
+        isPauseDetected: false,
+        isNoSpeechDetected: false,
+        isNoSpeechAfterProcessing: false,
+        isUserReminded: false,
+        currentMessageText: 'Connection lost. Reconnecting...',
+        hasError: false, // Don't show error immediately, try to reconnect
+        errorType: null,
+        errorMessage: null
+      }));
+      
+      // Attempt to reconnect if we haven't exceeded max attempts
+      if (connectionAttemptsRef.current < maxConnectionAttempts) {
+        console.log('🔄 Attempting to reconnect WebSocket...');
+        setTimeout(() => {
+          if (isScreenFocusedRef.current && !isEnglishOnlySocketConnected()) {
+            connectToWebSocket();
+          }
+        }, 1000);
+      } else {
+        // Max attempts reached, show error
+        setState(prev => ({
+          ...prev,
+          hasError: true,
+          errorType: 'websocket_closed',
+          errorMessage: 'Connection to enhanced AI tutor was lost. Please try again.',
+          currentMessageText: 'Connection failed. Please check your internet and try again.'
+        }));
+      }
+    }
   };
 
   const playEnhancedAudio = async (audioUri: string, isGreeting = false, isNoSpeechDetected = false, 
@@ -1542,17 +1605,11 @@ export default function EnglishOnlyScreen() {
     }
   };
 
-  // Enhanced function to handle user speech and pause responses
+  // Enhanced function to handle user speech with optimized binary transmission
   const processUserSpeech = async (audioUri: string) => {
     try {
-      const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
       // If we're in pause detection mode, handle it as a pause response
       if (state.isPauseDetected) {
-        // For now, we'll send it to backend for STT and then handle the response
-        // In a real implementation, you might want to handle pause responses differently
         console.log('⏰ Processing pause response...');
       }
 
@@ -1566,21 +1623,41 @@ export default function EnglishOnlyScreen() {
         currentMessageText: 'Processing your speech...',
       }));
 
-      // 🎯 REMOVED: Play pre-generated processing audio for natural conversation flow
-      // await playProcessingAudio();
+      // OPTIMIZATION: Try binary transmission first (33% smaller payload)
+      try {
+        // Read audio as base64 first
+        const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
 
-      // Send the audio directly to backend for processing
-      const messagePayload = {
-        audio_base64: base64Audio,
-        filename: `english_only_recording-${Date.now()}.wav`,
-        user_name: state.userName,
-      };
+        // Convert base64 to ArrayBuffer for binary transmission
+        const binaryString = atob(base64Audio);
+        const audioArrayBuffer = new ArrayBuffer(binaryString.length);
+        const audioBytes = new Uint8Array(audioArrayBuffer);
+        for (let i = 0; i < binaryString.length; i++) {
+          audioBytes[i] = binaryString.charCodeAt(i);
+        }
 
-      console.log('📤 Sending audio to backend for processing...');
-      sendEnglishOnlyMessage(JSON.stringify(messagePayload));
+        // Send binary audio directly (more efficient)
+        console.log('📤 Sending binary audio to backend (optimized)...');
+        sendEnglishOnlyBinaryAudio(audioArrayBuffer, state.userName);
+        
+      } catch (binaryError) {
+        // Fallback to Base64 if binary transmission fails
+        console.warn('⚠️ Binary transmission failed, falling back to Base64:', binaryError);
+        const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
 
-      // 🎯 REMOVED: No longer waiting for "processing_started" from backend
-      // Backend will directly send the final response
+        const messagePayload = {
+          audio_base64: base64Audio,
+          filename: `english_only_recording-${Date.now()}.wav`,
+          user_name: state.userName,
+        };
+
+        console.log('📤 Sending Base64 audio to backend (fallback)...');
+        sendEnglishOnlyMessage(JSON.stringify(messagePayload));
+      }
 
     } catch (error) {
       console.error('Failed to process user speech:', error);
@@ -1673,6 +1750,9 @@ export default function EnglishOnlyScreen() {
       silenceStartTime: null,
       lastUserInput: '',
       correctionProvided: false,
+      hasError: false,
+      errorType: null,
+      errorMessage: null,
     }));
     
     speechStartTimeRef.current = null;
@@ -1683,6 +1763,7 @@ export default function EnglishOnlyScreen() {
     isPlayingAudioRef.current = false; // Reset audio playing flag
     isProcessingAudioRef.current = false; // Reset processing audio flag
     greetingInitiatedRef.current = false;
+    isNewSessionAfterAI.current = false; // Reset new session flag
 
     
     console.log('✅ Cleanup completed');
